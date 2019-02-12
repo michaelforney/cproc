@@ -348,6 +348,9 @@ main(int argc, char *argv[])
 			case 'E':
 				last = PREPROCESS;
 				break;
+			case 'g':
+				/* ignore */
+				break;
 			case 'I':
 				arrayaddptr(&phases[PREPROCESS].cmd, "-I");
 				arrayaddptr(&phases[PREPROCESS].cmd, nextarg(&argv));
