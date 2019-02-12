@@ -1,0 +1,9 @@
+image: alpine/edge
+sources:
+  - https://git.sr.ht/~mcf/cc
+  - https://github.com/michaelforney/qbe
+tasks:
+  - build: |
+      make -C qbe
+      echo 'CFLAGS=-DDYNAMICLINKER=\"/lib/ld-musl-x86_64.so.1\"' >cc/config.mk
+      PATH=$PWD/qbe/obj:$PATH make -C cc all check bootstrap

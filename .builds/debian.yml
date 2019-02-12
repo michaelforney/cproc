@@ -1,0 +1,8 @@
+image: debian/stretch
+sources:
+  - https://git.sr.ht/~mcf/cc
+  - https://github.com/michaelforney/qbe
+tasks:
+  - build: |
+      make -C qbe
+      PATH=$PWD/qbe/obj:$PATH make -C cc all check bootstrap
