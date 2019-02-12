@@ -62,11 +62,11 @@ qbe.o     : $(srcdir)/qbe.c     $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
 .PHONY: stage2
 stage2: cc cc-qbe
 	@mkdir -p $@
-	$(MAKE) -C $@ -f ../$(srcdir)/Makefile srcdir=../$(srcdir) stagedeps='../cc ../cc-qbe' CC=../cc CFLAGS= LDFLAGS=
+	$(MAKE) -C $@ -f ../$(srcdir)/Makefile srcdir=../$(srcdir) stagedeps='../cc ../cc-qbe' CC=../cc
 .PHONY: stage3
 stage3: stage2
 	@mkdir -p $@
-	$(MAKE) -C $@ -f ../$(srcdir)/Makefile srcdir=../$(srcdir) stagedeps='../stage2/cc ../stage2/cc-qbe' CC=../stage2/cc CFLAGS= LDFLAGS=
+	$(MAKE) -C $@ -f ../$(srcdir)/Makefile srcdir=../$(srcdir) stagedeps='../stage2/cc ../stage2/cc-qbe' CC=../stage2/cc
 
 .PHONY: bootstrap
 bootstrap: stage2 stage3
