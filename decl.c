@@ -660,8 +660,14 @@ structdecl(struct scope *s, struct type *t)
 			if (align < m->type->align)
 				align = m->type->align;
 			t->size = ALIGNUP(t->size, align);
-			m->offset = t->size;
-			t->size += m->type->size;
+			if (t->kind == TYPESTRUCT) {
+				m->offset = t->size;
+				t->size += m->type->size;
+			} else {
+				m->offset = 0;
+				if (t->size < m->type->size)
+					t->size = m->type->size;
+			}
 			if (t->align < align)
 				t->align = align;
 		}
