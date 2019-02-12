@@ -496,7 +496,6 @@ utof(struct function *f, struct representation *r, struct value *v)
 static struct value *
 ftou(struct function *f, struct representation *r, struct value *v)
 {
-	uint64_t max = 1ull << ((32 << (r->base == 'l')) - 1);
 	struct value *big, *phi[5] = {0}, *join, *maxflt, *maxint;
 	enum instructionkind op = v->repr->base == 's' ? ISTOSI : IDTOSI;
 
