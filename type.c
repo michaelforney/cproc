@@ -53,9 +53,11 @@ mkqualifiedtype(struct type *t, enum typequalifier tq)
 	if (tq) {
 		t = mktype(TYPEQUALIFIED, t);
 		t->qualified.kind = tq;
-		t->size = t->base->size;
-		t->align = t->base->align;
-		t->repr = t->base->repr;
+		if (t->base) {
+			t->size = t->base->size;
+			t->align = t->base->align;
+			t->repr = t->base->repr;
+		}
 		// XXX: incomplete?
 	}
 	return t;

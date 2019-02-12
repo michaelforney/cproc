@@ -126,6 +126,17 @@ listinsert(struct list *list, struct list *new)
 }
 
 void
+listinsertlist(struct list *list, struct list *new)
+{
+	if (new->next == new)
+		return;
+	new->next->prev = list;
+	new->prev->next = list;
+	list->next->prev = new->prev;
+	list->next = new->next;
+}
+
+void
 listremove(struct list *list)
 {
 	list->next->prev = list->prev;

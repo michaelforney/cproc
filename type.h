@@ -52,7 +52,10 @@ struct type {
 	int align;
 	uint64_t size;
 	struct representation *repr;
-	struct type *base;
+	union {
+		struct type *base;
+		struct list link;  /* used only during construction of type */
+	};
 	_Bool incomplete;
 	union {
 		struct {

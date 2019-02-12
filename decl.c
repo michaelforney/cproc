@@ -413,31 +413,34 @@ istypename(struct scope *s, const char *name)
 }
 
 static void
-declaratortypes(struct scope *s, struct partialtype *result, char **name, bool allowabstract)
+declaratortypes(struct scope *s, struct list *result, char **name, bool allowabstract)
 {
-	struct partialtype prefix1 = {NULL, &prefix1.outer}, prefix2 = {NULL, &prefix2.outer};
+	struct list *ptr;
 	struct type *t;
 	struct parameter **p;
 	uint64_t i;
 	enum typequalifier tq;
 
 	while (consume(TMUL)) {
-		t = mkpointertype(result->outer);
+		t = mkpointertype(NULL);
+		listinsert(result, &t->link);
 		tq = QUALNONE;
 		while (typequal(&tq))
 			;
-		if (!result->outer)
-			result->inner = &t->base;
-		result->outer = mkqualifiedtype(t, tq);
+		if (tq) {
+			t = mkqualifiedtype(NULL, tq);
+			listinsert(result, &t->link);
+		}
 	}
 	if (name)
 		*name = NULL;
+	ptr = result->next;
 	switch (tok.kind) {
 	case TLPAREN:
 		next();
 		if (allowabstract && tok.kind != TMUL && (tok.kind != TIDENT || istypename(s, tok.lit)))
 			goto func;
-		declaratortypes(s, &prefix1, name, allowabstract);
+		declaratortypes(s, result, name, allowabstract);
 		expect(TRPAREN, "after parenthesized declarator");
 		break;
 	case TIDENT:
@@ -497,8 +500,7 @@ declaratortypes(struct scope *s, struct partialtype *result, char **name, bool a
 				break;
 			}
 			expect(TRPAREN, "to close function declarator");
-			*prefix2.inner = t;
-			prefix2.inner = &t->base;
+			listinsert(ptr->prev, &t->link);
 			break;
 		case TLBRACK:  /* array declarator */
 			next();
@@ -518,46 +520,45 @@ declaratortypes(struct scope *s, struct partialtype *result, char **name, bool a
 				i = intconstexpr(s);
 				expect(TRBRACK, "after array length");
 			}
+			if (tq) {
+				t = mkqualifiedtype(NULL, tq);
+				listinsert(ptr->prev, &t->link);
+			}
 			t = mkarraytype(NULL, i);
-			*prefix2.inner = mkqualifiedtype(t, tq);
-			prefix2.inner = &t->base;
+			listinsert(ptr->prev, &t->link);
 			break;
 		default:
-			goto done;
+			return;
 		}
-	}
-done:
-	if (prefix2.outer) {
-		if (result->inner == &result->outer)
-			result->inner = prefix2.inner;
-		*prefix2.inner = result->outer;
-		result->outer = prefix2.outer;
-	}
-	if (prefix1.outer) {
-		if (result->inner == &result->outer)
-			result->inner = prefix1.inner;
-		*prefix1.inner = result->outer;
-		result->outer = prefix1.outer;
 	}
 }
 
 static struct type *
-declarator(struct scope *s, struct type *t, char **name, bool allowabstract)
+declarator(struct scope *s, struct type *base, char **name, bool allowabstract)
 {
-	struct partialtype result = {NULL, &result.outer};
+	struct type *t;
+	struct list result = {&result, &result}, *l, *prev;
 
 	declaratortypes(s, &result, name, allowabstract);
-	*result.inner = t;
-	for (t = result.outer; t; t = t->base) {
+	for (l = result.prev; l != &result; l = prev) {
+		prev = l->prev;
+		t = listelement(l, struct type, link);
+		t->base = base;
 		switch (t->kind) {
 		case TYPEARRAY:
-			t->align = t->base->align;
-			t->size = t->base->size * t->array.length;  // XXX: overflow?
+			t->align = base->align;
+			t->size = base->size * t->array.length;  // XXX: overflow?
+			break;
+		case TYPEQUALIFIED:
+			t->align = base->align;
+			t->size = base->size;
+			t->repr = base->repr;
 			break;
 		}
+		base = t;
 	}
 
-	return result.outer;
+	return base;
 }
 
 static struct type *
