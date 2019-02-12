@@ -334,6 +334,8 @@ main(int argc, char *argv[])
 				usage();
 			arrayaddptr(&phases[PREPROCESS].cmd, "-include");
 			arrayaddptr(&phases[PREPROCESS].cmd, arg);
+		} else if (strcmp(arg, "-pipe") == 0) {
+			/* ignore */
 		} else {
 			if (arg[2] != '\0' && strchr("cESs", arg[1]))
 				usage();
