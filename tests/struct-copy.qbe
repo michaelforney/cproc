@@ -1,0 +1,21 @@
+export
+function $f() {
+@start.1
+	%.1 =l alloc4 12
+@body.2
+	%.2 =l add %.1, 0
+	%.3 =l loaduw $x
+	storew %.3, %.2
+	%.4 =l add $x, 4
+	%.5 =l add %.2, 4
+	%.6 =l loaduw %.4
+	storew %.6, %.5
+	%.7 =l add %.4, 4
+	%.8 =l add %.5, 4
+	%.9 =l loaduw %.7
+	storew %.9, %.8
+	%.10 =l add %.7, 4
+	%.11 =l add %.8, 4
+	ret
+}
+export data $x = align 4 { z 12 }

@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ $# = 0 ] ; then
+	set -- tests/*.c
+fi
+
+exitstatus=0
+out=$(mktemp)
+trap 'rm "$out"' EXIT
+for test ; do
+	if ${CC:=./cc} -emit-qbe -o $out $test && diff -Nu "${test%.c}.qbe" "$out" ; then
+		result="PASS"
+	else
+		result="FAIL"
+		exitstatus=1
+	fi
+	echo "[$result] $test" >&2
+done
+
+exit $exitstatus

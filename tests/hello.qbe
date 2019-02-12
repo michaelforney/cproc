@@ -1,0 +1,9 @@
+data $.Lstring.2 = align 1 { b "hello", z 1, }
+export
+function w $main() {
+@start.1
+@body.2
+	%.1 =l copy $.Lstring.2
+	%.2 =w call $puts(l %.1)
+	ret 0
+}

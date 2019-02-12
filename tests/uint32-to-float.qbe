@@ -1,0 +1,9 @@
+export
+function s $f() {
+@start.1
+@body.2
+	%.1 =w call $g()
+	%.2 =l extuw %.1
+	%.3 =s sltof %.2
+	ret %.3
+}

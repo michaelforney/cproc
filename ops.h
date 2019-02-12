@@ -1,0 +1,108 @@
+/* jumps */
+OP(IJMP,     0, 1, "jmp")
+OP(IJNZ,     0, 3, "jnz")
+OP(IRET,     0, 1, "ret")
+
+/* arithmetic and bits */
+OP(IADD,     1, 2, "add")
+OP(ISUB,     1, 2, "sub")
+OP(IDIV,     1, 2, "div")
+OP(IMUL,     1, 2, "mul")
+OP(IUDIV,    1, 2, "udiv")
+OP(IREM,     1, 2, "rem")
+OP(IUREM,    1, 2, "urem")
+OP(IOR,      1, 2, "or")
+OP(IXOR,     1, 2, "xor")
+OP(IAND,     1, 2, "and")
+OP(ISAR,     1, 2, "sar")
+OP(ISHR,     1, 2, "shr")
+OP(ISHL,     1, 2, "shl")
+
+/* memory */
+OP(ISTORED,  0, 2, "stored")
+OP(ISTORES,  0, 2, "stores")
+OP(ISTOREL,  0, 2, "storel")
+OP(ISTOREW,  0, 2, "storew")
+OP(ISTOREH,  0, 2, "storeh")
+OP(ISTOREB,  0, 2, "storeb")
+OP(ILOADD,   1, 1, "loadd")
+OP(ILOADS,   1, 1, "loads")
+OP(ILOADL,   1, 1, "loadl")
+OP(ILOADSW,  1, 1, "loadsw")
+OP(ILOADUW,  1, 1, "loaduw")
+OP(ILOADSH,  1, 1, "loadsh")
+OP(ILOADUH,  1, 1, "loaduh")
+OP(ILOADSB,  1, 1, "loadsb")
+OP(ILOADUB,  1, 1, "loadub")
+OP(IALLOC4,  1, 1, "alloc4")
+OP(IALLOC8,  1, 1, "alloc8")
+OP(IALLOC16, 1, 1, "alloc16")
+
+/* comparisons */
+OP(ICEQW,    1, 2, "ceqw")
+OP(ICNEW,    1, 2, "cnew")
+OP(ICSLEW,   1, 2, "cslew")
+OP(ICSLTW,   1, 2, "csltw")
+OP(ICSGEW,   1, 2, "csgew")
+OP(ICSGTW,   1, 2, "csgtw")
+OP(ICULEW,   1, 2, "culew")
+OP(ICULTW,   1, 2, "cultw")
+OP(ICUGEW,   1, 2, "cugew")
+OP(ICUGTW,   1, 2, "cugtw")
+
+OP(ICEQL,    1, 2, "ceql")
+OP(ICNEL,    1, 2, "cnel")
+OP(ICSLEL,   1, 2, "cslel")
+OP(ICSLTL,   1, 2, "csltl")
+OP(ICSGEL,   1, 2, "csgel")
+OP(ICSGTL,   1, 2, "csgtl")
+OP(ICULEL,   1, 2, "culel")
+OP(ICULTL,   1, 2, "cultl")
+OP(ICUGEL,   1, 2, "cugel")
+OP(ICUGTL,   1, 2, "cugtl")
+
+OP(ICEQS,    1, 2, "ceqs")
+OP(ICNES,    1, 2, "cnes")
+OP(ICLES,    1, 2, "cles")
+OP(ICLTS,    1, 2, "clts")
+OP(ICGES,    1, 2, "cges")
+OP(ICGTS,    1, 2, "cgts")
+OP(ICOS,     1, 2, "cos")
+OP(ICUOS,    1, 2, "cuos")
+
+OP(ICEQD,    1, 2, "ceqd")
+OP(ICNED,    1, 2, "cned")
+OP(ICLED,    1, 2, "cled")
+OP(ICLTD,    1, 2, "cltd")
+OP(ICGED,    1, 2, "cged")
+OP(ICGTD,    1, 2, "cgtd")
+OP(ICOD,     1, 2, "cod")
+OP(ICUOD,    1, 2, "cuod")
+
+/* conversions */
+OP(IEXTSW,   1, 1, "extsw")
+OP(IEXTUW,   1, 1, "extuw")
+OP(IEXTSH,   1, 1, "extsh")
+OP(IEXTUH,   1, 1, "extuh")
+OP(IEXTSB,   1, 1, "extsb")
+OP(IEXTUB,   1, 1, "extub")
+OP(IEXTS,    1, 1, "exts")
+OP(ITRUNCD,  1, 1, "truncd")
+OP(ISTOSI,   1, 1, "stosi")
+OP(IDTOSI,   1, 1, "dtosi")
+OP(ISWTOF,   1, 1, "swtof")
+OP(ISLTOF,   1, 1, "sltof")
+
+/* cast and copy */
+OP(ICAST,    1, 1, "cast")
+OP(ICOPY,    1, 1, "copy")
+
+/* call */
+OP(ICALL,    1, -1, "call")
+
+/* variadic */
+OP(IVASTART, 0, 1, "vastart")
+OP(IVAARG,   1, 1, "vaarg")
+
+/* phi */
+OP(IPHI,     1, -1, "phi")

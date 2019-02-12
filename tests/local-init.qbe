@@ -1,0 +1,22 @@
+export
+function $f() {
+@start.1
+	%.1 =l alloc8 32
+@body.2
+	%.2 =l add %.1, 0
+	%.3 =w copy 97
+	storeb %.3, %.2
+	%.4 =l add %.1, 1
+	storeb 0, %.4
+	%.5 =l add %.1, 2
+	storeh 0, %.5
+	%.6 =l add %.1, 4
+	storew 0, %.6
+	%.7 =l add %.1, 8
+	storel 0, %.7
+	%.8 =l add %.1, 16
+	storel 0, %.8
+	%.9 =l add %.1, 24
+	storel 0, %.9
+	ret
+}

@@ -1,0 +1,7 @@
+export
+function $f() {
+@start.1
+	%.1 =l alloc8 8
+@body.2
+	ret
+}

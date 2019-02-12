@@ -1,0 +1,11 @@
+export
+function $f() {
+@start.1
+@body.2
+	%.1 =d exts s_0x1p+0
+	call $g1(d %.1)
+	%.2 =d exts s_0x1p+0
+	call $g2(w 0, d %.2, ...)
+	call $g3(s s_0x1p+0)
+	ret
+}

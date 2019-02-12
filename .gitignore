@@ -1,0 +1,6 @@
+*.o
+/cc
+/cc-qbe
+/config.h
+/stage2
+/stage3
