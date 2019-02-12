@@ -1,4 +1,6 @@
+#ifndef DYNAMICLINKER
 #define DYNAMICLINKER "/lib64/ld-linux-x86-64.so.2"
+#endif
 
 static char *startfiles[] = {
 	"-l", ":crt1.o",
