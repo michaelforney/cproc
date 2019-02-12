@@ -208,7 +208,7 @@ primaryexpr(struct scope *s)
 			/* floating constant */
 			errno = 0;
 			e->constant.f = strtod(tok.lit, &end);
-			if (errno)
+			if (errno && errno != ERANGE)
 				error(&tok.loc, "invalid floating constant '%s': %s", tok.lit, strerror(errno));
 			if (!end[0])
 				e->type = &typedouble;
