@@ -309,6 +309,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expression *l, stru
 			r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
 		} else if (lp & PROPINT && r->type->kind == TYPEPOINTER) {
 			t = r->type;
+			l = mkbinaryexpr(loc, TMUL, exprconvert(l, &typeulong), mkconstexpr(&typeulong, t->base->size));
 		} else {
 			error(loc, "invalid operands to '+' operator");
 		}
