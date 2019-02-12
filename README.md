@@ -1,3 +1,5 @@
+[![builds.sr.ht status](https://builds.sr.ht/~mcf.svg?search=~mcf/cc)](https://builds.sr.ht/~mcf?search=~mcf/cc)
+
 This is a C11 compiler using [QBE] as a backend.
 
 There is still much to do and the code is a little rough, but it currently
