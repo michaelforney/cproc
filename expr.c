@@ -378,6 +378,8 @@ postfixexpr(struct scope *s, struct expression *r)
 			next();
 			arr = r;
 			idx = expr(s);
+			lvalueconvert(arr);
+			lvalueconvert(idx);
 			if (arr->type->kind != TYPEPOINTER) {
 				if (idx->type->kind != TYPEPOINTER)
 					error(&tok.loc, "either array or index must be pointer type");
@@ -387,7 +389,6 @@ postfixexpr(struct scope *s, struct expression *r)
 			}
 			if (arr->type->base->incomplete)
 				error(&tok.loc, "array is pointer to incomplete type");
-			lvalueconvert(idx);
 			if (!(typeprop(idx->type) & PROPINT))
 				error(&tok.loc, "index is not an integer type");
 			tmp = mkbinaryexpr(&tok.loc, TADD, arr, idx);
