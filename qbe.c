@@ -852,19 +852,19 @@ casesearch(struct function *f, struct value *v, struct switchcase *c, struct val
 		funcjmp(f, defaultlabel);
 		return;
 	}
-	label[0] = mkblock("switch_lt");
-	label[1] = mkblock("switch_ge");
+	label[0] = mkblock("switch_ne");
+	label[1] = mkblock("switch_lt");
 	label[2] = mkblock("switch_gt");
 
 	// XXX: linear search if c->node.height < 4
 	key = mkintconst(&i64, c->node.key);
-	res = funcinst(f, ICULTW, &i32, (struct value *[]){v, key});
-	funcjnz(f, res, label[0], label[1]);
+	res = funcinst(f, ICEQW, &i32, (struct value *[]){v, key});
+	funcjnz(f, res, c->body, label[0]);
 	funclabel(f, label[0]);
-	casesearch(f, v, c->node.child[0], defaultlabel);
+	res = funcinst(f, ICULTW, typeint.repr, (struct value *[]){v, key});
+	funcjnz(f, res, label[1], label[2]);
 	funclabel(f, label[1]);
-	res = funcinst(f, ICUGTW, typeint.repr, (struct value *[]){v, key});
-	funcjnz(f, res, label[2], c->body);
+	casesearch(f, v, c->node.child[0], defaultlabel);
 	funclabel(f, label[2]);
 	casesearch(f, v, c->node.child[1], defaultlabel);
 }

@@ -16,45 +16,45 @@ function $f() {
 @switch_case.10
 	jmp @switch_join.4
 @switch_cond.3
-	%.1 =w cultw 0, 52
-	jnz %.1, @switch_lt.11, @switch_ge.12
-@switch_lt.11
-	%.2 =w cultw 0, 3
-	jnz %.2, @switch_lt.14, @switch_ge.15
-@switch_lt.14
-	%.3 =w cultw 0, 0
-	jnz %.3, @switch_lt.17, @switch_ge.18
-@switch_lt.17
+	%.1 =w ceqw 0, 52
+	jnz %.1, @switch_case.6, @switch_ne.11
+@switch_ne.11
+	%.2 =w cultw 0, 52
+	jnz %.2, @switch_lt.12, @switch_gt.13
+@switch_lt.12
+	%.3 =w ceqw 0, 3
+	jnz %.3, @switch_case.5, @switch_ne.14
+@switch_ne.14
+	%.4 =w cultw 0, 3
+	jnz %.4, @switch_lt.15, @switch_gt.16
+@switch_lt.15
+	%.5 =w ceqw 0, 0
+	jnz %.5, @switch_case.9, @switch_ne.17
+@switch_ne.17
+	%.6 =w cultw 0, 0
+	jnz %.6, @switch_lt.18, @switch_gt.19
+@switch_lt.18
 	jmp @switch_default.8
-@switch_ge.18
-	%.4 =w cugtw 0, 0
-	jnz %.4, @switch_gt.19, @switch_case.9
 @switch_gt.19
 	jmp @switch_default.8
-@switch_ge.15
-	%.5 =w cugtw 0, 3
-	jnz %.5, @switch_gt.16, @switch_case.5
 @switch_gt.16
 	jmp @switch_default.8
-@switch_ge.12
-	%.6 =w cugtw 0, 52
-	jnz %.6, @switch_gt.13, @switch_case.6
 @switch_gt.13
-	%.7 =w cultw 0, 18446744073709551613
-	jnz %.7, @switch_lt.20, @switch_ge.21
-@switch_lt.20
-	%.8 =w cultw 0, 101
-	jnz %.8, @switch_lt.23, @switch_ge.24
-@switch_lt.23
+	%.7 =w ceqw 0, 18446744073709551613
+	jnz %.7, @switch_case.7, @switch_ne.20
+@switch_ne.20
+	%.8 =w cultw 0, 18446744073709551613
+	jnz %.8, @switch_lt.21, @switch_gt.22
+@switch_lt.21
+	%.9 =w ceqw 0, 101
+	jnz %.9, @switch_case.10, @switch_ne.23
+@switch_ne.23
+	%.10 =w cultw 0, 101
+	jnz %.10, @switch_lt.24, @switch_gt.25
+@switch_lt.24
 	jmp @switch_default.8
-@switch_ge.24
-	%.9 =w cugtw 0, 101
-	jnz %.9, @switch_gt.25, @switch_case.10
 @switch_gt.25
 	jmp @switch_default.8
-@switch_ge.21
-	%.10 =w cugtw 0, 18446744073709551613
-	jnz %.10, @switch_gt.22, @switch_case.7
 @switch_gt.22
 	jmp @switch_default.8
 @switch_join.4
