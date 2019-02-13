@@ -243,19 +243,13 @@ funcstore(struct function *f, struct type *t, struct value *addr, struct value *
 		error(&tok.loc, "cannot store to 'const' object");
 	switch (t->kind) {
 	case TYPEBASIC:
-		switch (t->basic.kind) {
-		case BASICBOOL:
-		case BASICCHAR:     op = ISTOREB; break;
-		case BASICSHORT:    op = ISTOREH; break;
-		case BASICINT:      op = ISTOREW; break;
-		case BASICLONG:     op = ISTOREL; break;
-		case BASICLONGLONG: op = ISTOREL; break;
-		case BASICFLOAT:    op = ISTORES; break;
-		case BASICDOUBLE:   op = ISTORED; break;
-		case BASICLONGDOUBLE:
-			fatal("'long double' store is not yet supported");
+		switch (t->size) {
+		case 1: op = ISTOREB; break;
+		case 2: op = ISTOREH; break;
+		case 4: op = typeprop(t) & PROPFLOAT ? ISTORES : ISTOREW; break;
+		case 8: op = typeprop(t) & PROPFLOAT ? ISTORED : ISTOREL; break;
 		default:
-			fatal("internal error; unknown basic type %d", t->basic.kind);
+			fatal("internal error; unimplemented store");
 		}
 		break;
 	case TYPEPOINTER:
