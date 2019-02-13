@@ -410,6 +410,13 @@ postfixexpr(struct scope *s, struct expression *r)
 					free(expect(TIDENT, "after ','"));
 					// XXX: check that this was actually a parameter name?
 					expect(TRPAREN, "after parameter identifier");
+				} else if (r->ident.decl == &builtinvaarg) {
+					e = mkexpr(EXPRBUILTIN, NULL, 0);
+					e->builtin.kind = BUILTINVAARG;
+					e->builtin.arg = exprconvert(assignexpr(s), &typevalistptr);
+					expect(TCOMMA, "after va_list");
+					e->type = typename(s);
+					expect(TRPAREN, "after typename");
 				} else if (r->ident.decl == &builtinvaend) {
 					e = mkexpr(EXPRBUILTIN, &typevoid, 0);
 					e->builtin.kind = BUILTINVAEND;

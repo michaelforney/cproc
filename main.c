@@ -54,6 +54,7 @@ main(int argc, char *argv[])
 		}
 	} else {
 		scopeputdecl(&filescope, "__builtin_va_start", &builtinvastart);
+		scopeputdecl(&filescope, "__builtin_va_arg", &builtinvaarg);
 		scopeputdecl(&filescope, "__builtin_va_end", &builtinvaend);
 		scopeputdecl(&filescope, "__builtin_offsetof", &builtinoffsetof);
 		while (tok.kind != TEOF) {

@@ -19,6 +19,7 @@
 #include "type.h"
 
 struct declaration builtinvastart = {.kind = DECLBUILTIN};
+struct declaration builtinvaarg = {.kind = DECLBUILTIN};
 struct declaration builtinvaend = {.kind = DECLBUILTIN};
 struct declaration builtinoffsetof = {.kind = DECLBUILTIN};
 

@@ -1,0 +1,22 @@
+export
+function $f(w %.1, ...) {
+@start.1
+	%.2 =l alloc4 4
+	storew %.1, %.2
+	%.3 =l alloc8 24
+@body.2
+	vastart %.3
+@while_cond.3
+	%.4 =w loadsw %.2
+	jnz %.4, @while_body.4, @while_join.5
+@while_body.4
+	%.5 =w vaarg %.3
+	%.6 =s vaarg %.3
+	%.7 =l vaarg %.3
+	%.8 =w loadsw %.2
+	%.9 =w sub %.8, 1
+	storew %.9, %.2
+	jmp @while_cond.3
+@while_join.5
+	ret
+}

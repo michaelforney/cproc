@@ -79,6 +79,7 @@ struct expression {
 		struct {
 			enum {
 				BUILTINVASTART,
+				BUILTINVAARG,
 				BUILTINVAEND,
 			} kind;
 			struct expression *arg;

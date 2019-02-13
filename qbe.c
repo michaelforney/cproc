@@ -777,6 +777,9 @@ funcexpr(struct function *f, struct expression *e)
 			l = funcexpr(f, e->builtin.arg);
 			funcinst(f, IVASTART, NULL, (struct value *[]){l});
 			break;
+		case BUILTINVAARG:
+			l = funcexpr(f, e->builtin.arg);
+			return funcinst(f, IVAARG, e->type->repr, (struct value *[]){l});
 		case BUILTINVAEND:
 			/* no-op */
 			break;
