@@ -211,7 +211,7 @@ parseinit(struct scope *s, struct type *t)
 	p.cur = NULL;
 	p.sub = p.obj;
 	p.sub->offset = 0;
-	p.sub->type = t;
+	p.sub->type = typeunqual(t, NULL);
 	for (;;) {
 		if (p.cur) {
 			if (tok.kind == TLBRACK || tok.kind == TPERIOD)
