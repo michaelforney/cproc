@@ -328,12 +328,11 @@ main(int argc, char *argv[])
 			arrayaddptr(&phases[LINK].cmd, arg);
 		} else if (strcmp(arg, "-emit-qbe") == 0) {
 			last = COMPILE;
-		} else if (strcmp(arg, "-include") == 0) {
-			--argc, arg = *++argv;
-			if (!arg)
+		} else if (strcmp(arg, "-include") == 0 || strcmp(arg, "-idirafter") == 0) {
+			if (!--argc)
 				usage();
-			arrayaddptr(&phases[PREPROCESS].cmd, "-include");
 			arrayaddptr(&phases[PREPROCESS].cmd, arg);
+			arrayaddptr(&phases[PREPROCESS].cmd, *++argv);
 		} else if (strcmp(arg, "-pipe") == 0) {
 			/* ignore */
 		} else {
