@@ -397,7 +397,6 @@ main(int argc, char *argv[])
 						end = strchr(arg, ',');
 						if (end)
 							*end = '\0';
-						printf("arg %s\n", arg);
 						arrayaddptr(cmd, arg);
 					}
 				} else {
