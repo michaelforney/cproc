@@ -322,6 +322,7 @@ main(int argc, char *argv[])
 			arrayaddptr(&inputs, arg);
 			continue;
 		}
+		/* TODO: use a binary search for these long parameters */
 		if (strcmp(arg, "-nostdlib") == 0) {
 			flags.nostdlib = true;
 		} else if (strcmp(arg, "-static") == 0) {
@@ -334,6 +335,10 @@ main(int argc, char *argv[])
 			arrayaddptr(&phases[PREPROCESS].cmd, arg);
 			arrayaddptr(&phases[PREPROCESS].cmd, *++argv);
 		} else if (strcmp(arg, "-pipe") == 0) {
+			/* ignore */
+		} else if (strncmp(arg, "-std=", 5) == 0) {
+			/* ignore */
+		} else if (strcmp(arg, "-pedantic") == 0) {
 			/* ignore */
 		} else {
 			if (arg[2] != '\0' && strchr("cESs", arg[1]))
