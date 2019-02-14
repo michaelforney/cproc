@@ -22,6 +22,9 @@ static char *preprocesscmd[] = {
 		"-D", "__extension__=",
 		"-D", "__attribute__(x)=",
 		"-D", "__asm__(x)=",
+
+		/* required for kernel headers */
+		"-D", "__signed__=signed",
 };
 static char *compilecmd[] = {"cc-qbe"};
 static char *codegencmd[] = {"qbe"};
