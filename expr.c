@@ -479,6 +479,7 @@ postfixexpr(struct scope *s, struct expression *r)
 			/* fallthrough */
 		case TARROW:
 			op = tok.kind;
+			lvalueconvert(r);
 			if (r->type->kind != TYPEPOINTER)
 				error(&tok.loc, "arrow operator must be applied to pointer to struct/union");
 			tq = QUALNONE;
@@ -556,6 +557,7 @@ unaryexpr(struct scope *s)
 	case TMUL:
 		next();
 		l = castexpr(s);
+		lvalueconvert(l);
 		if (l->type->kind != TYPEPOINTER)
 			error(&tok.loc, "cannot dereference non-pointer");
 		e = mkexpr(EXPRUNARY, l->type->base, EXPRFLAG_LVAL);
@@ -823,6 +825,7 @@ assignexpr(struct scope *s)
 	}
 	next();
 	r = assignexpr(s);
+	lvalueconvert(r);
 	if (op) {
 		/* rewrite `E1 OP= E2` as `T = &E1, *T = *T OP E2`, where T is a temporary slot */
 		tmp = mkexpr(EXPRTEMP, mkpointertype(l->type), EXPRFLAG_LVAL);
