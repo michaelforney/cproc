@@ -184,7 +184,7 @@ mkintconst(struct representation *r, uint64_t n)
 uint64_t
 intconstvalue(struct value *v)
 {
-	assert(v->kind = VALCONST);
+	assert(v->kind == VALCONST);
 	return v->i;
 }
 
