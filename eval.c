@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include "util.h"
@@ -12,6 +13,7 @@ struct expression *
 eval(struct expression *expr)
 {
 	struct expression *l, *r, *c;
+	struct declaration *d;
 	int op;
 
 	switch (expr->kind) {
@@ -20,6 +22,13 @@ eval(struct expression *expr)
 			break;
 		expr->kind = EXPRCONST;
 		expr->constant.i = intconstvalue(expr->ident.decl->value);
+		break;
+	case EXPRCOMPOUND:
+		d = mkdecl(DECLOBJECT, expr->type, LINKNONE);
+		d->value = mkglobal(NULL, true);
+		emitdata(d, expr->compound.init);
+		expr->kind = EXPRIDENT;
+		expr->ident.decl = d;
 		break;
 	case EXPRUNARY:
 		l = eval(expr->unary.base);
