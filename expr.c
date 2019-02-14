@@ -53,15 +53,21 @@ static struct expression *
 decay(struct expression *e)
 {
 	struct expression *old = e;
+	struct type *t;
+	enum typequalifier tq = QUALNONE;
 
-	switch (e->type->kind) {
+	// XXX: combine with decl.c:adjust in some way?
+	t = typeunqual(e->type, &tq);
+	switch (t->kind) {
 	case TYPEARRAY:
-		e = mkexpr(EXPRUNARY, mkpointertype(old->type->base), EXPRFLAG_DECAYED);
+		t = mkqualifiedtype(mkpointertype(old->type->base), tq);
+		e = mkexpr(EXPRUNARY, t, EXPRFLAG_DECAYED);
 		e->unary.op = TBAND;
 		e->unary.base = old;
 		break;
 	case TYPEFUNC:
-		e = mkexpr(EXPRUNARY, mkpointertype(old->type), EXPRFLAG_DECAYED);
+		t = mkpointertype(old->type);
+		e = mkexpr(EXPRUNARY, t, EXPRFLAG_DECAYED);
 		e->unary.op = TBAND;
 		e->unary.base = old;
 		break;
