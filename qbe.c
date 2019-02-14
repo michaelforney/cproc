@@ -359,7 +359,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 			d->value = p->value;
 		} else {
 			funcinit(f, d, NULL);
-			funcstore(f, p->type, d->value, p->value);
+			funcstore(f, typeunqual(p->type, NULL), d->value, p->value);
 		}
 		scopeputdecl(s, p->name, d);
 	}
