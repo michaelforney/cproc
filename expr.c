@@ -782,18 +782,12 @@ condexpr(struct scope *s)
 	return e;
 }
 
-struct expression *
-constexpr(struct scope *s)
-{
-	return eval(condexpr(s));
-}
-
 uint64_t
 intconstexpr(struct scope *s)
 {
 	struct expression *e;
 
-	e = constexpr(s);
+	e = eval(condexpr(s));
 	if (e->kind != EXPRCONST || !(typeprop(e->type) & PROPINT))
 		error(&tok.loc, "not an integer constant expression");
 	return e->constant.i;

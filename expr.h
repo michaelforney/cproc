@@ -92,7 +92,6 @@ struct scope;
 
 struct expression *expr(struct scope *);
 struct expression *assignexpr(struct scope *);
-struct expression *constexpr(struct scope *);
 uint64_t intconstexpr(struct scope *);
 void delexpr(struct expression *);
 
