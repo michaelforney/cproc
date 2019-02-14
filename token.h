@@ -117,22 +117,6 @@ struct token {
 	char *lit;
 };
 
-#if 0
-enum tokenclass {
-	/* declaration */
-	STORCLASS    = 1<<1,
-	TYPEQUAL     = 1<<2,
-	TYPESPEC     = 1<<3,
-	FUNCSPEC     = 1<<4,
-	ALIGNSPEC    = 1<<5,
-	STATICASSERT = 1<<6,
-	DECLARATION  = (1<<7) - 1,
-};
-#endif
-
-//struct token *tokdup(struct token *);
-//enum tokenclass tokclass(struct token *);
-
 extern struct token tok;
 
 void tokprint(const struct token *);
