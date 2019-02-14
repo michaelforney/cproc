@@ -18,6 +18,7 @@
 #include "token.h"
 #include "type.h"
 
+struct declaration builtinvalist = {.kind = DECLTYPE, .type = &typevalist};
 struct declaration builtinvastart = {.kind = DECLBUILTIN};
 struct declaration builtinvaarg = {.kind = DECLBUILTIN};
 struct declaration builtinvaend = {.kind = DECLBUILTIN};
@@ -308,11 +309,6 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspecifier *fs, int *a
 			break;
 		case T_ATOMIC:
 			fatal("_Atomic is not yet supported");
-			break;
-		case T__BUILTIN_VA_LIST:
-			t = &typevalist;
-			++ntypes;
-			next();
 			break;
 		case TSTRUCT:
 		case TUNION:

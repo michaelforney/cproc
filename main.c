@@ -53,6 +53,7 @@ main(int argc, char *argv[])
 			next();
 		}
 	} else {
+		scopeputdecl(&filescope, "__builtin_va_list", &builtinvalist);
 		scopeputdecl(&filescope, "__builtin_va_start", &builtinvastart);
 		scopeputdecl(&filescope, "__builtin_va_arg", &builtinvaarg);
 		scopeputdecl(&filescope, "__builtin_va_end", &builtinvaend);

@@ -25,7 +25,11 @@ struct declaration {
 struct scope;
 struct function;
 
-extern struct declaration builtinvastart, builtinvaarg, builtinvaend, builtinoffsetof;
+extern struct declaration builtinvalist;
+extern struct declaration builtinvastart;
+extern struct declaration builtinvaarg;
+extern struct declaration builtinvaend;
+extern struct declaration builtinoffsetof;
 
 struct declaration *mkdecl(enum declarationkind, struct type *, enum linkage);
 _Bool decl(struct scope *, struct function *);
