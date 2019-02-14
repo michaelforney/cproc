@@ -327,9 +327,9 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expression *l, stru
 			t = l->type;
 			r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
 		} else if (l->type->kind == TYPEPOINTER && r->type->kind == TYPEPOINTER && typecompatible(typeunqual(l->type->base, NULL), typeunqual(r->type->base, NULL))) {
-			l = mkbinaryexpr(loc, TDIV, exprconvert(l, &typeulong), mkconstexpr(&typeulong, l->type->base->size));
-			r = mkbinaryexpr(loc, TDIV, exprconvert(r, &typeulong), mkconstexpr(&typeulong, r->type->base->size));
-			t = &typelong;
+			/* XXX: when is the appropriate place to convert to signed integer */
+			e = mkbinaryexpr(loc, TSUB, exprconvert(l, &typelong), exprconvert(r, &typelong));
+			return mkbinaryexpr(loc, TDIV, e, mkconstexpr(&typelong, l->type->base->size));
 		} else {
 			error(loc, "invalid operands to '-' operator");
 		}
