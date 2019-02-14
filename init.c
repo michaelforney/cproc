@@ -31,13 +31,13 @@ struct initparser {
 };
 
 struct initializer *
-mkinit(uint64_t offset, struct expression *expr)
+mkinit(uint64_t start, uint64_t end, struct expression *expr)
 {
 	struct initializer *init;
 
 	init = xmalloc(sizeof(*init));
-	init->start = offset;
-	init->end = offset + expr->type->size;
+	init->start = start;
+	init->end = end;
 	init->expr = expr;
 	init->next = NULL;
 
@@ -257,7 +257,7 @@ parseinit(struct scope *s, struct type *t)
 			focus(&p);
 		}
 	add:
-		initadd(&init, mkinit(p.sub->offset, expr));
+		initadd(&init, mkinit(p.sub->offset, p.sub->offset + p.sub->type->size, expr));
 		for (;;) {
 			if (p.sub->type->kind == TYPEARRAY && p.sub->type->incomplete)
 				p.sub->type->incomplete = false;

@@ -885,7 +885,7 @@ struct declaration *stringdecl(struct expression *expr)
 	if (!d) {
 		d = mkdecl(DECLOBJECT, expr->type, LINKNONE);
 		d->value = mkglobal("string", true);
-		emitdata(d, mkinit(0, expr));
+		emitdata(d, mkinit(0, expr->type->size, expr));
 		*entry = d;
 	}
 	return d;
