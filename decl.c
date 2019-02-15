@@ -243,6 +243,8 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspecifier *fs, int *a
 		*sc = SCNONE;
 	if (fs)
 		*fs = FUNCNONE;
+	if (align)
+		*align = 0;
 	for (;;) {
 		if (typequal(&tq) || storageclass(sc) || funcspec(fs))
 			continue;
@@ -628,7 +630,7 @@ structdecl(struct scope *s, struct type *t)
 {
 	struct type *base;
 	struct member *m;
-	int basealign = 0, align;
+	int basealign, align;
 
 	base = declspecs(s, NULL, NULL, &basealign);
 	if (!base)
@@ -701,7 +703,7 @@ decl(struct scope *s, struct function *f)
 	enum declarationkind kind;
 	enum linkage linkage;
 	uint64_t c;
-	int align = 0;
+	int align;
 
 	if (consume(T_STATIC_ASSERT)) {
 		expect(TLPAREN, "after _Static_assert");
