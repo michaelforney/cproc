@@ -148,7 +148,7 @@ unescape(char **p)
 			++s;
 			assert(isxdigit(*s));
 			c = 0;
-			do c = c * 16 + (*s > '9' ? tolower(*s) - 'a' : *s - '0');
+			do c = c * 16 + (*s > '9' ? 10 + tolower(*s) - 'a' : *s - '0');
 			while (isxdigit(*++s));
 			break;
 		default:
