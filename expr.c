@@ -373,6 +373,7 @@ postfixexpr(struct scope *s, struct expression *r)
 	struct parameter *p;
 	struct member *m;
 	char *name;
+	uint64_t offset;
 	enum tokenkind op;
 	bool lvalue;
 
@@ -434,10 +435,10 @@ postfixexpr(struct scope *s, struct expression *r)
 					name = expect(TIDENT, "after ','");
 					if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
 						error(&tok.loc, "type is not a struct/union type");
-					m = typemember(t, name);
-					if (!m)
+					offset = 0;
+					if (!typemember(t, name, &offset))
 						error(&tok.loc, "struct/union has no member named '%s'", name);
-					e = mkconstexpr(&typeulong, m->offset);
+					e = mkconstexpr(&typeulong, offset);
 					free(name);
 					expect(TRPAREN, "after member name");
 				} else {
@@ -497,11 +498,12 @@ postfixexpr(struct scope *s, struct expression *r)
 				error(&tok.loc, "expected identifier after '->' operator");
 			lvalue = op == TARROW || r->unary.base->flags & EXPRFLAG_LVAL;
 			r = exprconvert(r, mkpointertype(&typechar));
-			m = typemember(t, tok.lit);
-			if (!m)
+			offset = 0;
+			t = typemember(t, tok.lit, &offset);
+			if (!t)
 				error(&tok.loc, "struct/union has no member named '%s'", tok.lit);
-			r = mkbinaryexpr(&tok.loc, TADD, r, mkconstexpr(&typeulong, m->offset));
-			r = exprconvert(r, mkpointertype(mkqualifiedtype(m->type, tq)));
+			r = mkbinaryexpr(&tok.loc, TADD, r, mkconstexpr(&typeulong, offset));
+			r = exprconvert(r, mkpointertype(mkqualifiedtype(t, tq)));
 			e = mkexpr(EXPRUNARY, r->type->base, lvalue ? EXPRFLAG_LVAL : 0);
 			e->unary.op = TMUL;
 			e->unary.base = r;

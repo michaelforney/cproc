@@ -3,7 +3,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
@@ -84,16 +83,48 @@ updatearray(struct type *t, uint64_t i)
 }
 
 static void
+subobj(struct initparser *p, struct type *t, uint64_t off)
+{
+	off += p->sub->offset;
+	if (++p->sub == p->obj + LEN(p->obj))
+		fatal("internal error: too many designators");
+	p->sub->type = t;
+	p->sub->offset = off;
+	p->sub->iscur = false;
+}
+
+static bool
+findmember(struct initparser *p, char *name)
+{
+	struct member *m;
+
+	for (m = p->sub->type->structunion.members; m; m = m->next) {
+		if (m->name) {
+			if (strcmp(m->name, name) == 0) {
+				p->sub->mem = m;
+				subobj(p, m->type, m->offset);
+				return true;
+			}
+		} else {
+			subobj(p, m->type, m->offset);
+			if (findmember(p, name))
+				return true;
+			--p->sub;
+		}
+	}
+	return false;
+}
+
+static void
 designator(struct scope *s, struct initparser *p)
 {
 	struct type *t;
 	uint64_t offset;
-	const char *name;
+	char *name;
 
 	p->sub = p->cur;
-	t = p->sub->type;
-	offset = p->sub->offset;
 	for (;;) {
+		t = p->sub->type;
 		switch (tok.kind) {
 		case TLBRACK:
 			if (t->kind != TYPEARRAY)
@@ -105,32 +136,21 @@ designator(struct scope *s, struct initparser *p)
 			else if (p->sub->idx >= t->array.length)
 				error(&tok.loc, "index designator is larger than array length");
 			expect(TRBRACK, "for index designator");
-			t = t->base;
-			offset += p->sub->idx * t->size;
+			subobj(p, t->base, p->sub->idx * t->base->size);
 			break;
 		case TPERIOD:
 			if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
 				error(&tok.loc, "member designator only valid for struct/union types");
 			next();
 			name = expect(TIDENT, "for member designator");
-			arrayforeach (&t->structunion.members, p->sub->mem) {
-				if (strcmp(p->sub->mem->name, name) == 0)
-					break;
-			}
-			if (!p->sub->mem)
+			if (!findmember(p, name))
 				error(&tok.loc, "%s has no member named '%s'", t->kind == TYPEUNION ? "union" : "struct", name);
-			t = p->sub->mem->type;
-			offset += p->sub->mem->offset;
+			free(name);
 			break;
 		default:
 			expect(TASSIGN, "after designator");
 			return;
 		}
-		if (++p->sub == p->obj + LEN(p->obj))
-			fatal("internal error: too many designators");
-		p->sub->type = t;
-		p->sub->offset = offset;
-		p->sub->iscur = false;
 	}
 }
 
@@ -138,9 +158,7 @@ static void
 focus(struct initparser *p)
 {
 	struct type *t;
-	uint64_t offset;
 
-	offset = p->sub->offset;
 	switch (p->sub->type->kind) {
 	case TYPEARRAY:
 		p->sub->idx = 0;
@@ -150,17 +168,13 @@ focus(struct initparser *p)
 		break;
 	case TYPESTRUCT:
 	case TYPEUNION:
-		p->sub->mem = p->sub->type->structunion.members.val;
+		p->sub->mem = p->sub->type->structunion.members;
 		t = p->sub->mem->type;
 		break;
 	default:
 		t = p->sub->type;
 	}
-	if (++p->sub == p->obj + LEN(p->obj))
-		fatal("internal error: too many designators");
-	p->sub->type = typeunqual(t, NULL);
-	p->sub->offset = offset;
-	p->sub->iscur = false;
+	subobj(p, typeunqual(t, NULL), 0);
 }
 
 static void
@@ -171,7 +185,6 @@ advance(struct initparser *p)
 
 	for (;;) {
 		--p->sub;
-		offset = p->sub->offset;
 		switch (p->sub->type->kind) {
 		case TYPEARRAY:
 			++p->sub->idx;
@@ -179,15 +192,15 @@ advance(struct initparser *p)
 				updatearray(p->sub->type, p->sub->idx);
 			if (p->sub->idx < p->sub->type->array.length) {
 				t = p->sub->type->base;
-				offset += t->size * p->sub->idx;
+				offset = t->size * p->sub->idx;
 				goto done;
 			}
 			break;
 		case TYPESTRUCT:
-			++p->sub->mem;
-			if (p->sub->mem != (void *)((uintptr_t)p->sub->type->structunion.members.val + p->sub->type->structunion.members.len)) {
+			p->sub->mem = p->sub->mem->next;
+			if (p->sub->mem) {
 				t = p->sub->mem->type;
-				offset += p->sub->mem->offset;
+				offset = p->sub->mem->offset;
 				goto done;
 			}
 			break;
@@ -196,10 +209,7 @@ advance(struct initparser *p)
 			error(&tok.loc, "too many initializers for type");
 	}
 done:
-	++p->sub;
-	p->sub->type = typeunqual(t, NULL);
-	p->sub->offset = offset;
-	p->sub->iscur = false;
+	subobj(p, typeunqual(t, NULL), offset);
 }
 
 /* 6.7.9 Initialization */

@@ -928,7 +928,7 @@ aggr(struct type *t)
 		}
 		break;
 	case TYPESTRUCT:
-		arrayforeach (&t->structunion.members, m) {
+		for (m = t->structunion.members; m; m = m->next) {
 			if (typeprop(m->type) & PROPAGGR)
 				aggr(m->type);
 			else

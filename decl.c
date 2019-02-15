@@ -147,7 +147,7 @@ funcspec(enum funcspecifier *fs)
 	return 1;
 }
 
-static void structdecl(struct scope *, struct type *);
+static void structdecl(struct scope *, struct type *, struct member ***);
 
 static struct type *
 tagspec(struct scope *s)
@@ -156,6 +156,7 @@ tagspec(struct scope *s)
 	char *tag;
 	enum typekind kind;
 	struct declaration *d;
+	struct member **end;
 	uint64_t i;
 
 	switch (tok.kind) {
@@ -189,7 +190,7 @@ tagspec(struct scope *s)
 			t->size = 0;
 			t->align = 0;
 			t->structunion.tag = tag;
-			t->structunion.members = (struct array){0};
+			t->structunion.members = NULL;
 		}
 		t->incomplete = true;
 		if (tag)
@@ -203,8 +204,9 @@ tagspec(struct scope *s)
 	switch (t->kind) {
 	case TYPESTRUCT:
 	case TYPEUNION:
+		end = &t->structunion.members;
 		while (tok.kind != TRBRACE)
-			structdecl(s, t);
+			structdecl(s, t, &end);
 		next();
 		t->size = ALIGNUP(t->size, t->align);
 		t->incomplete = false;
@@ -621,51 +623,55 @@ paramdecl(struct scope *s, struct parameter *params)
 	return true;
 }
 
-// XXX: cleanup
 static void
-structdecl(struct scope *s, struct type *t)
+addmember(struct type *t, struct member ***end, struct type *mt, char *name, int align)
 {
-	struct type *base;
 	struct member *m;
-	int basealign, align;
 
-	base = declspecs(s, NULL, NULL, &basealign);
+	m = xmalloc(sizeof(*m));
+	m->type = mt;
+	m->name = name;
+	m->next = NULL;
+	**end = m;
+	*end = &m->next;
+
+	assert(mt->align > 0);
+	if (align < mt->align)
+		align = mt->align;
+	t->size = ALIGNUP(t->size, align);
+	if (t->kind == TYPESTRUCT) {
+		m->offset = t->size;
+		t->size += mt->size;
+	} else {
+		m->offset = 0;
+		if (t->size < mt->size)
+			t->size = mt->size;
+	}
+	if (t->align < align)
+		t->align = align;
+}
+
+static void
+structdecl(struct scope *s, struct type *t, struct member ***end)
+{
+	struct type *base, *mt;
+	char *name;
+	int align;
+
+	base = declspecs(s, NULL, NULL, &align);
 	if (!base)
 		error(&tok.loc, "no type in struct member declaration");
 	if (tok.kind == TSEMICOLON) {
 		if ((base->kind != TYPESTRUCT && base->kind != TYPEUNION) || base->structunion.tag)
 			error(&tok.loc, "struct declaration must declare at least one member");
 		next();
-		if (basealign < base->align)
-			basealign = base->align;
-		t->size = ALIGNUP(t->size, basealign);
-		arrayforeach (&base->structunion.members, m)
-			m->offset += t->size;
-		arrayaddbuf(&t->structunion.members, base->structunion.members.val, base->structunion.members.len);
-		t->size += ALIGNUP(base->size, basealign);
-		if (t->align < basealign)
-			t->align = basealign;
+		addmember(t, end, base, NULL, align);
 		return;
 	}
 	for (;;) {
-		align = basealign;
 		if (tok.kind != TCOLON) {
-			m = arrayadd(&t->structunion.members, sizeof(*m));
-			m->type = declarator(s, base, &m->name, false);
-			assert(m->type->align > 0);
-			if (align < m->type->align)
-				align = m->type->align;
-			t->size = ALIGNUP(t->size, align);
-			if (t->kind == TYPESTRUCT) {
-				m->offset = t->size;
-				t->size += m->type->size;
-			} else {
-				m->offset = 0;
-				if (t->size < m->type->size)
-					t->size = m->type->size;
-			}
-			if (t->align < align)
-				t->align = align;
+			mt = declarator(s, base, &name, false);
+			addmember(t, end, mt, name, align);
 		}
 		if (tok.kind == TCOLON)
 			error(&tok.loc, "bit-fields are not yet supported");

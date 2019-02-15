@@ -45,6 +45,7 @@ struct member {
 	char *name;
 	struct type *type;
 	uint64_t offset;
+	struct member *next;
 };
 
 struct type {
@@ -84,7 +85,7 @@ struct type {
 		} func;
 		struct {
 			char *tag;
-			struct array members;
+			struct member *members;
 		} structunion;
 	};
 };
@@ -102,7 +103,7 @@ struct type *typecommonreal(struct type *, struct type *);
 struct type *typeargpromote(struct type *);
 struct type *typeintpromote(struct type *);
 enum typeproperty typeprop(struct type *);
-struct member *typemember(struct type *, const char *name);
+struct type *typemember(struct type *, const char *, uint64_t *);
 
 struct parameter *mkparam(char *, struct type *);
 
