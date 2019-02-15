@@ -630,22 +630,22 @@ structdecl(struct scope *s, struct type *t)
 	struct member *m;
 	int basealign = 0, align;
 
-	base = declspecs(s, NULL, NULL, &align);
+	base = declspecs(s, NULL, NULL, &basealign);
 	if (!base)
 		error(&tok.loc, "no type in struct member declaration");
 	if (tok.kind == TSEMICOLON) {
 		if ((base->kind != TYPESTRUCT && base->kind != TYPEUNION) || base->structunion.tag)
 			error(&tok.loc, "struct declaration must declare at least one member");
 		next();
-		if (align < base->align)
-			align = base->align;
-		t->size = ALIGNUP(t->size, align);
+		if (basealign < base->align)
+			basealign = base->align;
+		t->size = ALIGNUP(t->size, basealign);
 		arrayforeach (&base->structunion.members, m)
 			m->offset += t->size;
 		arrayaddbuf(&t->structunion.members, base->structunion.members.val, base->structunion.members.len);
-		t->size += ALIGNUP(base->size, align);
-		if (t->align < align)
-			t->align = align;
+		t->size += ALIGNUP(base->size, basealign);
+		if (t->align < basealign)
+			t->align = basealign;
 		return;
 	}
 	for (;;) {
