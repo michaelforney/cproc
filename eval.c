@@ -51,9 +51,9 @@ eval(struct expression *expr)
 		if (l->kind == EXPRCONST) {
 			expr->kind = EXPRCONST;
 			if (typeprop(l->type) & PROPINT && typeprop(expr->type) & PROPFLOAT)
-				expr->constant.i = l->constant.f;
-			else if (typeprop(l->type) & PROPFLOAT && typeprop(expr->type) & PROPINT)
 				expr->constant.f = l->constant.i;
+			else if (typeprop(l->type) & PROPFLOAT && typeprop(expr->type) & PROPINT)
+				expr->constant.i = l->constant.f;
 			else
 				expr->constant = l->constant;
 		} else if (l->type->kind == TYPEPOINTER && expr->type->kind == TYPEPOINTER) {
