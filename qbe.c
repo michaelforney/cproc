@@ -1038,7 +1038,7 @@ emitfunc(struct function *f, bool global)
 	size_t n;
 
 	if (!f->end->terminated)
-		funcret(f, NULL);
+		funcret(f, strcmp(f->name, "main") == 0 ? mkintconst(&i32, 0) : NULL);
 	if (global)
 		puts("export");
 	fputs("function ", stdout);
