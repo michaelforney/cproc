@@ -1,0 +1,7 @@
+export
+function $f() {
+@start.1
+@body.2
+@x.3
+	ret
+}

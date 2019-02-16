@@ -14,6 +14,23 @@
 #include "token.h"
 #include "type.h"
 
+static bool
+gotolabel(struct function *f)
+{
+	char *name;
+	struct gotolabel *g;
+
+	if (tok.kind != TIDENT)
+		return false;
+	name = tok.lit;
+	if (!peek(TCOLON))
+		return false;
+	g = funcgoto(f, name);
+	g->defined = true;
+	funclabel(f, g->label);
+	return true;
+}
+
 /* 6.8 Statements and blocks */
 void
 stmt(struct function *f, struct scope *s)
@@ -25,6 +42,8 @@ stmt(struct function *f, struct scope *s)
 	struct switchcases swtch = {0};
 	uint64_t i;
 
+	while (gotolabel(f))
+		;
 	switch (tok.kind) {
 	/* 6.8.1 Labeled statements */
 	case TCASE:
@@ -55,7 +74,7 @@ stmt(struct function *f, struct scope *s)
 		next();
 		s = mkscope(s);
 		while (tok.kind != TRBRACE) {
-			if (!decl(s, f))
+			if (gotolabel(f) || !decl(s, f))
 				stmt(f, s);
 		}
 		s = delscope(s);
@@ -66,16 +85,6 @@ stmt(struct function *f, struct scope *s)
 	case TSEMICOLON:
 		next();
 		break;
-	case TIDENT:
-		name = tok.lit;
-		if (peek(TCOLON)) {
-			struct gotolabel *g = funcgoto(f, name);
-			g->defined = true;
-			funclabel(f, g->label);
-			stmt(f, s);
-			break;
-		}
-		/* fallthrough */
 	default:
 		e = expr(s);
 		v = funcexpr(f, e);

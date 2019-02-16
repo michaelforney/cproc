@@ -112,7 +112,8 @@ next(void)
 bool
 peek(int kind)
 {
-	nextinto(&pending);
+	if (!pending.kind)
+		nextinto(&pending);
 	if (pending.kind != kind)
 		return false;
 	pending.kind = TNONE;
