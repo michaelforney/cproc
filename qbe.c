@@ -60,7 +60,7 @@ struct instruction {
 
 struct block {
 	struct value label;
-	_Bool terminated;
+	bool terminated;
 	struct array insts;
 
 	struct block *next;
@@ -960,7 +960,7 @@ emittype(struct type *t)
 }
 
 static void
-emitrepr(struct representation *r, _Bool abi)
+emitrepr(struct representation *r, bool abi)
 {
 	if (abi && r->abi.id) {
 		putchar(':');
@@ -1030,7 +1030,7 @@ emitinst(struct instruction *inst)
 }
 
 void
-emitfunc(struct function *f, _Bool global)
+emitfunc(struct function *f, bool global)
 {
 	struct block *b;
 	struct instruction **inst;

@@ -193,7 +193,7 @@ typecompatible(struct type *t1, struct type *t2)
 	}
 }
 
-_Bool
+bool
 typesame(struct type *t1, struct type *t2)
 {
 	// XXX: implement
