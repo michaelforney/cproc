@@ -88,7 +88,7 @@ subobj(struct initparser *p, struct type *t, uint64_t off)
 	off += p->sub->offset;
 	if (++p->sub == p->obj + LEN(p->obj))
 		fatal("internal error: too many designators");
-	p->sub->type = t;
+	p->sub->type = typeunqual(t, NULL);
 	p->sub->offset = off;
 	p->sub->iscur = false;
 }
@@ -174,42 +174,38 @@ focus(struct initparser *p)
 	default:
 		t = p->sub->type;
 	}
-	subobj(p, typeunqual(t, NULL), 0);
+	subobj(p, t, 0);
 }
 
 static void
 advance(struct initparser *p)
 {
 	struct type *t;
-	uint64_t offset;
 
 	for (;;) {
 		--p->sub;
-		switch (p->sub->type->kind) {
+		t = p->sub->type;
+		switch (t->kind) {
 		case TYPEARRAY:
 			++p->sub->idx;
-			if (p->sub->type->incomplete)
-				updatearray(p->sub->type, p->sub->idx);
-			if (p->sub->idx < p->sub->type->array.length) {
-				t = p->sub->type->base;
-				offset = t->size * p->sub->idx;
-				goto done;
+			if (t->incomplete)
+				updatearray(t, p->sub->idx);
+			if (p->sub->idx < t->array.length) {
+				subobj(p, t->base, t->base->size * p->sub->idx);
+				return;
 			}
 			break;
 		case TYPESTRUCT:
 			p->sub->mem = p->sub->mem->next;
 			if (p->sub->mem) {
-				t = p->sub->mem->type;
-				offset = p->sub->mem->offset;
-				goto done;
+				subobj(p, p->sub->mem->type, p->sub->mem->offset);
+				return;
 			}
 			break;
 		}
 		if (p->sub == p->cur)
 			error(&tok.loc, "too many initializers for type");
 	}
-done:
-	subobj(p, typeunqual(t, NULL), offset);
 }
 
 /* 6.7.9 Initialization */
@@ -245,7 +241,7 @@ parseinit(struct scope *s, struct type *t)
 		}
 		expr = assignexpr(s);
 		for (;;) {
-			t = typeunqual(p.sub->type, NULL);
+			t = p.sub->type;
 			switch (t->kind) {
 			case TYPEARRAY:
 				if (expr->flags & EXPRFLAG_DECAYED && expr->unary.base->kind == EXPRSTRING) {
