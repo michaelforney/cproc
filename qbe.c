@@ -290,6 +290,7 @@ funcstore(struct function *f, struct type *t, struct value *addr, struct value *
 static struct value *
 funcload(struct function *f, struct type *t, struct value *addr)
 {
+	struct value *v;
 	enum instructionkind op;
 	enum typequalifier tq;
 
@@ -311,7 +312,10 @@ funcload(struct function *f, struct type *t, struct value *addr)
 	case TYPESTRUCT:
 	case TYPEUNION:
 	case TYPEARRAY:
-		return addr;
+		v = xmalloc(sizeof(*v));
+		*v = *addr;
+		v->repr = t->repr;
+		return v;
 	default:
 		fatal("unimplemented load %d", t->kind);
 	}
@@ -356,7 +360,9 @@ mkfunc(char *name, struct type *t, struct scope *s)
 		p->value = xmalloc(sizeof(*p->value));
 		functemp(f, p->value, p->type->repr);
 		if (p->type->repr->abi.id) {
-			d->value = p->value;
+			d->value = xmalloc(sizeof(*d->value));
+			*d->value = *p->value;
+			d->value->repr = &iptr;
 		} else {
 			funcinit(f, d, NULL);
 			funcstore(f, typeunqual(p->type, NULL), d->value, p->value);
