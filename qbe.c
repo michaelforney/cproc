@@ -619,10 +619,16 @@ funcexpr(struct function *f, struct expression *e)
 				op = src->size == 8 ? ICNED : ICNES;
 		} else if (dstprop & PROPINT) {
 			if (srcprop & PROPINT) {
-				if (dst->size == 8 && src->size <= 4)
-					op = src->basic.issigned ? IEXTSW : IEXTUW;
-				else
+				if (dst->size <= src->size) {
 					op = ICOPY;
+				} else {
+					switch (src->size) {
+					case 4: op = src->basic.issigned ? IEXTSW : IEXTUW; break;
+					case 2: op = src->basic.issigned ? IEXTSH : IEXTUH; break;
+					case 1: op = src->basic.issigned ? IEXTSB : IEXTUB; break;
+					default: fatal("internal error; unknown int conversion");
+					}
+				}
 			} else {
 				if (!dst->basic.issigned)
 					return ftou(f, dst->repr, l);
