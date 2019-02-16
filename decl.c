@@ -471,9 +471,8 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 						*p = mkparam(tok.lit, NULL);
 						p = &(*p)->next;
 						next();
-						if (tok.kind != TCOMMA)
+						if (!consume(TCOMMA))
 							break;
-						next();
 					} while (tok.kind == TIDENT);
 					break;
 				}
@@ -483,12 +482,10 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				for (;;) {
 					*p = parameter(s);
 					p = &(*p)->next;
-					if (tok.kind != TCOMMA)
+					if (!consume(TCOMMA))
 						break;
-					next();
-					if (tok.kind == TELLIPSIS) {
+					if (consume(TELLIPSIS)) {
 						t->func.isvararg = true;
-						next();
 						break;
 					}
 				}
