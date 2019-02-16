@@ -79,9 +79,8 @@ struct type {
 			uint64_t length;
 		} array;
 		struct {
-			int isprototype, isvararg;
+			_Bool isprototype, isvararg, isnoreturn;
 			struct parameter *params;
-			_Bool isnoreturn;
 		} func;
 		struct {
 			char *tag;

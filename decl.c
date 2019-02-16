@@ -458,9 +458,9 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 			next();
 		func:
 			t = mktype(TYPEFUNC, NULL);
-			t->func.isprototype = 0;
-			t->func.isvararg = 0;
-			t->func.isnoreturn = 0;
+			t->func.isprototype = false;
+			t->func.isvararg = false;
+			t->func.isnoreturn = false;
 			t->func.params = NULL;
 			p = &t->func.params;
 			switch (tok.kind) {
@@ -479,7 +479,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				}
 				/* fallthrough */
 			default:
-				t->func.isprototype = 1;
+				t->func.isprototype = true;
 				for (;;) {
 					*p = parameter(s);
 					p = &(*p)->next;
@@ -487,7 +487,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 						break;
 					next();
 					if (tok.kind == TELLIPSIS) {
-						t->func.isvararg = 1;
+						t->func.isvararg = true;
 						next();
 						break;
 					}
