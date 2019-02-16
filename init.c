@@ -130,6 +130,7 @@ designator(struct scope *s, struct initparser *p)
 			fatal("internal error: too many designators");
 		p->sub->type = t;
 		p->sub->offset = offset;
+		p->sub->iscur = false;
 	}
 }
 
@@ -159,6 +160,7 @@ focus(struct initparser *p)
 		fatal("internal error: too many designators");
 	p->sub->type = typeunqual(t, NULL);
 	p->sub->offset = offset;
+	p->sub->iscur = false;
 }
 
 static void
@@ -197,6 +199,7 @@ done:
 	++p->sub;
 	p->sub->type = typeunqual(t, NULL);
 	p->sub->offset = offset;
+	p->sub->iscur = false;
 }
 
 /* 6.7.9 Initialization */
@@ -212,6 +215,7 @@ parseinit(struct scope *s, struct type *t)
 	p.sub = p.obj;
 	p.sub->offset = 0;
 	p.sub->type = typeunqual(t, NULL);
+	p.sub->iscur = false;
 	for (;;) {
 		if (p.cur) {
 			if (tok.kind == TLBRACK || tok.kind == TPERIOD)
