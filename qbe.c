@@ -502,8 +502,8 @@ ftou(struct function *f, struct representation *r, struct value *v)
 	phi[2] = mkblock("ftou_big");
 	join = mkblock("ftou_join");
 
-	maxflt = mkfltconst(v->repr, r->base == 'w' ? 0x1p31 : 0x1p63);
-	maxint = mkintconst(&i64, r->base == 'w' ? 1ull<<31 : 1ull<<63);
+	maxflt = mkfltconst(v->repr, 0x1p63);
+	maxint = mkintconst(&i64, 1ull<<63);
 
 	big = funcinst(f, v->repr->base == 's' ? ICGES : ICGED, &i32, (struct value *[]){v, maxflt});
 	funcjnz(f, big, phi[2], phi[0]);
