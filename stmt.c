@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
+#include "backend.h"
 #include "decl.h"
-#include "emit.h"
 #include "expr.h"
 #include "pp.h"
 #include "scope.h"

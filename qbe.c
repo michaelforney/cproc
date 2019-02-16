@@ -6,8 +6,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include "util.h"
+#include "backend.h"
 #include "decl.h"
-#include "emit.h"
 #include "eval.h"
 #include "expr.h"
 #include "htab.h"

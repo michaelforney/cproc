@@ -2,8 +2,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "util.h"
+#include "backend.h"
 #include "decl.h"
-#include "emit.h"
 #include "eval.h"
 #include "expr.h"
 #include "token.h"

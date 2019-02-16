@@ -1,8 +1,8 @@
 driver.o: driver.c util.h config.h
 util.o: util.c util.h
-decl.o: decl.c util.h decl.h emit.h expr.h htab.h init.h pp.h scope.h \
+decl.o: decl.c util.h backend.h decl.h expr.h htab.h init.h pp.h scope.h \
  stmt.h token.h type.h
-eval.o: eval.c util.h decl.h emit.h eval.h expr.h token.h type.h
+eval.o: eval.c util.h backend.h decl.h eval.h expr.h token.h type.h
 expr.o: expr.c util.h decl.h eval.h expr.h init.h pp.h scope.h token.h \
  type.h
 htab.o: htab.c util.h htab.h
@@ -12,11 +12,11 @@ pp.o: pp.c util.h pp.h scan.h token.h
 scan.o: scan.c util.h scan.h token.h
 scope.o: scope.c util.h htab.h scope.h
 siphash.o: siphash.c
-stmt.o: stmt.c util.h decl.h emit.h expr.h pp.h scope.h stmt.h token.h \
+stmt.o: stmt.c util.h backend.h decl.h expr.h pp.h scope.h stmt.h token.h \
  type.h
 tree.o: tree.c util.h tree.h
 token.o: token.c util.h token.h
-type.o: type.c util.h emit.h type.h
+type.o: type.c util.h backend.h type.h
 util.o: util.c util.h
-qbe.o: qbe.c util.h decl.h emit.h eval.h expr.h htab.h init.h scope.h \
+qbe.o: qbe.c util.h backend.h decl.h eval.h expr.h htab.h init.h scope.h \
  token.h tree.h type.h ops.h
