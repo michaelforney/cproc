@@ -153,6 +153,7 @@ typerank(struct type *t)
 bool
 typecompatible(struct type *t1, struct type *t2)
 {
+	struct type *tmp;
 	struct parameter *p1, *p2;
 
 	if (t1 == t2)
@@ -166,8 +167,6 @@ typecompatible(struct type *t1, struct type *t2)
 		return typecompatible(t1->base, t2->base);
 	case TYPEVOID:
 		return true;
-	case TYPEBASIC:
-		return false;
 	case TYPEPOINTER:
 		return typecompatible(t1->base, t2->base);
 	case TYPEARRAY:
@@ -177,20 +176,28 @@ typecompatible(struct type *t1, struct type *t2)
 	case TYPEFUNC:
 		if (!typecompatible(t1->base, t2->base))
 			return false;
-		if (t1->func.isprototype && t2->func.isprototype) {
-			if (t1->func.isvararg != t2->func.isvararg)
-				return false;
-			for (p1 = t1->func.params, p2 = t2->func.params; p1 && p2; p1 = p1->next, p2 = p2->next) {
-				if (!typecompatible(p1->type, p2->type))
+		if (!t1->func.isprototype) {
+			if (!t2->func.isprototype)
+				return true;
+			tmp = t1, t1 = t2, t2 = tmp;
+		}
+		if (t1->func.isvararg != t2->func.isvararg)
+			return false;
+		if (!t2->func.paraminfo) {
+			for (p1 = t1->func.params; p1; p1 = p1->next) {
+				if (!typecompatible(p1->type, typeargpromote(p1->type)))
 					return false;
 			}
-			return !p1 && !p2;
+			return true;
 		}
-		// XXX: handle non-prototype functions
-		return false;
-	default:
-		return false;
+		for (p1 = t1->func.params, p2 = t2->func.params; p1 && p2; p1 = p1->next, p2 = p2->next) {
+			tmp = t2->func.isprototype ? p2->type : typeargpromote(p2->type);
+			if (!typecompatible(p1->type, tmp))
+				return false;
+		}
+		return !p1 && !p2;
 	}
+	return false;
 }
 
 bool

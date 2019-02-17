@@ -80,7 +80,7 @@ struct type {
 			uint64_t length;
 		} array;
 		struct {
-			_Bool isprototype, isvararg, isnoreturn;
+			_Bool isprototype, isvararg, isnoreturn, paraminfo;
 			struct parameter *params;
 		} func;
 		struct {

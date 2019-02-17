@@ -337,6 +337,12 @@ mkglobal(char *name, bool private)
 	return v;
 }
 
+/*
+XXX: If a function declared without a prototype is declared with a
+parameter affected by default argument promotion, we need to emit a QBE
+function with the promoted type and implicitly convert to the declared
+parameter type before storing into the allocated memory for the parameter.
+*/
 struct function *
 mkfunc(char *name, struct type *t, struct scope *s)
 {
@@ -355,6 +361,8 @@ mkfunc(char *name, struct type *t, struct scope *s)
 	for (p = t->func.params; p; p = p->next) {
 		if (!p->name)
 			error(&tok.loc, "parameter name omitted in function definition");
+		if (!t->func.isprototype && !typecompatible(p->type, typeargpromote(p->type)))
+			error(&tok.loc, "old-style function definition with parameter type incompatible with promoted type is not yet supported");
 		emittype(p->type);
 		d = mkdecl(DECLOBJECT, p->type, LINKNONE);
 		p->value = xmalloc(sizeof(*p->value));

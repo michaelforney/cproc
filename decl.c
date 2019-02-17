@@ -498,6 +498,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				break;
 			}
 			expect(TRPAREN, "to close function declarator");
+			t->func.paraminfo = t->func.isprototype || t->func.params || tok.kind == TLBRACE;
 			listinsert(ptr->prev, &t->link);
 			break;
 		case TLBRACK:  /* array declarator */
@@ -816,6 +817,19 @@ decl(struct scope *s, struct function *f)
 			t->func.isnoreturn |= fs & FUNCNORETURN;
 			if (f && sc && sc != SCEXTERN)  /* 6.7.1p7 */
 				error(&tok.loc, "function '%s' with block scope may only have storage class 'extern'", name);
+			if (!t->func.isprototype && t->func.paraminfo) {
+				if (!allowfunc)
+					error(&tok.loc, "function declaration not allowed");
+				/* collect type information for parameters before we check compatibility */
+				while (paramdecl(s, t->func.params))
+					;
+				if (tok.kind != TLBRACE)
+					error(&tok.loc, "function declaration with identifier list is not part of definition");
+				for (p = t->func.params; p; p = p->next) {
+					if (!p->type)
+						error(&tok.loc, "old-style function definition does not declare '%s'", p->name);
+				}
+			}
 			if (d) {
 				if (!typecompatible(t, d->type))
 					error(&tok.loc, "function '%s' redeclared with incompatible type", name);
@@ -838,19 +852,6 @@ decl(struct scope *s, struct function *f)
 			break;
 		}
 		switch (tok.kind) {
-		default:
-			if (!allowfunc || kind != DECLFUNC || t->func.isprototype)
-				error(&tok.loc, "expected ',' or ';' after declarator");
-			/* K&R-style function definition */
-			while (paramdecl(s, t->func.params))
-				;
-			for (p = t->func.params; p; p = p->next) {
-				if (!p->type)
-					error(&tok.loc, "old-style function definition does not declare '%s'", p->name);
-			}
-			if (tok.kind != TLBRACE)
-				error(&tok.loc, "expected compound statement after function declarator");
-			/* fallthrough */
 		case TLBRACE:
 			if (!allowfunc)
 				error(&tok.loc, "function declaration not allowed");
@@ -870,6 +871,8 @@ decl(struct scope *s, struct function *f)
 		case TSEMICOLON:
 			next();
 			return true;
+		default:
+			error(&tok.loc, "expected ',' or ';' after declarator");
 		}
 	}
 }
