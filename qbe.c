@@ -463,8 +463,13 @@ objectaddr(struct function *f, struct expression *e)
 		funcinit(f, d, e->compound.init);
 		return d->value;
 	case EXPRUNARY:
-		if (e->unary.op == TMUL)
-			return funcexpr(f, e->unary.base);
+		if (e->unary.op != TMUL)
+			break;
+		return funcexpr(f, e->unary.base);
+	default:
+		if (e->type->kind != TYPESTRUCT && e->type->kind != TYPEUNION)
+			break;
+		return funcinst(f, ICOPY, &iptr, (struct value *[]){funcexpr(f, e)});
 	}
 	error(&tok.loc, "expression is not an object");
 }
