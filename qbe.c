@@ -356,6 +356,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 	f->start = f->end = (struct block *)mkblock("start");
 	f->gotos = mkhtab(8);
 	f->lastid = 0;
+	emittype(t->base);
 
 	/* allocate space for parameters */
 	for (p = t->func.params; p; p = p->next) {
@@ -593,6 +594,7 @@ funcexpr(struct function *f, struct expression *e)
 	case EXPRCALL:
 		argvals = xreallocarray(NULL, e->call.nargs + 3, sizeof(argvals[0]));
 		argvals[0] = funcexpr(f, e->call.func);
+		emittype(e->type);
 		for (argval = &argvals[1], arg = e->call.args; arg; ++argval, arg = arg->next) {
 			emittype(arg->type);
 			*argval = funcexpr(f, arg);
@@ -991,7 +993,7 @@ emittype(struct type *t)
 {
 	static uint64_t id;
 
-	if (t->repr->abi.id || !(typeprop(t) & PROPAGGR))
+	if (!t->repr || t->repr->abi.id || !(typeprop(t) & PROPAGGR))
 		return;
 	t->repr = xmalloc(sizeof(*t->repr));
 	t->repr->base = 'l';
