@@ -849,21 +849,22 @@ decl(struct scope *s, struct function *f)
 				d->value = mkglobal(name, false);
 				scopeputdecl(s, name, d);
 			}
+			if (tok.kind == TLBRACE) {
+				if (!allowfunc)
+					error(&tok.loc, "function declaration not allowed");
+				if (d->defined)
+					error(&tok.loc, "function '%s' redefined", name);
+				s = mkscope(&filescope);
+				f = mkfunc(name, t, s);
+				stmt(f, s);
+				emitfunc(f, d->linkage == LINKEXTERN);
+				s = delscope(s);
+				d->defined = true;
+				return true;
+			}
 			break;
 		}
 		switch (tok.kind) {
-		case TLBRACE:
-			if (!allowfunc)
-				error(&tok.loc, "function declaration not allowed");
-			if (d->defined)
-				error(&tok.loc, "function '%s' redefined", name);
-			s = mkscope(&filescope);
-			f = mkfunc(name, t, s);
-			stmt(f, s);
-			emitfunc(f, d->linkage == LINKEXTERN);
-			s = delscope(s);
-			d->defined = true;
-			return true;
 		case TCOMMA:
 			next();
 			allowfunc = 0;
