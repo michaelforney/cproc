@@ -817,7 +817,7 @@ decl(struct scope *s, struct function *f)
 			t->func.isnoreturn |= fs & FUNCNORETURN;
 			if (f && sc && sc != SCEXTERN)  /* 6.7.1p7 */
 				error(&tok.loc, "function '%s' with block scope may only have storage class 'extern'", name);
-			if (!t->func.isprototype && t->func.paraminfo) {
+			if (!t->func.isprototype && t->func.params) {
 				if (!allowfunc)
 					error(&tok.loc, "function declaration not allowed");
 				/* collect type information for parameters before we check compatibility */
