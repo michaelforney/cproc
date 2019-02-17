@@ -544,6 +544,12 @@ declarator(struct scope *s, struct type *base, char **name, bool allowabstract)
 		t = listelement(l, struct type, link);
 		t->base = base;
 		switch (t->kind) {
+		case TYPEFUNC:
+			if (base->kind == TYPEFUNC)
+				error(&tok.loc, "function declarator specifies function return type");
+			if (base->kind == TYPEARRAY)
+				error(&tok.loc, "function declarator specifies array return type");
+			break;
 		case TYPEARRAY:
 			t->align = base->align;
 			t->size = base->size * t->array.length;  // XXX: overflow?
