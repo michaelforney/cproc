@@ -603,13 +603,20 @@ unaryexpr(struct scope *s)
 		next();
 		if (consume(TLPAREN)) {
 			t = typename(s);
-			if (!t) {
+			if (t) {
+				expect(TRPAREN, "after type name");
+				/* might be part of a compound literal */
+				if (op == TSIZEOF && tok.kind == TLBRACE)
+					parseinit(s, t);
+			} else {
 				e = expr(s);
+				expect(TRPAREN, "after expression");
+				if (op == TSIZEOF)
+					e = postfixexpr(s, e);
 				if (e->flags & EXPRFLAG_DECAYED)
 					e = e->unary.base;
 				t = e->type;
 			}
-			expect(TRPAREN, "after type name");
 		} else if (op == TSIZEOF) {
 			e = unaryexpr(s);
 			if (e->flags & EXPRFLAG_DECAYED)
