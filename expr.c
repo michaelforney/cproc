@@ -461,7 +461,7 @@ postfixexpr(struct scope *s, struct expression *r)
 					break;
 				if (e->call.args)
 					expect(TCOMMA, "or ')' after function call argument");
-				if (!p && !t->func.isvararg && t->func.isprototype)
+				if (!p && !t->func.isvararg && t->func.paraminfo)
 					error(&tok.loc, "too many arguments for function call");
 				*end = assignexpr(s);
 				if (!t->func.isprototype || (t->func.isvararg && !p))
