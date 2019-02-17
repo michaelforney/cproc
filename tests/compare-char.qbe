@@ -1,0 +1,11 @@
+export
+function w $main() {
+@start.1
+@body.2
+	%.1 =w copy 0
+	%.2 =w copy 256
+	%.3 =w extub %.1
+	%.4 =w extub %.2
+	%.5 =w cultw %.3, %.4
+	ret %.5
+}

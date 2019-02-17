@@ -527,6 +527,19 @@ ftou(struct function *f, struct representation *r, struct value *v)
 	return funcinst(f, IPHI, r, phi);
 }
 
+static struct value *
+extend(struct function *f, struct type *t, struct value *v)
+{
+	enum instructionkind op;
+
+	switch (t->size) {
+	case 1: op = t->basic.issigned ? IEXTSB : IEXTUB; break;
+	case 2: op = t->basic.issigned ? IEXTSH : IEXTUH; break;
+	default: return v;
+	}
+	return funcinst(f, op, &i32, (struct value *[]){v});
+}
+
 struct value *
 funcexpr(struct function *f, struct expression *e)
 {
@@ -612,6 +625,7 @@ funcexpr(struct function *f, struct expression *e)
 		srcprop = typeprop(src);
 		dstprop = typeprop(dst);
 		if (dst->basic.kind == BASICBOOL) {
+			l = extend(f, src, l);
 			r = mkintconst(src->repr, 0);
 			if (srcprop & PROPINT)
 				op = src->size == 8 ? ICNEL : ICNEW;
@@ -704,36 +718,48 @@ funcexpr(struct function *f, struct expression *e)
 			op = IXOR;
 			break;
 		case TLESS:
+			l = extend(f, t, l);
+			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = typeprop(t) & PROPFLOAT ? ICLTS : t->basic.issigned ? ICSLTW : ICULTW;
 			else
 				op = typeprop(t) & PROPFLOAT ? ICLTD : t->basic.issigned ? ICSLTL : ICULTL;
 			break;
 		case TGREATER:
+			l = extend(f, t, l);
+			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = typeprop(t) & PROPFLOAT ? ICGTS : t->basic.issigned ? ICSGTW : ICUGTW;
 			else
 				op = typeprop(t) & PROPFLOAT ? ICGTD : t->basic.issigned ? ICSGTL : ICUGTL;
 			break;
 		case TLEQ:
+			l = extend(f, t, l);
+			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = typeprop(t) & PROPFLOAT ? ICLES : t->basic.issigned ? ICSLEW : ICULEW;
 			else
 				op = typeprop(t) & PROPFLOAT ? ICLED : t->basic.issigned ? ICSLEL : ICULEL;
 			break;
 		case TGEQ:
+			l = extend(f, t, l);
+			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = typeprop(t) & PROPFLOAT ? ICGES : t->basic.issigned ? ICSGEW : ICUGEW;
 			else
 				op = typeprop(t) & PROPFLOAT ? ICGED : t->basic.issigned ? ICSGEL : ICUGEL;
 			break;
 		case TEQL:
+			l = extend(f, t, l);
+			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = typeprop(t) & PROPFLOAT ? ICEQS : ICEQW;
 			else
 				op = typeprop(t) & PROPFLOAT ? ICEQD : ICEQL;
 			break;
 		case TNEQ:
+			l = extend(f, t, l);
+			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = typeprop(t) & PROPFLOAT ? ICNES : ICNEW;
 			else
