@@ -161,6 +161,10 @@ typecompatible(struct type *t1, struct type *t2)
 	if (t1->kind != t2->kind)
 		return false;
 	switch (t1->kind) {
+	case TYPEBASIC:
+		/* enum types are compatible with 'int', but not with
+		   each other (unless they are the same type) */
+		return t1->basic.kind == t2->basic.kind && (t1 == &typeint || t2 == &typeint);
 	case TYPEQUALIFIED:
 		if (t1->qualified.kind != t2->qualified.kind)
 			return false;
