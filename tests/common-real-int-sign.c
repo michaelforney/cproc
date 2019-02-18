@@ -1,4 +1,3 @@
 int main(void) {
-	unsigned x = -1;
-	return 0 > x;
+	return 0 > -1u;
 }
