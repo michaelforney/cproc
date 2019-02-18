@@ -142,6 +142,7 @@ typerank(struct type *t)
 	case BASICBOOL:     return 1;
 	case BASICCHAR:     return 2;
 	case BASICSHORT:    return 3;
+	case BASICENUM:
 	case BASICINT:      return 4;
 	case BASICLONG:     return 5;
 	case BASICLONGLONG: return 6;
@@ -162,9 +163,12 @@ typecompatible(struct type *t1, struct type *t2)
 		return false;
 	switch (t1->kind) {
 	case TYPEBASIC:
+		if (t1->basic.issigned != t2->basic.issigned)
+			return false;
 		/* enum types are compatible with 'int', but not with
 		   each other (unless they are the same type) */
-		return t1->basic.kind == t2->basic.kind && (t1 == &typeint || t2 == &typeint);
+		return t1->basic.kind == BASICENUM && t2->basic.kind == BASICINT ||
+		       t1->basic.kind == BASICINT && t2->basic.kind == BASICENUM;
 	case TYPEQUALIFIED:
 		if (t1->qualified.kind != t2->qualified.kind)
 			return false;

@@ -185,6 +185,7 @@ tagspec(struct scope *s)
 		t = mktype(kind, NULL);
 		if (kind == TYPEBASIC) {
 			*t = typeint;
+			t->basic.kind = BASICENUM;
 		} else {
 			t->repr = &i64; // XXX
 			t->size = 0;

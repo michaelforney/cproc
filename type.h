@@ -68,6 +68,7 @@ struct type {
 				BASICCHAR,
 				BASICSHORT,
 				BASICINT,
+				BASICENUM,
 				BASICLONG,
 				BASICLONGLONG,
 				BASICFLOAT,
