@@ -310,28 +310,37 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expression *l, stru
 	case TADD:
 		if (lp & PROPARITH && rp & PROPARITH) {
 			t = commonreal(&l, &r);
-		} else if (l->type->kind == TYPEPOINTER && rp & PROPINT) {
-			t = l->type;
-			r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
-		} else if (lp & PROPINT && r->type->kind == TYPEPOINTER) {
-			t = r->type;
-			l = mkbinaryexpr(loc, TMUL, exprconvert(l, &typeulong), mkconstexpr(&typeulong, t->base->size));
-		} else {
-			error(loc, "invalid operands to '+' operator");
+			break;
 		}
+		if (r->type->kind == TYPEPOINTER)
+			e = l, l = r, r = e;
+		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT))
+			error(loc, "invalid operands to '+' operator");
+		t = l->type;
+		if (t->base->incomplete)
+			error(loc, "pointer operand to '+' must be to complete object type");
+		r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
 		break;
 	case TSUB:
 		if (lp & PROPARITH && rp & PROPARITH) {
 			t = commonreal(&l, &r);
-		} else if (l->type->kind == TYPEPOINTER && rp & PROPINT) {
+			break;
+		}
+		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT) && r->type->kind != TYPEPOINTER)
+			error(loc, "invalid operands to '-' operator");
+		if (l->type->base->incomplete)
+			error(loc, "pointer operand to '-' must be to complete object type");
+		if (rp & PROPINT) {
 			t = l->type;
 			r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
-		} else if (l->type->kind == TYPEPOINTER && r->type->kind == TYPEPOINTER && typecompatible(typeunqual(l->type->base, NULL), typeunqual(r->type->base, NULL))) {
-			/* XXX: when is the appropriate place to convert to signed integer */
-			e = mkbinaryexpr(loc, TSUB, exprconvert(l, &typelong), exprconvert(r, &typelong));
-			return mkbinaryexpr(loc, TDIV, e, mkconstexpr(&typelong, l->type->base->size));
 		} else {
-			error(loc, "invalid operands to '-' operator");
+			if (!typecompatible(typeunqual(l->type->base, NULL), typeunqual(r->type->base, NULL)))
+				error(&tok.loc, "pointer operands to '-' are to incompatible types");
+			op = TDIV;
+			t = &typelong;
+			e = mkbinaryexpr(loc, TSUB, exprconvert(l, &typelong), exprconvert(r, &typelong));
+			r = mkconstexpr(&typelong, l->type->base->size);
+			l = e;
 		}
 		break;
 	case TMOD:
