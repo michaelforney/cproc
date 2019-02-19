@@ -237,6 +237,7 @@ typeunqual(struct type *t, enum typequalifier *tq)
 struct type *
 typeintpromote(struct type *t)
 {
+	assert(t->kind != TYPEQUALIFIED);
 	if (typeprop(t) & PROPINT && typerank(t) <= typerank(&typeint))
 		return t->size < typeint.size || t->basic.issigned ? &typeint : &typeuint;
 	return t;
@@ -245,6 +246,7 @@ typeintpromote(struct type *t)
 struct type *
 typeargpromote(struct type *t)
 {
+	assert(t->kind != TYPEQUALIFIED);
 	if (t == &typefloat)
 		return &typedouble;
 	return typeintpromote(t);

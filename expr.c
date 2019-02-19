@@ -473,6 +473,7 @@ postfixexpr(struct scope *s, struct expression *r)
 				if (!p && !t->func.isvararg && t->func.paraminfo)
 					error(&tok.loc, "too many arguments for function call");
 				*end = assignexpr(s);
+				lvalueconvert(*end);
 				if (!t->func.isprototype || (t->func.isvararg && !p))
 					*end = exprconvert(*end, typeargpromote((*end)->type));
 				else
@@ -585,17 +586,20 @@ unaryexpr(struct scope *s)
 	case TADD:
 		next();
 		e = castexpr(s);
+		lvalueconvert(e);
 		e = exprconvert(e, typeintpromote(e->type));
 		break;
 	case TSUB:
 		next();
 		e = castexpr(s);
+		lvalueconvert(e);
 		e = exprconvert(e, typeintpromote(e->type));
 		e = mkbinaryexpr(&tok.loc, TSUB, mkconstexpr(&typeint, 0), e);
 		break;
 	case TBNOT:
 		next();
 		e = castexpr(s);
+		lvalueconvert(e);
 		e = exprconvert(e, typeintpromote(e->type));
 		e = mkbinaryexpr(&tok.loc, TXOR, e, mkconstexpr(e->type, -1));
 		break;

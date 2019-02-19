@@ -1,0 +1,14 @@
+data $.Lc.2 = align 1 { b 0, }
+export
+function $f() {
+@start.1
+@body.2
+	%.1 =w loadub $.Lc.2
+	%.2 =w extub %.1
+	call $g(w %.2)
+	%.3 =w loadub $.Lc.2
+	%.4 =w extub %.3
+	%.5 =w xor %.4, 18446744073709551615
+	call $g(w %.5)
+	ret
+}
