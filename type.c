@@ -7,7 +7,7 @@
 #include "backend.h"
 #include "type.h"
 
-struct type typevoid       = {.kind = TYPEVOID};
+struct type typevoid       = {.kind = TYPEVOID, .incomplete = true};
 
 struct type typechar       = {.kind = TYPEBASIC, .size = 1, .align = 1, .repr = &i8, .basic = {.kind = BASICCHAR, .issigned = 1}};
 struct type typeschar      = {.kind = TYPEBASIC, .size = 1, .align = 1, .repr = &i8, .basic = {.kind = BASICCHAR, .issigned = 1}};
