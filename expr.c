@@ -841,6 +841,8 @@ assignexpr(struct scope *s)
 	default:
 		return l;
 	}
+	if (!(l->flags & EXPRFLAG_LVAL))
+		error(&tok.loc, "left side of assignment expression is not an lvalue");
 	next();
 	r = assignexpr(s);
 	lvalueconvert(r);
