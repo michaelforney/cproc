@@ -21,6 +21,7 @@
 struct declaration builtinvalist = {.kind = DECLTYPE, .type = &typevalist};
 struct declaration builtinvastart = {.kind = DECLBUILTIN};
 struct declaration builtinvaarg = {.kind = DECLBUILTIN};
+struct declaration builtinvacopy = {.kind = DECLBUILTIN};
 struct declaration builtinvaend = {.kind = DECLBUILTIN};
 struct declaration builtinoffsetof = {.kind = DECLBUILTIN};
 

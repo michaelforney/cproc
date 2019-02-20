@@ -28,6 +28,7 @@ struct function;
 extern struct declaration builtinvalist;
 extern struct declaration builtinvastart;
 extern struct declaration builtinvaarg;
+extern struct declaration builtinvacopy;
 extern struct declaration builtinvaend;
 extern struct declaration builtinoffsetof;
 

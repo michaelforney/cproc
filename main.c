@@ -55,6 +55,7 @@ main(int argc, char *argv[])
 	} else {
 		scopeputdecl(&filescope, "__builtin_va_list", &builtinvalist);
 		scopeputdecl(&filescope, "__builtin_va_start", &builtinvastart);
+		scopeputdecl(&filescope, "__builtin_va_copy", &builtinvacopy);
 		scopeputdecl(&filescope, "__builtin_va_arg", &builtinvaarg);
 		scopeputdecl(&filescope, "__builtin_va_end", &builtinvaend);
 		scopeputdecl(&filescope, "__builtin_offsetof", &builtinoffsetof);

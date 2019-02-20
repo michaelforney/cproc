@@ -453,6 +453,13 @@ postfixexpr(struct scope *s, struct expression *r)
 					expect(TCOMMA, "after va_list");
 					e->type = typename(s);
 					expect(TRPAREN, "after typename");
+				} else if (r->ident.decl == &builtinvacopy) {
+					e = mkexpr(EXPRASSIGN, typevalist.base, 0);
+					e->assign.l = mkunaryexpr(TMUL, exprconvert(assignexpr(s), &typevalistptr));
+					expect(TCOMMA, "after target va_list");
+					e->assign.r = mkunaryexpr(TMUL, exprconvert(assignexpr(s), &typevalistptr));
+					expect(TRPAREN, "after source va_list");
+					e = exprconvert(e, &typevoid);
 				} else if (r->ident.decl == &builtinvaend) {
 					e = mkexpr(EXPRBUILTIN, &typevoid, 0);
 					e->builtin.kind = BUILTINVAEND;
