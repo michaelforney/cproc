@@ -109,6 +109,124 @@ mkunaryexpr(enum tokenkind op, struct expression *base)
 }
 
 static struct type *
+commonreal(struct expression **e1, struct expression **e2)
+{
+	struct type *t;
+
+	t = typecommonreal((*e1)->type, (*e2)->type);
+	*e1 = exprconvert(*e1, t);
+	*e2 = exprconvert(*e2, t);
+
+	return t;
+}
+
+static struct expression *
+mkbinaryexpr(struct location *loc, enum tokenkind op, struct expression *l, struct expression *r)
+{
+	struct expression *e;
+	struct type *t = NULL;
+	enum typeproperty lp, rp;
+
+	lvalueconvert(l);
+	lvalueconvert(r);
+	lp = typeprop(l->type);
+	rp = typeprop(r->type);
+	switch (op) {
+	case TLOR:
+	case TLAND:
+		if (!(lp & PROPSCALAR))
+			error(loc, "left-hand-side of logical operator must be scalar");
+		if (!(rp & PROPSCALAR))
+			error(loc, "right-hand-side of logical operator must be scalar");
+		l = exprconvert(l, &typebool);
+		r = exprconvert(r, &typebool);
+		t = &typeint;
+		break;
+	case TEQL:
+	case TNEQ:
+	case TLESS:
+	case TGREATER:
+	case TLEQ:
+	case TGEQ:
+		if (lp & PROPARITH && rp & PROPARITH) {
+			commonreal(&l, &r);
+		} else {
+			// XXX: check pointer types
+		}
+		t = &typeint;
+		break;
+	case TBOR:
+	case TXOR:
+	case TBAND:
+		t = commonreal(&l, &r);
+		break;
+	case TADD:
+		if (lp & PROPARITH && rp & PROPARITH) {
+			t = commonreal(&l, &r);
+			break;
+		}
+		if (r->type->kind == TYPEPOINTER)
+			e = l, l = r, r = e;
+		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT))
+			error(loc, "invalid operands to '+' operator");
+		t = l->type;
+		if (t->base->incomplete)
+			error(loc, "pointer operand to '+' must be to complete object type");
+		r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
+		break;
+	case TSUB:
+		if (lp & PROPARITH && rp & PROPARITH) {
+			t = commonreal(&l, &r);
+			break;
+		}
+		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT) && r->type->kind != TYPEPOINTER)
+			error(loc, "invalid operands to '-' operator");
+		if (l->type->base->incomplete)
+			error(loc, "pointer operand to '-' must be to complete object type");
+		if (rp & PROPINT) {
+			t = l->type;
+			r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
+		} else {
+			if (!typecompatible(typeunqual(l->type->base, NULL), typeunqual(r->type->base, NULL)))
+				error(&tok.loc, "pointer operands to '-' are to incompatible types");
+			op = TDIV;
+			t = &typelong;
+			e = mkbinaryexpr(loc, TSUB, exprconvert(l, &typelong), exprconvert(r, &typelong));
+			r = mkconstexpr(&typelong, l->type->base->size);
+			l = e;
+		}
+		break;
+	case TMOD:
+		if (!(lp & PROPINT) || !(rp & PROPINT))
+			error(loc, "operands to '%%' operator must be integer");
+		t = commonreal(&l, &r);
+		break;
+	case TMUL:
+	case TDIV:
+		if (!(lp & PROPARITH) || !(rp & PROPARITH))
+			error(loc, "operands to '%c' operator must be arithmetic", op == TMUL ? '*' : '/');
+		t = commonreal(&l, &r);
+		break;
+	case TSHL:
+	case TSHR:
+		if (!(lp & PROPINT) || !(rp & PROPINT))
+			error(loc, "operands to '%s' operator must be integer", op == TSHL ? "<<" : ">>");
+		l = exprconvert(l, typeintpromote(l->type));
+		r = exprconvert(r, typeintpromote(r->type));
+		t = l->type;
+		break;
+	default:
+		fatal("internal error: unknown binary operator %d", op);
+	}
+	e = mkexpr(EXPRBINARY, t, 0);
+	e->binary.op = op;
+	e->binary.l = l;
+	e->binary.r = r;
+
+	return e;
+}
+
+static struct type *
 inttype(uint64_t val, bool decimal, char *end)
 {
 	static struct {
@@ -276,124 +394,6 @@ primaryexpr(struct scope *s)
 	default:
 		error(&tok.loc, "expected primary expression");
 	}
-
-	return e;
-}
-
-static struct type *
-commonreal(struct expression **e1, struct expression **e2)
-{
-	struct type *t;
-
-	t = typecommonreal((*e1)->type, (*e2)->type);
-	*e1 = exprconvert(*e1, t);
-	*e2 = exprconvert(*e2, t);
-
-	return t;
-}
-
-static struct expression *
-mkbinaryexpr(struct location *loc, enum tokenkind op, struct expression *l, struct expression *r)
-{
-	struct expression *e;
-	struct type *t = NULL;
-	enum typeproperty lp, rp;
-
-	lvalueconvert(l);
-	lvalueconvert(r);
-	lp = typeprop(l->type);
-	rp = typeprop(r->type);
-	switch (op) {
-	case TLOR:
-	case TLAND:
-		if (!(lp & PROPSCALAR))
-			error(loc, "left-hand-side of logical operator must be scalar");
-		if (!(rp & PROPSCALAR))
-			error(loc, "right-hand-side of logical operator must be scalar");
-		l = exprconvert(l, &typebool);
-		r = exprconvert(r, &typebool);
-		t = &typeint;
-		break;
-	case TEQL:
-	case TNEQ:
-	case TLESS:
-	case TGREATER:
-	case TLEQ:
-	case TGEQ:
-		if (lp & PROPARITH && rp & PROPARITH) {
-			commonreal(&l, &r);
-		} else {
-			// XXX: check pointer types
-		}
-		t = &typeint;
-		break;
-	case TBOR:
-	case TXOR:
-	case TBAND:
-		t = commonreal(&l, &r);
-		break;
-	case TADD:
-		if (lp & PROPARITH && rp & PROPARITH) {
-			t = commonreal(&l, &r);
-			break;
-		}
-		if (r->type->kind == TYPEPOINTER)
-			e = l, l = r, r = e;
-		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT))
-			error(loc, "invalid operands to '+' operator");
-		t = l->type;
-		if (t->base->incomplete)
-			error(loc, "pointer operand to '+' must be to complete object type");
-		r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
-		break;
-	case TSUB:
-		if (lp & PROPARITH && rp & PROPARITH) {
-			t = commonreal(&l, &r);
-			break;
-		}
-		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT) && r->type->kind != TYPEPOINTER)
-			error(loc, "invalid operands to '-' operator");
-		if (l->type->base->incomplete)
-			error(loc, "pointer operand to '-' must be to complete object type");
-		if (rp & PROPINT) {
-			t = l->type;
-			r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
-		} else {
-			if (!typecompatible(typeunqual(l->type->base, NULL), typeunqual(r->type->base, NULL)))
-				error(&tok.loc, "pointer operands to '-' are to incompatible types");
-			op = TDIV;
-			t = &typelong;
-			e = mkbinaryexpr(loc, TSUB, exprconvert(l, &typelong), exprconvert(r, &typelong));
-			r = mkconstexpr(&typelong, l->type->base->size);
-			l = e;
-		}
-		break;
-	case TMOD:
-		if (!(lp & PROPINT) || !(rp & PROPINT))
-			error(loc, "operands to '%%' operator must be integer");
-		t = commonreal(&l, &r);
-		break;
-	case TMUL:
-	case TDIV:
-		if (!(lp & PROPARITH) || !(rp & PROPARITH))
-			error(loc, "operands to '%c' operator must be arithmetic", op == TMUL ? '*' : '/');
-		t = commonreal(&l, &r);
-		break;
-	case TSHL:
-	case TSHR:
-		if (!(lp & PROPINT) || !(rp & PROPINT))
-			error(loc, "operands to '%s' operator must be integer", op == TSHL ? "<<" : ">>");
-		l = exprconvert(l, typeintpromote(l->type));
-		r = exprconvert(r, typeintpromote(r->type));
-		t = l->type;
-		break;
-	default:
-		fatal("internal error: unknown binary operator %d", op);
-	}
-	e = mkexpr(EXPRBINARY, t, 0);
-	e->binary.op = op;
-	e->binary.l = l;
-	e->binary.r = r;
 
 	return e;
 }
