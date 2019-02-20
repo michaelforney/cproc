@@ -48,6 +48,8 @@ delexpr(struct expression *e)
 	free(e);
 }
 
+static struct expression *mkunaryexpr(enum tokenkind, struct expression *);
+
 /* 6.3.2.1 Conversion of arrays and function designators */
 static struct expression *
 decay(struct expression *e)
@@ -60,20 +62,50 @@ decay(struct expression *e)
 	t = typeunqual(e->type, &tq);
 	switch (t->kind) {
 	case TYPEARRAY:
-		t = mkqualifiedtype(mkpointertype(old->type->base), tq);
-		e = mkexpr(EXPRUNARY, t, EXPRFLAG_DECAYED);
-		e->unary.op = TBAND;
-		e->unary.base = old;
+		e = mkunaryexpr(TBAND, old);
+		e->type = mkqualifiedtype(mkpointertype(old->type->base), tq);
+		e->flags |= EXPRFLAG_DECAYED;
 		break;
 	case TYPEFUNC:
-		t = mkpointertype(old->type);
-		e = mkexpr(EXPRUNARY, t, EXPRFLAG_DECAYED);
-		e->unary.op = TBAND;
-		e->unary.base = old;
+		e = mkunaryexpr(TBAND, old);
+		e->flags |= EXPRFLAG_DECAYED;
 		break;
 	}
 
 	return e;
+}
+
+static void
+lvalueconvert(struct expression *e)
+{
+	e->type = typeunqual(e->type, NULL);
+	e->flags &= ~EXPRFLAG_LVAL;
+}
+
+static struct expression *
+mkunaryexpr(enum tokenkind op, struct expression *base)
+{
+	struct expression *expr;
+
+	switch (op) {
+	case TBAND:
+		if (base->flags & EXPRFLAG_DECAYED)
+			return base;
+		expr = mkexpr(EXPRUNARY, mkpointertype(base->type), 0);
+		expr->unary.op = op;
+		expr->unary.base = base;
+		return expr;
+	case TMUL:
+		lvalueconvert(base);
+		if (base->type->kind != TYPEPOINTER)
+			error(&tok.loc, "cannot dereference non-pointer");
+		expr = mkexpr(EXPRUNARY, base->type->base, EXPRFLAG_LVAL);
+		expr->unary.op = op;
+		expr->unary.base = base;
+		return decay(expr);
+	}
+	/* other unary operators get compiled as equivalent binary ones */
+	fatal("internal error: unknown unary operator %d", op);
 }
 
 static struct type *
@@ -248,13 +280,6 @@ primaryexpr(struct scope *s)
 	return e;
 }
 
-static void
-lvalueconvert(struct expression *e)
-{
-	e->type = typeunqual(e->type, NULL);
-	e->flags &= ~EXPRFLAG_LVAL;
-}
-
 static struct type *
 commonreal(struct expression **e1, struct expression **e2)
 {
@@ -407,13 +432,8 @@ postfixexpr(struct scope *s, struct expression *r)
 				error(&tok.loc, "array is pointer to incomplete type");
 			if (!(typeprop(idx->type) & PROPINT))
 				error(&tok.loc, "index is not an integer type");
-			tmp = mkbinaryexpr(&tok.loc, TADD, arr, idx);
-
-			e = mkexpr(EXPRUNARY, arr->type->base, EXPRFLAG_LVAL);
-			e->unary.op = TMUL;
-			e->unary.base = tmp;
+			e = mkunaryexpr(TMUL, mkbinaryexpr(&tok.loc, TADD, arr, idx));
 			expect(TRBRACK, "after array index");
-			e = decay(e);
 			break;
 		case TLPAREN:  /* function call */
 			next();
@@ -489,10 +509,7 @@ postfixexpr(struct scope *s, struct expression *r)
 			next();
 			break;
 		case TPERIOD:
-			e = mkexpr(EXPRUNARY, mkpointertype(r->type), 0);
-			e->unary.op = TBAND;
-			e->unary.base = r;
-			r = e;
+			r = mkunaryexpr(TBAND, r);
 			/* fallthrough */
 		case TARROW:
 			op = tok.kind;
@@ -514,10 +531,9 @@ postfixexpr(struct scope *s, struct expression *r)
 				error(&tok.loc, "struct/union has no member named '%s'", tok.lit);
 			r = mkbinaryexpr(&tok.loc, TADD, r, mkconstexpr(&typeulong, offset));
 			r = exprconvert(r, mkpointertype(mkqualifiedtype(t, tq)));
-			e = mkexpr(EXPRUNARY, r->type->base, lvalue ? EXPRFLAG_LVAL : 0);
-			e->unary.op = TMUL;
-			e->unary.base = r;
-			e = decay(e);
+			e = mkunaryexpr(TMUL, r);
+			if (!lvalue)
+				e->flags &= ~EXPRFLAG_LVAL;
 			next();
 			break;
 		case TINC:
@@ -562,27 +578,9 @@ unaryexpr(struct scope *s)
 		e->incdec.post = 0;
 		break;
 	case TBAND:
-		next();
-		e = castexpr(s);
-		if (!(e->flags & EXPRFLAG_DECAYED)) {
-			l = e;
-			e = mkexpr(EXPRUNARY, NULL, 0);
-			e->unary.op = op;
-			e->unary.base = l;
-			e->type = mkpointertype(l->type);
-		}
-		break;
 	case TMUL:
 		next();
-		l = castexpr(s);
-		lvalueconvert(l);
-		if (l->type->kind != TYPEPOINTER)
-			error(&tok.loc, "cannot dereference non-pointer");
-		e = mkexpr(EXPRUNARY, l->type->base, EXPRFLAG_LVAL);
-		e->unary.op = op;
-		e->unary.base = l;
-		e = decay(e);
-		break;
+		return mkunaryexpr(op, castexpr(s));
 	case TADD:
 		next();
 		e = castexpr(s);
@@ -857,13 +855,9 @@ assignexpr(struct scope *s)
 		e = mkexpr(EXPRCOMMA, l->type, 0);
 		e->comma.exprs = mkexpr(EXPRASSIGN, tmp->type, 0);
 		e->comma.exprs->assign.l = tmp;
-		e->comma.exprs->assign.r = mkexpr(EXPRUNARY, e->type, 0);
-		e->comma.exprs->assign.r->unary.op = TBAND;
-		e->comma.exprs->assign.r->unary.base = l;
+		e->comma.exprs->assign.r = mkunaryexpr(TBAND, l);
 		res = &e->comma.exprs->next;
-		l = mkexpr(EXPRUNARY, l->type, 0);
-		l->unary.op = TMUL;
-		l->unary.base = tmp;
+		l = mkunaryexpr(TMUL, tmp);
 		r = mkbinaryexpr(&tok.loc, op, l, r);
 	}
 	r = exprconvert(r, l->type);
