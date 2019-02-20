@@ -1,0 +1,2 @@
+export data $y = align 8 { l $x + 20, }
+export data $x = align 4 { z 24 }

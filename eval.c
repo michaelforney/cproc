@@ -9,6 +9,66 @@
 #include "token.h"
 #include "type.h"
 
+static void
+binary(struct expression *expr, enum tokenkind op, struct expression *l, struct expression *r)
+{
+	expr->kind = EXPRCONST;
+#define F (1<<8)
+#define S (2<<8)
+	if (typeprop(l->type) & PROPFLOAT)
+		op |= F;
+	else if (l->type->basic.issigned)
+		op |= S;
+	switch (op) {
+	case TMUL:
+	case TMUL|S:    expr->constant.i = l->constant.i * r->constant.i; break;
+	case TMUL|F:    expr->constant.f = l->constant.f * r->constant.f; break;
+	case TDIV:      expr->constant.i = l->constant.i / r->constant.i; break;
+	case TDIV|S:    expr->constant.i = (int64_t)l->constant.i / (int64_t)r->constant.i; break;
+	case TDIV|F:    expr->constant.f = l->constant.f / r->constant.f; break;
+	case TMOD:      expr->constant.i = l->constant.i % r->constant.i; break;
+	case TMOD|S:    expr->constant.i = (int64_t)l->constant.i % (int64_t)r->constant.i; break;
+	case TADD:
+	case TADD|S:    expr->constant.i = l->constant.i + r->constant.i; break;
+	case TADD|F:    expr->constant.f = l->constant.f + r->constant.f; break;
+	case TSUB:
+	case TSUB|S:    expr->constant.i = l->constant.i - r->constant.i; break;
+	case TSUB|F:    expr->constant.f = l->constant.f - r->constant.f; break;
+	case TSHL:
+	case TSHL|S:    expr->constant.i = l->constant.i << r->constant.i; break;
+	case TSHR:      expr->constant.i = l->constant.i >> r->constant.i; break;
+	case TSHR|S:    expr->constant.i = (int64_t)l->constant.i >> r->constant.i; break;
+	case TBAND:
+	case TBAND|S:   expr->constant.i = l->constant.i & r->constant.i; break;
+	case TBOR:
+	case TBOR|S:    expr->constant.i = l->constant.i | r->constant.i; break;
+	case TXOR:
+	case TXOR|S:    expr->constant.i = l->constant.i ^ r->constant.i; break;
+	case TLESS:     expr->constant.i = l->constant.i < r->constant.i; break;
+	case TLESS|S:   expr->constant.i = (int64_t)l->constant.i < (int64_t)r->constant.i; break;
+	case TLESS|F:   expr->constant.i = l->constant.f < r->constant.f; break;
+	case TGREATER:  expr->constant.i = l->constant.i > r->constant.i; break;
+	case TGREATER|S: expr->constant.i = (int64_t)l->constant.i > (int64_t)r->constant.i; break;
+	case TGREATER|F: expr->constant.i = l->constant.f > r->constant.f; break;
+	case TLEQ:      expr->constant.i = l->constant.i <= r->constant.i; break;
+	case TLEQ|S:    expr->constant.i = (int64_t)l->constant.i <= (int64_t)r->constant.i; break;
+	case TLEQ|F:    expr->constant.i = l->constant.f <= r->constant.f; break;
+	case TGEQ:      expr->constant.i = l->constant.i >= r->constant.i; break;
+	case TGEQ|S:    expr->constant.i = (int64_t)l->constant.i >= (int64_t)r->constant.i; break;
+	case TGEQ|F:    expr->constant.i = l->constant.f >= r->constant.f; break;
+	case TEQL:
+	case TEQL|S:    expr->constant.i = l->constant.i == r->constant.i; break;
+	case TEQL|F:    expr->constant.i = l->constant.f == r->constant.f; break;
+	case TNEQ:
+	case TNEQ|S:    expr->constant.i = l->constant.i != r->constant.i; break;
+	case TNEQ|F:    expr->constant.i = l->constant.f != r->constant.f; break;
+	default:
+		fatal("internal error; unknown binary expression");
+	}
+#undef F
+#undef S
+}
+
 struct expression *
 eval(struct expression *expr)
 {
@@ -65,70 +125,36 @@ eval(struct expression *expr)
 		r = eval(expr->binary.r);
 		expr->binary.l = l;
 		expr->binary.r = r;
-		if (l->kind != EXPRCONST)
-			break;
-		if (expr->binary.op == TLOR)
-			return !l->constant.i ? r : l;
-		if (expr->binary.op == TLAND)
-			return l->constant.i ? r : l;
-		if (r->kind != EXPRCONST)
-			break;
-		expr->kind = EXPRCONST;
-		op = expr->binary.op;
-#define F (1<<8)
-#define S (2<<8)
-		if (typeprop(l->type) & PROPFLOAT)
-			op |= F;
-		else if (l->type->basic.issigned)
-			op |= S;
-		switch (op) {
-		case TMUL:
-		case TMUL|S:    expr->constant.i = l->constant.i * r->constant.i; break;
-		case TMUL|F:    expr->constant.f = l->constant.f * r->constant.f; break;
-		case TDIV:      expr->constant.i = l->constant.i / r->constant.i; break;
-		case TDIV|S:    expr->constant.i = (int64_t)l->constant.i / (int64_t)r->constant.i; break;
-		case TDIV|F:    expr->constant.f = l->constant.f / r->constant.f; break;
-		case TMOD:      expr->constant.i = l->constant.i % r->constant.i; break;
-		case TMOD|S:    expr->constant.i = (int64_t)l->constant.i % (int64_t)r->constant.i; break;
+		switch (expr->binary.op) {
 		case TADD:
-		case TADD|S:    expr->constant.i = l->constant.i + r->constant.i; break;
-		case TADD|F:    expr->constant.f = l->constant.f + r->constant.f; break;
-		case TSUB:
-		case TSUB|S:    expr->constant.i = l->constant.i - r->constant.i; break;
-		case TSUB|F:    expr->constant.f = l->constant.f - r->constant.f; break;
-		case TSHL:
-		case TSHL|S:    expr->constant.i = l->constant.i << r->constant.i; break;
-		case TSHR:      expr->constant.i = l->constant.i >> r->constant.i; break;
-		case TSHR|S:    expr->constant.i = (int64_t)l->constant.i >> r->constant.i; break;
-		case TBAND:
-		case TBAND|S:   expr->constant.i = l->constant.i & r->constant.i; break;
-		case TBOR:
-		case TBOR|S:    expr->constant.i = l->constant.i | r->constant.i; break;
-		case TXOR:
-		case TXOR|S:    expr->constant.i = l->constant.i ^ r->constant.i; break;
-		case TLESS:     expr->constant.i = l->constant.i < r->constant.i; break;
-		case TLESS|S:   expr->constant.i = (int64_t)l->constant.i < (int64_t)r->constant.i; break;
-		case TLESS|F:   expr->constant.i = l->constant.f < r->constant.f; break;
-		case TGREATER:  expr->constant.i = l->constant.i > r->constant.i; break;
-		case TGREATER|S: expr->constant.i = (int64_t)l->constant.i > (int64_t)r->constant.i; break;
-		case TGREATER|F: expr->constant.i = l->constant.f > r->constant.f; break;
-		case TLEQ:      expr->constant.i = l->constant.i <= r->constant.i; break;
-		case TLEQ|S:    expr->constant.i = (int64_t)l->constant.i <= (int64_t)r->constant.i; break;
-		case TLEQ|F:    expr->constant.i = l->constant.f <= r->constant.f; break;
-		case TGEQ:      expr->constant.i = l->constant.i >= r->constant.i; break;
-		case TGEQ|S:    expr->constant.i = (int64_t)l->constant.i >= (int64_t)r->constant.i; break;
-		case TGEQ|F:    expr->constant.i = l->constant.f >= r->constant.f; break;
-		case TEQL:
-		case TEQL|S:    expr->constant.i = l->constant.i == r->constant.i; break;
-		case TEQL|F:    expr->constant.i = l->constant.f == r->constant.f; break;
-		case TNEQ:
-		case TNEQ|S:    expr->constant.i = l->constant.i != r->constant.i; break;
-		case TNEQ|F:    expr->constant.i = l->constant.f != r->constant.f; break;
+			if (r->kind == EXPRBINARY)
+				c = l, l = r, r = c;
+			if (r->kind != EXPRCONST)
+				break;
+			if (l->kind == EXPRCONST) {
+				binary(expr, expr->binary.op, l, r);
+			} else if (l->kind == EXPRBINARY && l->type->kind == TYPEPOINTER && l->binary.r->kind == EXPRCONST) {
+				if (l->binary.op == TADD || l->binary.op == TSUB) {
+					/* (P ± C1) + C2  ->  P + (C2 ± C1) */
+					expr->binary.l = l->binary.l;
+					binary(expr->binary.r, l->binary.op, r, l->binary.r);
+				}
+			}
+			break;
+		/* TODO: TSUB pointer handling */
+		case TLOR:
+			if (l->kind != EXPRCONST)
+				break;
+			return l->constant.i ? l : r;
+		case TLAND:
+			if (l->kind != EXPRCONST)
+				break;
+			return l->constant.i ? r : l;
 		default:
-			fatal("internal error; unknown binary expression");
+			if (l->kind != EXPRCONST || r->kind != EXPRCONST)
+				break;
+			binary(expr, expr->binary.op, l, r);
 		}
-#undef F
-#undef S
 		break;
 	case EXPRCOND:
 		l = expr->cond.t;
