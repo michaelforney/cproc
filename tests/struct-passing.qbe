@@ -1,4 +1,5 @@
-type :s.1 = { w, b 3, h, b 3, h, d, }
+type :.2 = { b 3, h, }
+type :s.1 = { w, :.2 2, d, }
 export
 function $f(:s.1 %.1) {
 @start.1

@@ -966,61 +966,56 @@ emitvalue(struct value *v)
 }
 
 static void
-aggr(struct type *t)
-{
-	uint64_t i;
-	struct member *m;
-
-	switch (t->kind) {
-	case TYPEARRAY:
-		if (typeprop(t->base) & PROPAGGR) {
-			for (i = 0; i < t->array.length; ++i)
-				aggr(t->base);
-		} else {
-			printf("%c %" PRIu64 ", ", t->base->repr->ext, t->array.length);
-		}
-		break;
-	case TYPESTRUCT:
-		for (m = t->structunion.members; m; m = m->next) {
-			if (typeprop(m->type) & PROPAGGR)
-				aggr(m->type);
-			else
-				printf("%c, ", m->type->repr->ext);
-		}
-		break;
-	default:
-		fatal("internal error; not an aggregate type");
-	}
-}
-
-static void
-emittype(struct type *t)
-{
-	static uint64_t id;
-
-	if (!t->repr || t->repr->abi.id || !(typeprop(t) & PROPAGGR))
-		return;
-	t->repr = xmalloc(sizeof(*t->repr));
-	t->repr->base = 'l';
-	if (t->kind == TYPESTRUCT || t->kind == TYPEUNION)
-		t->repr->abi.str = t->structunion.tag;
-	t->repr->abi.id = ++id;
-	fputs("type :", stdout);
-	emitname(&t->repr->abi);
-	fputs(" = { ", stdout);
-	aggr(t);
-	puts("}");
-}
-
-static void
-emitrepr(struct representation *r, bool abi)
+emitrepr(struct representation *r, bool abi, bool ext)
 {
 	if (abi && r->abi.id) {
 		putchar(':');
 		emitname(&r->abi);
+	} else if (ext) {
+		putchar(r->ext);
 	} else {
 		putchar(r->base);
 	}
+}
+
+/* XXX: need to consider _Alignas on struct members */
+/* XXX: this might not be right for something like
+union {
+	struct { long long x; double y; };
+	struct { double z; long long w; };
+};
+*/
+static void
+emittype(struct type *t)
+{
+	static uint64_t id;
+	struct member *m;
+	struct type *sub;
+	uint64_t i;
+
+	if (!t->repr || t->repr->abi.id || t->kind != TYPESTRUCT && t->kind != TYPEUNION)
+		return;
+	t->repr = xmalloc(sizeof(*t->repr));
+	t->repr->base = 'l';
+	t->repr->abi.str = t->structunion.tag;
+	t->repr->abi.id = ++id;
+	for (m = t->structunion.members; m; m = m->next) {
+		for (sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
+			;
+		emittype(sub);
+	}
+	fputs("type :", stdout);
+	emitname(&t->repr->abi);
+	fputs(" = { ", stdout);
+	for (m = t->structunion.members; m && t->kind == TYPESTRUCT; m = m->next) {
+		for (i = 1, sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
+			i *= sub->array.length;
+		emitrepr(sub->repr, true, true);
+		if (i > 1)
+			printf(" %" PRIu64, i);
+		fputs(", ", stdout);
+	}
+	puts("}");
 }
 
 static void
@@ -1033,7 +1028,7 @@ emitinst(struct instruction *inst)
 	if (instdesc[inst->kind].ret && inst->res.kind) {
 		emitvalue(&inst->res);
 		fputs(" =", stdout);
-		emitrepr(inst->res.repr, inst->kind == ICALL);
+		emitrepr(inst->res.repr, inst->kind == ICALL, false);
 		putchar(' ');
 	}
 	fputs(instdesc[inst->kind].str, stdout);
@@ -1046,7 +1041,7 @@ emitinst(struct instruction *inst)
 			if (arg != &inst->arg[1])
 				fputs(", ", stdout);
 			if ((*arg)->kind != VALELLIPSIS) {
-				emitrepr((*arg)->repr, true);
+				emitrepr((*arg)->repr, true, false);
 				putchar(' ');
 			}
 			emitvalue(*arg);
@@ -1096,14 +1091,14 @@ emitfunc(struct function *f, bool global)
 		puts("export");
 	fputs("function ", stdout);
 	if (f->type->base != &typevoid) {
-		emitrepr(f->type->base->repr, true);
+		emitrepr(f->type->base->repr, true, false);
 		putchar(' ');
 	}
 	printf("$%s(", f->name);
 	for (p = f->type->func.params; p; p = p->next) {
 		if (p != f->type->func.params)
 			fputs(", ", stdout);
-		emitrepr(p->type->repr, true);
+		emitrepr(p->type->repr, true, false);
 		putchar(' ');
 		emitvalue(p->value);
 	}
