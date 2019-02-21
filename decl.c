@@ -207,8 +207,8 @@ tagspec(struct scope *s)
 	case TYPESTRUCT:
 	case TYPEUNION:
 		end = &t->structunion.members;
-		while (tok.kind != TRBRACE)
-			structdecl(s, t, &end);
+		do structdecl(s, t, &end);
+		while (tok.kind != TRBRACE);
 		next();
 		t->size = ALIGNUP(t->size, t->align);
 		t->incomplete = false;
