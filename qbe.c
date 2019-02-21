@@ -1007,13 +1007,15 @@ emittype(struct type *t)
 	fputs("type :", stdout);
 	emitname(&t->repr->abi);
 	fputs(" = { ", stdout);
-	for (m = t->structunion.members; m && t->kind == TYPESTRUCT; m = m->next) {
+	for (m = t->structunion.members; m; m = m->next) {
 		for (i = 1, sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
 			i *= sub->array.length;
 		emitrepr(sub->repr, true, true);
 		if (i > 1)
 			printf(" %" PRIu64, i);
 		fputs(", ", stdout);
+		if (t->kind == TYPEUNION)
+			break;
 	}
 	puts("}");
 }

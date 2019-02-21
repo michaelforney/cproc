@@ -1,0 +1,7 @@
+type :.1 = { w, }
+export
+function $f(:.1 %.1) {
+@start.1
+@body.2
+	ret
+}
