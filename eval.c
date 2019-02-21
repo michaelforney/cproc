@@ -74,7 +74,6 @@ eval(struct expression *expr)
 {
 	struct expression *l, *r, *c;
 	struct declaration *d;
-	int op;
 
 	switch (expr->kind) {
 	case EXPRIDENT:

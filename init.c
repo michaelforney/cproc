@@ -119,7 +119,6 @@ static void
 designator(struct scope *s, struct initparser *p)
 {
 	struct type *t;
-	uint64_t offset;
 	char *name;
 
 	p->sub = p->cur;

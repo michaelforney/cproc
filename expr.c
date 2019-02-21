@@ -405,7 +405,6 @@ postfixexpr(struct scope *s, struct expression *r)
 	struct type *t;
 	enum typequalifier tq;
 	struct parameter *p;
-	struct member *m;
 	char *name;
 	uint64_t offset;
 	enum tokenkind op;
