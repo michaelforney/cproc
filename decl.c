@@ -411,7 +411,7 @@ istypename(struct scope *s, const char *name)
 {
 	struct declaration *d;
 
-	d = scopegetdecl(s, tok.lit, 1);
+	d = scopegetdecl(s, name, 1);
 	return d && d->kind == DECLTYPE;
 }
 
