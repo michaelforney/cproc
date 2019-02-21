@@ -979,12 +979,6 @@ emitrepr(struct representation *r, bool abi, bool ext)
 }
 
 /* XXX: need to consider _Alignas on struct members */
-/* XXX: this might not be right for something like
-union {
-	struct { long long x; double y; };
-	struct { double z; long long w; };
-};
-*/
 static void
 emittype(struct type *t)
 {
@@ -1008,14 +1002,17 @@ emittype(struct type *t)
 	emitname(&t->repr->abi);
 	fputs(" = { ", stdout);
 	for (m = t->structunion.members; m; m = m->next) {
+		if (t->kind == TYPEUNION)
+			fputs("{ ", stdout);
 		for (i = 1, sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
 			i *= sub->array.length;
 		emitrepr(sub->repr, true, true);
 		if (i > 1)
 			printf(" %" PRIu64, i);
-		fputs(", ", stdout);
 		if (t->kind == TYPEUNION)
-			break;
+			fputs(" } ", stdout);
+		else
+			fputs(", ", stdout);
 	}
 	puts("}");
 }

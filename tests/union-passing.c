@@ -1,2 +1,2 @@
-void f(union {int x;} u) {
+void f(union {int x; float y;} u) {
 }

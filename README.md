@@ -10,7 +10,6 @@ Still TODO:
 - Come up with a name so it can be installed alongside the system `cc`.
 - The preprocessor (currently we are just using the system `cpp`).
 - Bit-fields.
-- Passing structs with embedded unions by value.
 - Variable-length arrays.
 - `volatile`-qualified types (requires support from QBE).
 - `_Thread_local` storage-class specifier (requires support from QBE).

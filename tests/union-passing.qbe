@@ -1,4 +1,4 @@
-type :.1 = { w, }
+type :.1 = { { w } { s } }
 export
 function $f(:.1 %.1) {
 @start.1
