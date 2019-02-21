@@ -54,7 +54,6 @@ static struct expression *mkunaryexpr(enum tokenkind, struct expression *);
 static struct expression *
 decay(struct expression *e)
 {
-	struct expression *old = e;
 	struct type *t;
 	enum typequalifier tq = QUALNONE;
 
@@ -62,12 +61,12 @@ decay(struct expression *e)
 	t = typeunqual(e->type, &tq);
 	switch (t->kind) {
 	case TYPEARRAY:
-		e = mkunaryexpr(TBAND, old);
-		e->type = mkqualifiedtype(mkpointertype(old->type->base), tq);
+		e = mkunaryexpr(TBAND, e);
+		e->type = mkqualifiedtype(mkpointertype(t->base), tq);
 		e->flags |= EXPRFLAG_DECAYED;
 		break;
 	case TYPEFUNC:
-		e = mkunaryexpr(TBAND, old);
+		e = mkunaryexpr(TBAND, e);
 		e->flags |= EXPRFLAG_DECAYED;
 		break;
 	}
