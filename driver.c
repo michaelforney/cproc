@@ -211,6 +211,8 @@ buildobj(struct input *input, char *output, enum phaseid last)
 	}
 	if (strcmp(input->name, "-") == 0)
 		input->name = NULL;
+	if (strcmp(output, "-") == 0)
+		output = NULL;
 
 	npids = 0;
 	for (i = first, fd = -1, phaseoutput = NULL; i <= last; ++i, ++npids) {
@@ -468,7 +470,6 @@ main(int argc, char *argv[])
 		if (strcmp(output, "-") == 0) {
 			if (last >= ASSEMBLE)
 				usage("cannot write object to stdout");
-			output = NULL;
 		} else if (last != LINK && inputs.len > sizeof(*input)) {
 			usage("cannot specify -o with multiple input files without linking");
 		}
