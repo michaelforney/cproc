@@ -2,9 +2,10 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdnoreturn.h>
 #include <string.h>
 
 #include <fcntl.h>
@@ -18,7 +19,7 @@
 extern int pipe2(int[2], int);
 
 enum phaseid {
-	PREPROCESS,
+	PREPROCESS = 1,
 	COMPILE,
 	CODEGEN,
 	ASSEMBLE,
@@ -36,6 +37,12 @@ struct phase {
 	pid_t pid;
 };
 
+struct input {
+	char *name;
+	enum phaseid phase;
+	bool lib;
+};
+
 extern char **environ;
 static struct {
 	bool nostdlib;
@@ -49,8 +56,17 @@ static struct phase phases[] = {
 };
 
 static void
-usage(void)
+usage(const char *fmt, ...)
 {
+	va_list ap;
+
+	if (fmt) {
+		fprintf(stderr, "%s: ", argv0);
+		va_start(ap, fmt);
+		vfprintf(stderr, fmt, ap);
+		va_end(ap);
+		fputc('\n', stderr);
+	}
 	fprintf(stderr, "usage: %s [-c|-S|-E] [-D name[=value]] [-U name] [-s] [-g] [-o output] input...\n", argv0);
 	exit(2);
 }
@@ -62,13 +78,14 @@ inputphase(const char *name)
 
 	dot = strrchr(name, '.');
 	if (dot) {
-		if (strcmp(dot, ".c") == 0)
+		++dot;
+		if (strcmp(dot, "c") == 0)
 			return PREPROCESS;
-		if (strcmp(dot, ".i") == 0)
+		if (strcmp(dot, "i") == 0)
 			return COMPILE;
-		if (strcmp(dot, ".qbe") == 0)
+		if (strcmp(dot, "qbe") == 0)
 			return CODEGEN;
-		if (strcmp(dot, ".s") == 0 || strcmp(dot, ".S") == 0)
+		if (strcmp(dot, "s") == 0 || strcmp(dot, "S") == 0)
 			return ASSEMBLE;
 	}
 
@@ -86,10 +103,11 @@ changeext(const char *name, const char *ext)
 	if (!slash)
 		slash = name;
 	dot = strrchr(slash, '.');
-	baselen = dot ? (size_t)(dot - name + 1) : strlen(name);
-	result = xmalloc(baselen + strlen(ext) + 1);
+	baselen = dot ? (size_t)(--dot - name + 1) : strlen(name);
+	result = xmalloc(baselen + strlen(ext) + 2);
 	memcpy(result, name, baselen);
-	strcpy(result + baselen, ext);
+	result[baselen] = '.';
+	strcpy(result + baselen + 1, ext);
 
 	return result;
 }
@@ -161,48 +179,49 @@ succeeded(const char *phase, pid_t pid, int status)
 	return false;
 }
 
-static char *
-buildobj(char *input, char *output, enum phaseid last)
+static void
+buildobj(struct input *input, char *output, enum phaseid last)
 {
-	const char *phase;
-	enum phaseid first;
-	int status, ret, fd;
-	bool success = true;
+	const char *phase, *ext;
+	char *phaseoutput;
 	size_t i, npids;
 	pid_t pid;
+	int status, ret, fd;
+	enum phaseid first = input->phase;
+	bool success = true;
+
+	if (input->phase > last || input->phase == LINK)
+		return;
+	if (last == LINK) {
+		last = ASSEMBLE;
+		output = strdup("/tmp/cc-XXXXXX");
+		if (!output)
+			fatal("strdup:");
+		fd = mkstemp(output);
+		if (fd < 0)
+			fatal("mkstemp:");
+		close(fd);
+	} else if (!output && last != PREPROCESS) {
+		switch (last) {
+		case COMPILE:  ext = "qbe"; break;
+		case CODEGEN:  ext = "s";   break;
+		case ASSEMBLE: ext = "o";   break;
+		}
+		output = changeext(input->name, ext);
+	}
+	if (strcmp(input->name, "-") == 0)
+		input->name = NULL;
 
 	npids = 0;
-	first = inputphase(input);
-	if (first > last || first == LINK)
-		return input;
-	switch (last) {
-	case COMPILE:
-		if (!output)
-			output = changeext(input, "qbe");
-		break;
-	case CODEGEN:
-		if (!output)
-			output = changeext(input, "s");
-		break;
-	case ASSEMBLE:
-		if (!output)
-			output = changeext(input, "o");
-		break;
-	case LINK:
-		/* TODO: temporary object, or just removed later? */
-		output = changeext(input, "o");
-		last = ASSEMBLE;
-		break;
-	}
-	if (output && strcmp(output, "-") == 0)
-		output = NULL;
-
-	for (i = first, fd = -1; i <= last; ++i, ++npids) {
-		ret = spawnphase(&phases[i], &fd, i == first ? input : NULL, i == last ? output : NULL, i == last);
+	for (i = first, fd = -1, phaseoutput = NULL; i <= last; ++i, ++npids) {
+		if (i == last)
+			phaseoutput = output;
+		ret = spawnphase(&phases[i], &fd, input->name, phaseoutput, i == last);
 		if (ret) {
 			warn("%s: spawn \"%s\": %s", phases[i].name, *(char **)phases[i].cmd.val, strerror(ret));
 			goto kill;
 		}
+		input->name = phaseoutput;
 	}
 
 	while (npids > 0) {
@@ -235,11 +254,10 @@ kill:
 			unlink(output);
 		exit(1);
 	}
-	return output;
 }
 
-static _Noreturn void
-buildexe(char *inputs[], size_t ninputs, char *output)
+static noreturn void
+buildexe(struct input *inputs, size_t ninputs, char *output)
 {
 	struct phase *p = &phases[LINK];
 	size_t i;
@@ -250,8 +268,11 @@ buildexe(char *inputs[], size_t ninputs, char *output)
 	arrayaddptr(&p->cmd, output);
 	if (!flags.nostdlib)
 		arrayaddbuf(&p->cmd, startfiles, sizeof(startfiles));
-	for (i = 0; i < ninputs; ++i)
-		arrayaddptr(&p->cmd, inputs[i]);
+	for (i = 0; i < ninputs; ++i) {
+		if (inputs[i].lib)
+			arrayaddptr(&p->cmd, "-l");
+		arrayaddptr(&p->cmd, inputs[i].name);
+	}
 	if (!flags.nostdlib)
 		arrayaddbuf(&p->cmd, endfiles, sizeof(endfiles));
 	arrayaddptr(&p->cmd, NULL);
@@ -261,6 +282,10 @@ buildexe(char *inputs[], size_t ninputs, char *output)
 		fatal("%s: spawn \"%s\": %s", p->name, *(char **)p->cmd.val, strerror(errno));
 	if (waitpid(pid, &status, 0) < 0)
 		fatal("waitpid %ju:", (uintmax_t)pid);
+	for (i = 0; i < ninputs; ++i) {
+		if (inputs[i].phase < LINK)
+			unlink(inputs[i].name);
+	}
 	exit(!succeeded(p->name, pid, status));
 }
 
@@ -271,7 +296,7 @@ nextarg(char ***argv)
 		return &(**argv)[2];
 	++*argv;
 	if (!**argv)
-		usage();
+		usage(NULL);
 	return **argv;
 }
 
@@ -298,9 +323,10 @@ compilecommand(void)
 int
 main(int argc, char *argv[])
 {
-	enum phaseid last = LINK;
-	char *arg, *end, *output = NULL, **input;
+	enum phaseid first = 0, last = LINK;
+	char *arg, *end, *output = NULL;
 	struct array inputs = {0}, *cmd;
+	struct input *input;
 	size_t i;
 
 	arrayaddbuf(&phases[PREPROCESS].cmd, preprocesscmd, sizeof(preprocesscmd));
@@ -318,8 +344,16 @@ main(int argc, char *argv[])
 		arg = *argv;
 		if (!arg)
 			break;
-		if (arg[0] != '-') {
-			arrayaddptr(&inputs, arg);
+		if (arg[0] != '-' || arg[1] == '\0') {
+			input = arrayadd(&inputs, sizeof(*input));
+			input->name = arg;
+			input->lib = false;
+			if (first)
+				input->phase = first;
+			else if (arg[1])
+				input->phase = inputphase(arg);
+			else
+				usage("reading from standard input requires -x");
 			continue;
 		}
 		/* TODO: use a binary search for these long parameters */
@@ -331,7 +365,7 @@ main(int argc, char *argv[])
 			last = COMPILE;
 		} else if (strcmp(arg, "-include") == 0 || strcmp(arg, "-idirafter") == 0) {
 			if (!--argc)
-				usage();
+				usage(NULL);
 			arrayaddptr(&phases[PREPROCESS].cmd, arg);
 			arrayaddptr(&phases[PREPROCESS].cmd, *++argv);
 		} else if (strcmp(arg, "-pipe") == 0) {
@@ -342,7 +376,7 @@ main(int argc, char *argv[])
 			/* ignore */
 		} else {
 			if (arg[2] != '\0' && strchr("cESs", arg[1]))
-				usage();
+				usage(NULL);
 			switch (arg[1]) {
 			case 'c':
 				last = ASSEMBLE;
@@ -366,8 +400,10 @@ main(int argc, char *argv[])
 				arrayaddptr(&phases[LINK].cmd, nextarg(&argv));
 				break;
 			case 'l':
-				arrayaddptr(&inputs, "-l");
-				arrayaddptr(&inputs, nextarg(&argv));
+				input = arrayadd(&inputs, sizeof(*input));
+				input->name = nextarg(&argv);
+				input->lib = true;
+				input->phase = LINK;
 				break;
 			case 'O':
 				/* ignore */
@@ -391,7 +427,7 @@ main(int argc, char *argv[])
 					case 'p': cmd = &phases[PREPROCESS].cmd; break;
 					case 'a': cmd = &phases[ASSEMBLE].cmd; break;
 					case 'l': cmd = &phases[LINK].cmd; break;
-					default: usage();
+					default: usage(NULL);
 					}
 					for (arg += 4; arg; arg = end ? end + 1 : NULL) {
 						end = strchr(arg, ',');
@@ -403,8 +439,23 @@ main(int argc, char *argv[])
 					/* ignore warning flag */
 				}
 				break;
+			case 'x':
+				arg = nextarg(&argv);
+				if (strcmp(arg, "none") == 0)
+					first = 0;
+				else if (strcmp(arg, "c") == 0)
+					first = PREPROCESS;
+				else if (strcmp(arg, "cpp-output") == 0)
+					first = COMPILE;
+				else if (strcmp(arg, "qbe") == 0)
+					first = CODEGEN;
+				else if (strcmp(arg, "assembler") == 0)
+					first = ASSEMBLE;
+				else
+					usage("unknown language '%s'", arg);
+				break;
 			default:
-				usage();
+				usage(NULL);
 			}
 		}
 	}
@@ -412,20 +463,21 @@ main(int argc, char *argv[])
 	for (i = 0; i < NPHASES; ++i)
 		phases[i].cmdbase = phases[i].cmd.len;
 	if (inputs.len == 0)
-		usage();
-	if (output && inputs.len / sizeof(char *) > 1 && last != LINK)
-		fatal("cannot specify -o with multiple input files without linking");
-	for (input = inputs.val; input < (char **)((char *)inputs.val + inputs.len); ++input) {
-		if (strcmp(*input, "-l") == 0)
-			++input;
-		else
-			*input = buildobj(*input, output, last);
+		usage(NULL);
+	if (output) {
+		if (strcmp(output, "-") == 0) {
+			if (last >= ASSEMBLE)
+				usage("cannot write object to stdout");
+			output = NULL;
+		} else if (last != LINK && inputs.len > sizeof(*input)) {
+			usage("cannot specify -o with multiple input files without linking");
+		}
 	}
+	for (input = inputs.val; input < (struct input *)((char *)inputs.val + inputs.len); ++input)
+		buildobj(input, output, last);
 	if (last == LINK) {
 		if (!output)
 			output = "a.out";
-		buildexe(inputs.val, inputs.len / sizeof(char *), output);
+		buildexe(inputs.val, inputs.len / sizeof(*input), output);
 	}
-
-	return 0;
 }
