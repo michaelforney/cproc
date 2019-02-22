@@ -18,14 +18,6 @@
 #include "token.h"
 #include "type.h"
 
-struct declaration builtinvalist = {.kind = DECLTYPE, .type = &typevalist};
-struct declaration builtinvastart = {.kind = DECLBUILTIN};
-struct declaration builtinvaarg = {.kind = DECLBUILTIN};
-struct declaration builtinvacopy = {.kind = DECLBUILTIN};
-struct declaration builtinvaend = {.kind = DECLBUILTIN};
-struct declaration builtinoffsetof = {.kind = DECLBUILTIN};
-struct declaration builtinalloca = {.kind = DECLBUILTIN};
-
 static struct list tentativedefns = {&tentativedefns, &tentativedefns};
 
 enum storageclass {

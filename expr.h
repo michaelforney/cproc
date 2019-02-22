@@ -77,12 +77,7 @@ struct expression {
 			struct expression *exprs;
 		} comma;
 		struct {
-			enum {
-				BUILTINVASTART,
-				BUILTINVAARG,
-				BUILTINVAEND,
-				BUILTINALLOCA,
-			} kind;
+			int kind;
 			struct expression *arg;
 		} builtin;
 		struct value *temp;

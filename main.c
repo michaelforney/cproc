@@ -49,13 +49,7 @@ main(int argc, char *argv[])
 			next();
 		}
 	} else {
-		scopeputdecl(&filescope, "__builtin_va_list", &builtinvalist);
-		scopeputdecl(&filescope, "__builtin_va_start", &builtinvastart);
-		scopeputdecl(&filescope, "__builtin_va_copy", &builtinvacopy);
-		scopeputdecl(&filescope, "__builtin_va_arg", &builtinvaarg);
-		scopeputdecl(&filescope, "__builtin_va_end", &builtinvaend);
-		scopeputdecl(&filescope, "__builtin_offsetof", &builtinoffsetof);
-		scopeputdecl(&filescope, "__builtin_alloca", &builtinalloca);
+		scopeinit();
 		while (tok.kind != TEOF) {
 			if (!decl(&filescope, NULL))
 				error(&tok.loc, "expected declaration or function definition");

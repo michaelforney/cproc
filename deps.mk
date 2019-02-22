@@ -10,7 +10,7 @@ init.o: init.c util.h decl.h expr.h init.h pp.h token.h type.h
 main.o: main.c util.h arg.h decl.h pp.h scope.h token.h
 pp.o: pp.c util.h pp.h scan.h token.h
 scan.o: scan.c util.h scan.h token.h
-scope.o: scope.c util.h htab.h scope.h
+scope.o: scope.c util.h decl.h htab.h scope.h type.h
 siphash.o: siphash.c
 stmt.o: stmt.c util.h backend.h decl.h expr.h pp.h scope.h stmt.h token.h \
  type.h

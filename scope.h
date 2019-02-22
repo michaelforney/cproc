@@ -7,6 +7,7 @@ struct scope {
 	struct scope *parent;
 };
 
+void scopeinit(void);
 struct scope *mkscope(struct scope *);
 struct scope *delscope(struct scope *);
 

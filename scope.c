@@ -3,10 +3,33 @@
 #include <stdint.h>
 #include <string.h>
 #include "util.h"
+#include "decl.h"
 #include "htab.h"
 #include "scope.h"
+#include "type.h"
 
 struct scope filescope;
+
+void
+scopeinit(void)
+{
+	static struct builtin {
+		char *name;
+		struct declaration decl;
+	} builtins[] = {
+		{"__builtin_va_list",  {.kind = DECLTYPE, .type = &typevalist}},
+		{"__builtin_va_start", {.kind = DECLBUILTIN, .builtin = BUILTINVASTART}},
+		{"__builtin_va_copy",  {.kind = DECLBUILTIN, .builtin = BUILTINVACOPY}},
+		{"__builtin_va_arg",   {.kind = DECLBUILTIN, .builtin = BUILTINVAARG}},
+		{"__builtin_va_end",   {.kind = DECLBUILTIN, .builtin = BUILTINVAEND}},
+		{"__builtin_offsetof", {.kind = DECLBUILTIN, .builtin = BUILTINOFFSETOF}},
+		{"__builtin_alloca",   {.kind = DECLBUILTIN, .builtin = BUILTINALLOCA}},
+	};
+	struct builtin *b;
+
+	for (b = builtins; b < builtins + LEN(builtins); ++b)
+		scopeputdecl(&filescope, b->name, &b->decl);
+}
 
 struct scope *
 mkscope(struct scope *parent)

@@ -436,30 +436,35 @@ postfixexpr(struct scope *s, struct expression *r)
 		case TLPAREN:  /* function call */
 			next();
 			if (r->kind == EXPRIDENT && r->ident.decl->kind == DECLBUILTIN) {
-				if (r->ident.decl == &builtinvastart) {
+				switch (r->ident.decl->builtin) {
+				case BUILTINVASTART:
 					e = mkexpr(EXPRBUILTIN, &typevoid, 0);
 					e->builtin.kind = BUILTINVASTART;
 					e->builtin.arg = exprconvert(assignexpr(s), &typevalistptr);
 					expect(TCOMMA, "after va_list");
 					free(expect(TIDENT, "after ','"));
 					// XXX: check that this was actually a parameter name?
-				} else if (r->ident.decl == &builtinvaarg) {
+					break;
+				case BUILTINVAARG:
 					e = mkexpr(EXPRBUILTIN, NULL, 0);
 					e->builtin.kind = BUILTINVAARG;
 					e->builtin.arg = exprconvert(assignexpr(s), &typevalistptr);
 					expect(TCOMMA, "after va_list");
 					e->type = typename(s);
-				} else if (r->ident.decl == &builtinvacopy) {
+					break;
+				case BUILTINVACOPY:
 					e = mkexpr(EXPRASSIGN, typevalist.base, 0);
 					e->assign.l = mkunaryexpr(TMUL, exprconvert(assignexpr(s), &typevalistptr));
 					expect(TCOMMA, "after target va_list");
 					e->assign.r = mkunaryexpr(TMUL, exprconvert(assignexpr(s), &typevalistptr));
 					e = exprconvert(e, &typevoid);
-				} else if (r->ident.decl == &builtinvaend) {
+					break;
+				case BUILTINVAEND:
 					e = mkexpr(EXPRBUILTIN, &typevoid, 0);
 					e->builtin.kind = BUILTINVAEND;
 					exprconvert(assignexpr(s), &typevalistptr);
-				} else if (r->ident.decl == &builtinoffsetof) {
+					break;
+				case BUILTINOFFSETOF:
 					t = typename(s);
 					expect(TCOMMA, "after type name");
 					name = expect(TIDENT, "after ','");
@@ -470,11 +475,13 @@ postfixexpr(struct scope *s, struct expression *r)
 						error(&tok.loc, "struct/union has no member named '%s'", name);
 					e = mkconstexpr(&typeulong, offset);
 					free(name);
-				} else if (r->ident.decl == &builtinalloca) {
+					break;
+				case BUILTINALLOCA:
 					e = mkexpr(EXPRBUILTIN, mkpointertype(&typevoid), 0);
 					e->builtin.kind = BUILTINALLOCA;
 					e->builtin.arg = exprconvert(assignexpr(s), &typeulong);
-				} else {
+					break;
+				default:
 					fatal("internal error; unknown builtin");
 				}
 				expect(TRPAREN, "after builtin parameters");
