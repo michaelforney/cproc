@@ -35,16 +35,12 @@ main(int argc, char *argv[])
 		usage();
 	} ARGEND
 
-	if (argc == 1) {
-		if (!freopen(argv[0], "r", stdin))
-			fatal("open %s:", argv[0]);
-	} else if (argc) {
+	if (argc > 1)
 		usage();
-	}
-	if (output) {
-		if (!freopen(output, "w", stdout))
-			fatal("open %s:", output);
-	}
+	if (argc == 1 && !freopen(argv[0], "r", stdin))
+		fatal("open %s:", argv[0]);
+	if (output && !freopen(output, "w", stdout))
+		fatal("open %s:", output);
 
 	ppinit(argc ? argv[0] : "<stdin>");
 	if (pponly) {
