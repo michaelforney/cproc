@@ -830,6 +830,9 @@ funcexpr(struct function *f, struct expression *e)
 		case BUILTINVAEND:
 			/* no-op */
 			break;
+		case BUILTINALLOCA:
+			l = funcexpr(f, e->builtin.arg);
+			return funcinst(f, IALLOC16, &iptr, (struct value *[]){l});
 		default:
 			fatal("internal error: unimplemented builtin");
 		}

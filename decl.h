@@ -31,6 +31,7 @@ extern struct declaration builtinvaarg;
 extern struct declaration builtinvacopy;
 extern struct declaration builtinvaend;
 extern struct declaration builtinoffsetof;
+extern struct declaration builtinalloca;
 
 struct declaration *mkdecl(enum declarationkind, struct type *, enum linkage);
 _Bool decl(struct scope *, struct function *);

@@ -59,6 +59,7 @@ main(int argc, char *argv[])
 		scopeputdecl(&filescope, "__builtin_va_arg", &builtinvaarg);
 		scopeputdecl(&filescope, "__builtin_va_end", &builtinvaend);
 		scopeputdecl(&filescope, "__builtin_offsetof", &builtinoffsetof);
+		scopeputdecl(&filescope, "__builtin_alloca", &builtinalloca);
 		while (tok.kind != TEOF) {
 			if (!decl(&filescope, NULL))
 				error(&tok.loc, "expected declaration or function definition");

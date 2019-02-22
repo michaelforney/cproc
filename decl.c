@@ -24,6 +24,7 @@ struct declaration builtinvaarg = {.kind = DECLBUILTIN};
 struct declaration builtinvacopy = {.kind = DECLBUILTIN};
 struct declaration builtinvaend = {.kind = DECLBUILTIN};
 struct declaration builtinoffsetof = {.kind = DECLBUILTIN};
+struct declaration builtinalloca = {.kind = DECLBUILTIN};
 
 static struct list tentativedefns = {&tentativedefns, &tentativedefns};
 

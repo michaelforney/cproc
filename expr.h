@@ -81,6 +81,7 @@ struct expression {
 				BUILTINVASTART,
 				BUILTINVAARG,
 				BUILTINVAEND,
+				BUILTINALLOCA,
 			} kind;
 			struct expression *arg;
 		} builtin;

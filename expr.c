@@ -443,26 +443,22 @@ postfixexpr(struct scope *s, struct expression *r)
 					expect(TCOMMA, "after va_list");
 					free(expect(TIDENT, "after ','"));
 					// XXX: check that this was actually a parameter name?
-					expect(TRPAREN, "after parameter identifier");
 				} else if (r->ident.decl == &builtinvaarg) {
 					e = mkexpr(EXPRBUILTIN, NULL, 0);
 					e->builtin.kind = BUILTINVAARG;
 					e->builtin.arg = exprconvert(assignexpr(s), &typevalistptr);
 					expect(TCOMMA, "after va_list");
 					e->type = typename(s);
-					expect(TRPAREN, "after typename");
 				} else if (r->ident.decl == &builtinvacopy) {
 					e = mkexpr(EXPRASSIGN, typevalist.base, 0);
 					e->assign.l = mkunaryexpr(TMUL, exprconvert(assignexpr(s), &typevalistptr));
 					expect(TCOMMA, "after target va_list");
 					e->assign.r = mkunaryexpr(TMUL, exprconvert(assignexpr(s), &typevalistptr));
-					expect(TRPAREN, "after source va_list");
 					e = exprconvert(e, &typevoid);
 				} else if (r->ident.decl == &builtinvaend) {
 					e = mkexpr(EXPRBUILTIN, &typevoid, 0);
 					e->builtin.kind = BUILTINVAEND;
 					exprconvert(assignexpr(s), &typevalistptr);
-					expect(TRPAREN, "after va_list");
 				} else if (r->ident.decl == &builtinoffsetof) {
 					t = typename(s);
 					expect(TCOMMA, "after type name");
@@ -474,10 +470,14 @@ postfixexpr(struct scope *s, struct expression *r)
 						error(&tok.loc, "struct/union has no member named '%s'", name);
 					e = mkconstexpr(&typeulong, offset);
 					free(name);
-					expect(TRPAREN, "after member name");
+				} else if (r->ident.decl == &builtinalloca) {
+					e = mkexpr(EXPRBUILTIN, mkpointertype(&typevoid), 0);
+					e->builtin.kind = BUILTINALLOCA;
+					e->builtin.arg = exprconvert(assignexpr(s), &typeulong);
 				} else {
 					fatal("internal error; unknown builtin");
 				}
+				expect(TRPAREN, "after builtin parameters");
 				break;
 			}
 			lvalueconvert(r);
