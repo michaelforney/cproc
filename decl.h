@@ -20,6 +20,7 @@ enum builtinkind {
 	BUILTINVAEND,
 	BUILTINOFFSETOF,
 	BUILTINALLOCA,
+	BUILTININFF,
 };
 
 struct declaration {

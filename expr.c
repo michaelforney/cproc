@@ -481,6 +481,11 @@ postfixexpr(struct scope *s, struct expression *r)
 					e->builtin.kind = BUILTINALLOCA;
 					e->builtin.arg = exprconvert(assignexpr(s), &typeulong);
 					break;
+				case BUILTININFF:
+					e = mkexpr(EXPRCONST, &typefloat, 0);
+					/* TODO: use INFINITY here when we can handle musl's math.h */
+					e->constant.f = strtod("inf", NULL);
+					break;
 				default:
 					fatal("internal error; unknown builtin");
 				}
