@@ -60,8 +60,8 @@ main(int argc, char *argv[])
 			if (!decl(&filescope, NULL))
 				error(&tok.loc, "expected declaration or function definition");
 		}
+		emittentativedefns();
 	}
-	emittentativedefns();
 
 	return 0;
 }
