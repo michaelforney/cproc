@@ -450,6 +450,14 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->builtin.kind = BUILTINALLOCA;
 		e->builtin.arg = exprconvert(assignexpr(s), &typeulong);
 		break;
+	case BUILTINNANF:
+		e = assignexpr(s);
+		if (!(e->flags & EXPRFLAG_DECAYED) || e->unary.base->kind != EXPRSTRING || e->unary.base->string.size > 0)
+			error(&tok.loc, "__builtin_nanf currently only supports empty string literals");
+		e = mkexpr(EXPRCONST, &typefloat, 0);
+		/* TODO: use NAN here when we can handle musl's math.h */
+		e->constant.f = strtod("nan", NULL);
+		break;
 	case BUILTININFF:
 		e = mkexpr(EXPRCONST, &typefloat, 0);
 		/* TODO: use INFINITY here when we can handle musl's math.h */

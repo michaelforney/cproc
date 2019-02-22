@@ -1,0 +1,1 @@
+export data $x = align 4 { s s_nan, }

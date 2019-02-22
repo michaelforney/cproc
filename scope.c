@@ -24,6 +24,7 @@ scopeinit(void)
 		{"__builtin_va_end",   {.kind = DECLBUILTIN, .builtin = BUILTINVAEND}},
 		{"__builtin_offsetof", {.kind = DECLBUILTIN, .builtin = BUILTINOFFSETOF}},
 		{"__builtin_alloca",   {.kind = DECLBUILTIN, .builtin = BUILTINALLOCA}},
+		{"__builtin_nanf",     {.kind = DECLBUILTIN, .builtin = BUILTINNANF}},
 		{"__builtin_inff",     {.kind = DECLBUILTIN, .builtin = BUILTININFF}},
 	};
 	struct builtin *b;
