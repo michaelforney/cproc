@@ -165,7 +165,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expression *l, stru
 			break;
 		}
 		if (r->type->kind == TYPEPOINTER)
-			e = l, l = r, r = e;
+			e = l, l = r, r = e, rp = lp;
 		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT))
 			error(loc, "invalid operands to '+' operator");
 		t = l->type;
