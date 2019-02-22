@@ -100,9 +100,9 @@ changeext(const char *name, const char *ext)
 	size_t baselen;
 
 	slash = strrchr(name, '/');
-	if (!slash)
-		slash = name;
-	dot = strrchr(slash, '.');
+	if (slash)
+		name = slash + 1;
+	dot = strrchr(name, '.');
 	baselen = dot ? (size_t)(--dot - name + 1) : strlen(name);
 	result = xmalloc(baselen + strlen(ext) + 2);
 	memcpy(result, name, baselen);
