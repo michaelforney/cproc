@@ -882,7 +882,7 @@ funcinit(struct function *func, struct declaration *d, struct initializer *init)
 	for (; init; init = init->next) {
 		zero(func, d->value, d->type->align, offset, init->start);
 		if (init->expr->kind == EXPRSTRING) {
-			for (i = 0; i <= init->expr->string.size && i < init->end - init->start; ++i) {
+			for (i = 0; i < init->expr->string.size && i < init->end - init->start; ++i) {
 				dst = funcinst(func, IADD, &iptr, (struct value *[]){d->value, mkintconst(&iptr, init->start + i)});
 				funcinst(func, ISTOREB, NULL, (struct value *[]){mkintconst(&i8, init->expr->string.data[i]), dst});
 			}
