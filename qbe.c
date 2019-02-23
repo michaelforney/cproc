@@ -886,12 +886,13 @@ funcinit(struct function *func, struct declaration *d, struct initializer *init)
 				dst = funcinst(func, IADD, &iptr, (struct value *[]){d->value, mkintconst(&iptr, init->start + i)});
 				funcinst(func, ISTOREB, NULL, (struct value *[]){mkintconst(&i8, init->expr->string.data[i]), dst});
 			}
+			offset += i;
 		} else {
 			dst = funcinst(func, IADD, &iptr, (struct value *[]){d->value, mkintconst(&iptr, init->start)});
 			src = funcexpr(func, init->expr);
 			funcstore(func, init->expr->type, dst, src);
+			offset = init->end;
 		}
-		offset = init->end;
 	}
 	zero(func, d->value, d->type->align, offset, d->type->size);
 }
