@@ -249,7 +249,7 @@ parseinit(struct scope *s, struct type *t)
 					if (!typecompatible(expr->type->base, base))
 						error(&tok.loc, "array initializer is string literal with incompatible type");
 					if (t->incomplete)
-						updatearray(t, expr->string.size + 1);
+						updatearray(t, expr->string.size);
 					goto add;
 				}
 				break;
