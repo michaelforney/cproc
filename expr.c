@@ -88,8 +88,10 @@ mkunaryexpr(enum tokenkind op, struct expression *base)
 
 	switch (op) {
 	case TBAND:
-		if (base->flags & EXPRFLAG_DECAYED)
+		if (base->flags & EXPRFLAG_DECAYED) {
+			base->flags &= ~EXPRFLAG_DECAYED;
 			return base;
+		}
 		expr = mkexpr(EXPRUNARY, mkpointertype(base->type), 0);
 		expr->unary.op = op;
 		expr->unary.base = base;
