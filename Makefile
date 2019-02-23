@@ -17,7 +17,7 @@ config.h:
 	@cp config.def.h $@
 
 cc: $(DRIVER_OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(DRIVER_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $(DRIVER_OBJ)
 
 SRC=\
 	decl.c\
@@ -63,6 +63,7 @@ qbe.o     : $(srcdir)/qbe.c     $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
 stage2: cc cc-qbe
 	@mkdir -p $@
 	$(MAKE) -C $@ -f ../$(srcdir)/Makefile srcdir=../$(srcdir) stagedeps='../cc ../cc-qbe' CC=../cc
+
 .PHONY: stage3
 stage3: stage2
 	@mkdir -p $@
