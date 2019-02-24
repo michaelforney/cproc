@@ -14,8 +14,11 @@ static char *endfiles[] = {
 static char *preprocesscmd[] = {
 		"cpp", "-P",
 
-		/* prevent libc from using GNU C extensions */
-		"-U", "__GNUC__",
+		/* specify the GNU C extensions we support */
+		"-U", "__GNUC__", "-D", "__GNUC__=4",
+
+		/* prevent glibc from using statement expressions for assert */
+		"-D", "__STRICT_ANSI__",
 
 		/* required for glibc headers */
 		"-D", "__restrict=restrict",
