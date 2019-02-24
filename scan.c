@@ -233,10 +233,31 @@ stringlit(struct scanner *s)
 	}
 }
 
+static bool
+comment(struct scanner *s)
+{
+	int last;
+
+	switch (s->chr) {
+	case '/':  /* C++-style comment */
+		do nextchar(s);
+		while (s->chr != '\n');
+		return true;
+	case '*':  /* C-style comment */
+		nextchar(s);
+		do last = s->chr, nextchar(s);
+		while (last != '*' || s->chr != '/');
+		nextchar(s);
+		return true;
+	default:
+		return false;
+	}
+}
+
 static int
 scankind(struct scanner *s)
 {
-	int tok;
+	enum tokenkind tok;
 	struct location loc;
 
 again:
@@ -275,7 +296,10 @@ again:
 		nextchar(s);
 		return TARROW;
 	case '/':
-		return op2(s, TDIV, TDIVASSIGN);
+		tok = op2(s, TDIV, TDIVASSIGN);
+		if (tok == TDIV && comment(s))
+			goto again;
+		return tok;
 	case '<':
 		return op4(s, TLESS, TLEQ, TSHL, TSHLASSIGN);
 	case '=':
