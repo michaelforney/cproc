@@ -57,5 +57,8 @@ main(int argc, char *argv[])
 		emittentativedefns();
 	}
 
+	fflush(stdout);
+	if (ferror(stdout))
+		fatal("write failed");
 	return 0;
 }
