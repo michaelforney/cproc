@@ -15,10 +15,9 @@ struct buffer {
 
 struct scanner {
 	int chr;
-	struct token next;
+	bool usebuf;
 	struct location loc;
 	struct buffer buf;
-	bool usebuf;
 };
 
 static void
