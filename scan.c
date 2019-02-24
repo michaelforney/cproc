@@ -47,13 +47,25 @@ bufget(struct buffer *b)
 static void
 nextchar(struct scanner *s)
 {
+	int c;
+
 	if (s->usebuf)
 		bufadd(&s->buf, s->chr);
-	s->chr = getchar();
-	if (s->chr == '\n')
+	for (;;) {
+		s->chr = getchar();
+		if (s->chr == '\n')
+			++s->loc.line, s->loc.col = 1;
+		else
+			++s->loc.col;
+		if (s->chr != '\\')
+			break;
+		c = getchar();
+		if (c != '\n') {
+			ungetc(c, stdin);
+			break;
+		}
 		++s->loc.line, s->loc.col = 1;
-	else
-		++s->loc.col;
+	}
 }
 
 static int
