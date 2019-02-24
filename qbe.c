@@ -383,6 +383,11 @@ mkfunc(char *name, struct type *t, struct scope *s)
 	d = mkdecl(DECLOBJECT, t, LINKNONE);
 	d->value = mkglobal("__func__", true);
 	scopeputdecl(s, "__func__", d);
+	/*
+	needed for glibc's assert definition with __GNUC__=4
+	XXX: this should also work at file scope, where it should evaluate to "toplevel"
+	*/
+	scopeputdecl(s, "__PRETTY_FUNCTION__", d);
 	f->namedecl = d;
 
 	funclabel(f, mkblock("body"));
