@@ -212,7 +212,7 @@ tagspec(struct scope *s)
 			scopeputdecl(s, tok.lit, d);
 			next();
 			if (consume(TASSIGN))
-				i = intconstexpr(s);
+				i = intconstexpr(s, true);
 			d->value = mkintconst(t->repr, i);
 			if (!consume(TCOMMA))
 				break;
@@ -336,7 +336,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspecifier *fs, int *a
 			if (t) {
 				*align = t->align;
 			} else {
-				i = intconstexpr(s);
+				i = intconstexpr(s, false);
 				if (!i || i & (i - 1) || i > 16)
 					error(&tok.loc, "invalid alignment: %d", i);
 				*align = (int)i;
@@ -511,7 +511,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				i = 0;
 				next();
 			} else {
-				i = intconstexpr(s);
+				i = intconstexpr(s, false);
 				expect(TRBRACK, "after array length");
 			}
 			if (tq) {
@@ -712,7 +712,7 @@ decl(struct scope *s, struct function *f)
 
 	if (consume(T_STATIC_ASSERT)) {
 		expect(TLPAREN, "after _Static_assert");
-		c = intconstexpr(s);
+		c = intconstexpr(s, true);
 		expect(TCOMMA, "after static assertion expression");
 		expect(TSTRINGLIT, "after static assertion expression");
 		if (!c)

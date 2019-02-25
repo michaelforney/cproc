@@ -847,13 +847,15 @@ condexpr(struct scope *s)
 }
 
 uint64_t
-intconstexpr(struct scope *s)
+intconstexpr(struct scope *s, bool allowneg)
 {
 	struct expression *e;
 
 	e = eval(condexpr(s));
 	if (e->kind != EXPRCONST || !(typeprop(e->type) & PROPINT))
 		error(&tok.loc, "not an integer constant expression");
+	if (!allowneg && e->type->basic.issigned && e->constant.i > INT64_MAX)
+		error(&tok.loc, "integer constant expression cannot be negative");
 	return e->constant.i;
 }
 

@@ -129,7 +129,7 @@ designator(struct scope *s, struct initparser *p)
 			if (t->kind != TYPEARRAY)
 				error(&tok.loc, "index designator is only valid for array types");
 			next();
-			p->sub->idx = intconstexpr(s);
+			p->sub->idx = intconstexpr(s, false);
 			if (t->incomplete)
 				updatearray(t, p->sub->idx);
 			else if (p->sub->idx >= t->array.length)

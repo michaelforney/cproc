@@ -52,7 +52,7 @@ stmt(struct function *f, struct scope *s)
 			error(&tok.loc, "'case' label must be in switch");
 		label[0] = mkblock("switch_case");
 		funclabel(f, label[0]);
-		i = intconstexpr(s);
+		i = intconstexpr(s, true);
 		switchcase(s->switchcases, i, label[0]);
 		expect(TCOLON, "after case expression");
 		stmt(f, s);
