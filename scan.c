@@ -16,9 +16,13 @@ struct buffer {
 struct scanner {
 	int chr;
 	bool usebuf;
+	FILE *file;
 	struct location loc;
 	struct buffer buf;
+	struct scanner *next;
 };
+
+static struct scanner *scanner;
 
 static void
 bufadd(struct buffer *b, char c)
@@ -51,16 +55,16 @@ nextchar(struct scanner *s)
 	if (s->usebuf)
 		bufadd(&s->buf, s->chr);
 	for (;;) {
-		s->chr = getchar();
+		s->chr = getc(s->file);
 		if (s->chr == '\n')
 			++s->loc.line, s->loc.col = 1;
 		else
 			++s->loc.col;
 		if (s->chr != '\\')
 			break;
-		c = getchar();
+		c = getc(s->file);
 		if (c != '\n') {
-			ungetc(c, stdin);
+			ungetc(c, s->file);
 			break;
 		}
 		++s->loc.line, s->loc.col = 1;
@@ -337,7 +341,7 @@ again:
 		loc = s->loc;
 		nextchar(s);
 		if (s->chr != '.') {
-			ungetc(s->chr, stdout);
+			ungetc(s->chr, s->file);
 			s->loc = loc;
 			s->chr = '.';
 			return TPERIOD;
@@ -372,32 +376,48 @@ again:
 	}
 }
 
-struct scanner *
-mkscanner(const char *file)
+int
+scanfrom(const char *name)
 {
 	struct scanner *s;
+	FILE *file;
 
+	if (name) {
+		file = fopen(name, "r");
+		if (!file)
+			return -1;
+	} else {
+		file = stdin;
+		name = "<stdin>";
+	}
 	s = xmalloc(sizeof(*s));
+	s->file = file;
 	s->buf.str = NULL;
 	s->buf.len = 0;
 	s->buf.cap = 0;
 	s->usebuf = false;
-	s->loc.file = file;
+	s->loc.file = name;
 	s->loc.line = 1;
 	s->loc.col = 0;
+	s->next = scanner;
+	scanner = s;
 	nextchar(s);
-
-	return s;
+	return 0;
 }
 
 void
-scan(struct scanner *s, struct token *t)
+scan(struct token *t)
 {
-	t->loc = s->loc;
-	t->kind = scankind(s);
-	if (s->usebuf) {
-		t->lit = bufget(&s->buf);
-		s->usebuf = false;
+	for (;;) {
+		t->loc = scanner->loc;
+		t->kind = scankind(scanner);
+		if (t->kind != TEOF || !scanner->next)
+			break;
+		scanner = scanner->next;
+	}
+	if (scanner->usebuf) {
+		t->lit = bufget(&scanner->buf);
+		scanner->usebuf = false;
 	} else {
 		t->lit = NULL;
 	}

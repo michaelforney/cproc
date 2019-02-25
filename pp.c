@@ -8,7 +8,6 @@
 #include "scan.h"
 #include "token.h"
 
-static struct scanner *scanner;
 static struct token pending;
 
 static void
@@ -85,14 +84,15 @@ keyword(struct token *tok)
 void
 ppinit(const char *file)
 {
-	scanner = mkscanner(file);
+	if (scanfrom(file) < 0)
+		fatal("open %s:", file);
 	next();
 }
 
 static void
 nextinto(struct token *t)
 {
-	do scan(scanner, t);
+	do scan(t);
 	while (t->kind == TNEWLINE);
 	if (t->kind == TIDENT)
 		keyword(t);
