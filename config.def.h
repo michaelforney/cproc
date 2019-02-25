@@ -28,6 +28,9 @@ static char *preprocesscmd[] = {
 
 		/* required for kernel headers */
 		"-D", "__signed__=signed",
+
+		/* required for binutils */
+		"-D", "__alignof__=_Alignof",
 };
 static char *compilecmd[] = {"cc-qbe"};
 static char *codegencmd[] = {"qbe"};
