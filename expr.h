@@ -91,5 +91,4 @@ struct expression *assignexpr(struct scope *);
 uint64_t intconstexpr(struct scope *, _Bool);
 void delexpr(struct expression *);
 
-void exprpromote(struct expression **);  // XXX: move to type
 struct expression *exprconvert(struct expression *, struct type *);
