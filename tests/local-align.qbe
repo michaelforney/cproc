@@ -3,5 +3,12 @@ function $f() {
 @start.1
 	%.1 =l alloc16 4
 @body.2
+	storeb 0, %.1
+	%.2 =l add %.1, 1
+	storeb 0, %.2
+	%.3 =l add %.1, 2
+	storeb 0, %.3
+	%.4 =l add %.1, 3
+	storeb 0, %.4
 	ret
 }

@@ -420,6 +420,13 @@ funcjnz(struct function *f, struct value *v, struct value *l1, struct value *l2)
 void
 funcret(struct function *f, struct value *v)
 {
+	struct declaration *d;
+
+	if (!v && f->type->base->kind != TYPEVOID) {
+		d = mkdecl(DECLOBJECT, f->type->base, LINKNONE);
+		funcinit(f, d, NULL);
+		v = funcload(f, d->type, d->value);
+	}
 	funcinst(f, IRET, NULL, (struct value *[]){v});
 	f->end->terminated = true;
 }
@@ -882,8 +889,6 @@ funcinit(struct function *func, struct declaration *d, struct initializer *init)
 	size_t i;
 
 	funcalloc(func, d);
-	if (!init)
-		return;
 	for (; init; init = init->next) {
 		zero(func, d->value, d->type->align, offset, init->start);
 		if (init->expr->kind == EXPRSTRING) {
@@ -1094,7 +1099,7 @@ emitfunc(struct function *f, bool global)
 	size_t n;
 
 	if (!f->end->terminated)
-		funcret(f, strcmp(f->name, "main") == 0 ? mkintconst(&i32, 0) : NULL);
+		funcret(f, NULL);
 	if (global)
 		puts("export");
 	fputs("function ", stdout);

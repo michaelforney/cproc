@@ -3,5 +3,6 @@ function $f() {
 @start.1
 	%.1 =l alloc8 8
 @body.2
+	storel 0, %.1
 	ret
 }
