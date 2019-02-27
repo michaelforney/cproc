@@ -1,0 +1,54 @@
+export
+function w $f() {
+@start.1
+@body.2
+	storew 1, $v
+	ret 0
+}
+export
+function w $main() {
+@start.3
+	%.1 =l alloc4 4
+	%.3 =l alloc8 8
+@body.4
+	%.2 =l add %.1, 0
+	storew 123, %.2
+	%.4 =l add %.3, 0
+	storel %.1, %.4
+	%.5 =w loadsw %.1
+	%.6 =w cnew %.5, 123
+	%.7 =w cnew %.6, 0
+	jnz %.7, @if_true.5, @if_false.6
+@if_true.5
+	ret 1
+@if_false.6
+	%.8 =l loadl %.3
+	%.9 =w loadsw %.8
+	%.10 =w cnew %.9, 123
+	%.11 =w cnew %.10, 0
+	jnz %.11, @if_true.7, @if_false.8
+@if_true.7
+	ret 2
+@if_false.8
+	%.12 =w cnel 8, 8
+	%.13 =w cnew %.12, 0
+	jnz %.13, @if_true.9, @if_false.10
+@if_true.9
+	ret 3
+@if_false.10
+	%.14 =w cnel 4, 4
+	%.15 =w cnew %.14, 0
+	jnz %.15, @if_true.11, @if_false.12
+@if_true.11
+	ret 4
+@if_false.12
+	%.16 =w loadsw $v
+	%.17 =w cnew %.16, 0
+	%.18 =w cnew %.17, 0
+	jnz %.18, @if_true.13, @if_false.14
+@if_true.13
+	ret 5
+@if_false.14
+	ret 0
+}
+export data $v = align 4 { z 4 }

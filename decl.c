@@ -325,6 +325,15 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspecifier *fs, int *a
 			++ntypes;
 			next();
 			break;
+		case T__TYPEOF__:
+			next();
+			expect(TLPAREN, "after '__typeof__'");
+			t = typename(s);
+			if (!t)
+				t = expr(s)->type;
+			++ntypes;
+			expect(TRPAREN, "to close '__typeof__'");
+			break;
 
 		/* 6.7.5 Alignment specifier */
 		case T_ALIGNAS:

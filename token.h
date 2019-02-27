@@ -54,6 +54,7 @@ enum tokenkind {
 	T_NORETURN,
 	T_STATIC_ASSERT,
 	T_THREAD_LOCAL,
+	T__TYPEOF__,
 
 	/* punctuator */
 	TLBRACK,
