@@ -139,7 +139,7 @@ static struct {
 };
 
 static struct value *
-funcinst(struct function *f, int op, struct representation *repr, struct value *args[])
+funcinstn(struct function *f, int op, struct representation *repr, struct value *args[])
 {
 	struct instruction *inst;
 	size_t n;
@@ -167,6 +167,8 @@ funcinst(struct function *f, int op, struct representation *repr, struct value *
 
 	return instdesc[op].ret ? &inst->res : NULL;
 }
+
+#define funcinst(f, op, repr, ...) funcinstn(f, op, repr, (struct value *[]){__VA_ARGS__})
 
 struct value *
 mkintconst(struct representation *r, uint64_t n)
@@ -274,17 +276,17 @@ funcstore(struct function *f, struct type *t, struct value *addr, struct value *
 		dst = addr;
 		align = mkintconst(&iptr, t->align);
 		for (offset = 0; offset < t->size; offset += t->align) {
-			tmp = funcinst(f, loadop, &iptr, (struct value *[]){src});
-			funcinst(f, op, NULL, (struct value *[]){tmp, dst});
-			src = funcinst(f, IADD, &iptr, (struct value *[]){src, align});
-			dst = funcinst(f, IADD, &iptr, (struct value *[]){dst, align});
+			tmp = funcinst(f, loadop, &iptr, src);
+			funcinst(f, op, NULL, tmp, dst);
+			src = funcinst(f, IADD, &iptr, src, align);
+			dst = funcinst(f, IADD, &iptr, dst, align);
 		}
 		return;
 	}
 	default:
 		fatal("unimplemented store");
 	}
-	funcinst(f, op, NULL, (struct value *[]){v, addr});
+	funcinst(f, op, NULL, v, addr);
 }
 
 static struct value *
@@ -319,7 +321,7 @@ funcload(struct function *f, struct type *t, struct value *addr)
 	default:
 		fatal("unimplemented load %d", t->kind);
 	}
-	return funcinst(f, op, t->repr, (struct value *[]){addr});
+	return funcinst(f, op, t->repr, addr);
 }
 
 struct value *
@@ -406,14 +408,14 @@ funclabel(struct function *f, struct value *v)
 void
 funcjmp(struct function *f, struct value *v)
 {
-	funcinst(f, IJMP, NULL, (struct value *[]){v});
+	funcinst(f, IJMP, NULL, v);
 	f->end->terminated = true;
 }
 
 void
 funcjnz(struct function *f, struct value *v, struct value *l1, struct value *l2)
 {
-	funcinst(f, IJNZ, NULL, (struct value *[]){v, l1, l2});
+	funcinstn(f, IJNZ, NULL, (struct value *[]){v, l1, l2});
 	f->end->terminated = true;
 }
 
@@ -427,7 +429,7 @@ funcret(struct function *f, struct value *v)
 		funcinit(f, d, NULL);
 		v = funcload(f, d->type, d->value);
 	}
-	funcinst(f, IRET, NULL, (struct value *[]){v});
+	funcinst(f, IRET, NULL, v);
 	f->end->terminated = true;
 }
 
@@ -481,7 +483,7 @@ objectaddr(struct function *f, struct expression *e)
 	default:
 		if (e->type->kind != TYPESTRUCT && e->type->kind != TYPEUNION)
 			break;
-		return funcinst(f, ICOPY, &iptr, (struct value *[]){funcexpr(f, e)});
+		return funcinst(f, ICOPY, &iptr, funcexpr(f, e));
 	}
 	error(&tok.loc, "expression is not an object");
 }
@@ -493,30 +495,30 @@ utof(struct function *f, struct representation *r, struct value *v)
 	struct value *odd, *big, *phi[5] = {0}, *join;
 
 	if (v->repr->base == 'w') {
-		v = funcinst(f, IEXTUW, &i64, (struct value *[]){v});
-		return funcinst(f, ISLTOF, r, (struct value *[]){v});
+		v = funcinst(f, IEXTUW, &i64, v);
+		return funcinst(f, ISLTOF, r, v);
 	}
 
 	phi[0] = mkblock("utof_small");
 	phi[2] = mkblock("utof_big");
 	join = mkblock("utof_join");
 
-	big = funcinst(f, ICSLTL, &i32, (struct value *[]){v, mkintconst(&i64, 0)});
+	big = funcinst(f, ICSLTL, &i32, v, mkintconst(&i64, 0));
 	funcjnz(f, big, phi[2], phi[0]);
 
 	funclabel(f, phi[0]);
-	phi[1] = funcinst(f, ISLTOF, r, (struct value *[]){v});
+	phi[1] = funcinst(f, ISLTOF, r, v);
 	funcjmp(f, join);
 
 	funclabel(f, phi[2]);
-	odd = funcinst(f, IAND, &i64, (struct value *[]){v, mkintconst(&i64, 1)});
-	v = funcinst(f, ISHR, &i64, (struct value *[]){v, mkintconst(&i64, 1)});
-	v = funcinst(f, IOR, &i64, (struct value *[]){v, odd});  /* round to odd */
-	v = funcinst(f, ISLTOF, r, (struct value *[]){v});
-	phi[3] = funcinst(f, IADD, r, (struct value *[]){v, v});
+	odd = funcinst(f, IAND, &i64, v, mkintconst(&i64, 1));
+	v = funcinst(f, ISHR, &i64, v, mkintconst(&i64, 1));
+	v = funcinst(f, IOR, &i64, v, odd);  /* round to odd */
+	v = funcinst(f, ISLTOF, r, v);
+	phi[3] = funcinst(f, IADD, r, v, v);
 
 	funclabel(f, join);
-	return funcinst(f, IPHI, r, phi);
+	return funcinstn(f, IPHI, r, phi);
 }
 
 static struct value *
@@ -526,8 +528,8 @@ ftou(struct function *f, struct representation *r, struct value *v)
 	enum instructionkind op = v->repr->base == 's' ? ISTOSI : IDTOSI;
 
 	if (r->base == 'w') {
-		v = funcinst(f, op, &i64, (struct value *[]){v});
-		return funcinst(f, ICOPY, r, (struct value *[]){v});
+		v = funcinst(f, op, &i64, v);
+		return funcinst(f, ICOPY, r, v);
 	}
 
 	phi[0] = mkblock("ftou_small");
@@ -537,20 +539,20 @@ ftou(struct function *f, struct representation *r, struct value *v)
 	maxflt = mkfltconst(v->repr, 0x1p63);
 	maxint = mkintconst(&i64, 1ull<<63);
 
-	big = funcinst(f, v->repr->base == 's' ? ICGES : ICGED, &i32, (struct value *[]){v, maxflt});
+	big = funcinst(f, v->repr->base == 's' ? ICGES : ICGED, &i32, v, maxflt);
 	funcjnz(f, big, phi[2], phi[0]);
 
 	funclabel(f, phi[0]);
-	phi[1] = funcinst(f, op, r, (struct value *[]){v});
+	phi[1] = funcinst(f, op, r, v);
 	funcjmp(f, join);
 
 	funclabel(f, phi[2]);
-	v = funcinst(f, ISUB, v->repr, (struct value *[]){v, maxflt});
-	v = funcinst(f, op, r, (struct value *[]){v});
-	phi[3] = funcinst(f, IXOR, r, (struct value *[]){v, maxint});
+	v = funcinst(f, ISUB, v->repr, v, maxflt);
+	v = funcinst(f, op, r, v);
+	phi[3] = funcinst(f, IXOR, r, v, maxint);
 
 	funclabel(f, join);
-	return funcinst(f, IPHI, r, phi);
+	return funcinstn(f, IPHI, r, phi);
 }
 
 static struct value *
@@ -563,7 +565,7 @@ extend(struct function *f, struct type *t, struct value *v)
 	case 2: op = t->basic.issigned ? IEXTSH : IEXTUH; break;
 	default: return v;
 	}
-	return funcinst(f, op, &i32, (struct value *[]){v});
+	return funcinst(f, op, &i32, v);
 }
 
 struct value *
@@ -605,7 +607,7 @@ funcexpr(struct function *f, struct expression *e)
 			r = mkfltconst(e->type->repr, 1);
 		else
 			fatal("not a scalar");
-		v = funcinst(f, e->incdec.op == TINC ? IADD : ISUB, e->type->repr, (struct value *[]){l, r});
+		v = funcinst(f, e->incdec.op == TINC ? IADD : ISUB, e->type->repr, l, r);
 		funcstore(f, e->type, addr, v);
 		return e->incdec.post ? l : v;
 	case EXPRCALL:
@@ -619,7 +621,7 @@ funcexpr(struct function *f, struct expression *e)
 		if (e->call.func->type->base->func.isvararg)
 			*argval++ = &ellipsis;
 		*argval = NULL;
-		return funcinst(f, ICALL, e->type == &typevoid ? NULL : e->type->repr, argvals);
+		return funcinstn(f, ICALL, e->type == &typevoid ? NULL : e->type->repr, argvals);
 		//if (e->call.func->type->base->func.isnoreturn)
 		//	funcret(f, NULL);
 	case EXPRUNARY:
@@ -689,7 +691,7 @@ funcexpr(struct function *f, struct expression *e)
 					op = ICOPY;
 			}
 		}
-		return funcinst(f, op, dst->repr, (struct value *[]){l, r});
+		return funcinst(f, op, dst->repr, l, r);
 	}
 	case EXPRBINARY:
 		if (e->binary.op == TLOR || e->binary.op == TLAND) {
@@ -706,7 +708,7 @@ funcexpr(struct function *f, struct expression *e)
 			r = funcexpr(f, e->binary.r);
 			label[3] = (struct value *)f->end;
 			funclabel(f, label[1]);
-			return funcinst(f, IPHI, e->type->repr, (struct value *[]){label[2], l, label[3], r, NULL});
+			return funcinstn(f, IPHI, e->type->repr, (struct value *[]){label[2], l, label[3], r, NULL});
 		}
 		l = funcexpr(f, e->binary.l);
 		r = funcexpr(f, e->binary.r);
@@ -795,7 +797,7 @@ funcexpr(struct function *f, struct expression *e)
 		}
 		if (op == INONE)
 			fatal("internal error; unimplemented binary expression");
-		return funcinst(f, op, e->type->repr, (struct value *[]){l, r});
+		return funcinst(f, op, e->type->repr, l, r);
 	case EXPRCOND:
 		label[0] = mkblock("cond_true");
 		label[1] = mkblock("cond_false");
@@ -816,7 +818,7 @@ funcexpr(struct function *f, struct expression *e)
 		funclabel(f, label[2]);
 		if (e->type == &typevoid)
 			return NULL;
-		return funcinst(f, IPHI, e->type->repr, (struct value *[]){label[3], l, label[4], r, NULL});
+		return funcinstn(f, IPHI, e->type->repr, (struct value *[]){label[3], l, label[4], r, NULL});
 	case EXPRASSIGN:
 		r = funcexpr(f, e->assign.r);
 		if (e->assign.l->kind == EXPRTEMP) {
@@ -834,17 +836,17 @@ funcexpr(struct function *f, struct expression *e)
 		switch (e->builtin.kind) {
 		case BUILTINVASTART:
 			l = funcexpr(f, e->builtin.arg);
-			funcinst(f, IVASTART, NULL, (struct value *[]){l});
+			funcinst(f, IVASTART, NULL, l);
 			break;
 		case BUILTINVAARG:
 			l = funcexpr(f, e->builtin.arg);
-			return funcinst(f, IVAARG, e->type->repr, (struct value *[]){l});
+			return funcinst(f, IVAARG, e->type->repr, l);
 		case BUILTINVAEND:
 			/* no-op */
 			break;
 		case BUILTINALLOCA:
 			l = funcexpr(f, e->builtin.arg);
-			return funcinst(f, IALLOC16, &iptr, (struct value *[]){l});
+			return funcinst(f, IALLOC16, &iptr, l);
 		default:
 			fatal("internal error: unimplemented builtin");
 		}
@@ -872,8 +874,8 @@ zero(struct function *func, struct value *addr, int align, uint64_t offset, uint
 
 	while (offset < end) {
 		if ((align - (offset & align - 1)) & a) {
-			tmp = offset ? funcinst(func, IADD, &iptr, (struct value *[]){addr, mkintconst(&iptr, offset)}) : addr;
-			funcinst(func, store[a], NULL, (struct value *[]){&z, tmp});
+			tmp = offset ? funcinst(func, IADD, &iptr, addr, mkintconst(&iptr, offset)) : addr;
+			funcinst(func, store[a], NULL, &z, tmp);
 			offset += a;
 		}
 		if (a < align)
@@ -893,12 +895,12 @@ funcinit(struct function *func, struct declaration *d, struct initializer *init)
 		zero(func, d->value, d->type->align, offset, init->start);
 		if (init->expr->kind == EXPRSTRING) {
 			for (i = 0; i < init->expr->string.size && i < init->end - init->start; ++i) {
-				dst = funcinst(func, IADD, &iptr, (struct value *[]){d->value, mkintconst(&iptr, init->start + i)});
-				funcinst(func, ISTOREB, NULL, (struct value *[]){mkintconst(&i8, init->expr->string.data[i]), dst});
+				dst = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start + i));
+				funcinst(func, ISTOREB, NULL, mkintconst(&i8, init->expr->string.data[i]), dst);
 			}
 			offset += i;
 		} else {
-			dst = funcinst(func, IADD, &iptr, (struct value *[]){d->value, mkintconst(&iptr, init->start)});
+			dst = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start));
 			src = funcexpr(func, init->expr);
 			funcstore(func, init->expr->type, dst, src);
 			offset = init->end;
@@ -922,10 +924,10 @@ casesearch(struct function *f, struct value *v, struct switchcase *c, struct val
 
 	// XXX: linear search if c->node.height < 4
 	key = mkintconst(&i64, c->node.key);
-	res = funcinst(f, ICEQW, &i32, (struct value *[]){v, key});
+	res = funcinst(f, ICEQW, &i32, v, key);
 	funcjnz(f, res, c->body, label[0]);
 	funclabel(f, label[0]);
-	res = funcinst(f, ICULTW, typeint.repr, (struct value *[]){v, key});
+	res = funcinst(f, ICULTW, typeint.repr, v, key);
 	funcjnz(f, res, label[1], label[2]);
 	funclabel(f, label[1]);
 	casesearch(f, v, c->node.child[0], defaultlabel);
