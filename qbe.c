@@ -865,7 +865,7 @@ zero(struct function *func, struct value *addr, int align, uint64_t offset, uint
 
 	while (offset < end) {
 		if ((align - (offset & align - 1)) & a) {
-			tmp = funcinst(func, IADD, &iptr, (struct value *[]){addr, mkintconst(&iptr, offset)});
+			tmp = offset ? funcinst(func, IADD, &iptr, (struct value *[]){addr, mkintconst(&iptr, offset)}) : addr;
 			funcinst(func, store[a], NULL, (struct value *[]){&z, tmp});
 			offset += a;
 		}
