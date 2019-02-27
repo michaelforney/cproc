@@ -415,7 +415,7 @@ funcjmp(struct function *f, struct value *v)
 void
 funcjnz(struct function *f, struct value *v, struct value *l1, struct value *l2)
 {
-	funcinstn(f, IJNZ, NULL, (struct value *[]){v, l1, l2});
+	funcinst(f, IJNZ, NULL, v, l1, l2);
 	f->end->terminated = true;
 }
 
@@ -708,7 +708,7 @@ funcexpr(struct function *f, struct expression *e)
 			r = funcexpr(f, e->binary.r);
 			label[3] = (struct value *)f->end;
 			funclabel(f, label[1]);
-			return funcinstn(f, IPHI, e->type->repr, (struct value *[]){label[2], l, label[3], r, NULL});
+			return funcinst(f, IPHI, e->type->repr, label[2], l, label[3], r, NULL);
 		}
 		l = funcexpr(f, e->binary.l);
 		r = funcexpr(f, e->binary.r);
@@ -818,7 +818,7 @@ funcexpr(struct function *f, struct expression *e)
 		funclabel(f, label[2]);
 		if (e->type == &typevoid)
 			return NULL;
-		return funcinstn(f, IPHI, e->type->repr, (struct value *[]){label[3], l, label[4], r, NULL});
+		return funcinst(f, IPHI, e->type->repr, label[3], l, label[4], r, NULL);
 	case EXPRASSIGN:
 		r = funcexpr(f, e->assign.r);
 		if (e->assign.l->kind == EXPRTEMP) {
