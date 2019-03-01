@@ -408,6 +408,14 @@ main(int argc, char *argv[])
 				input->lib = true;
 				input->phase = LINK;
 				break;
+			case 'M':
+				if (strcmp(arg, "-M") == 0 || strcmp(arg, "-MM") == 0) {
+					arrayaddptr(&phases[PREPROCESS].cmd, arg);
+					last = PREPROCESS;
+				} else {
+					usage(NULL);
+				}
+				break;
 			case 'O':
 				/* ignore */
 				break;
