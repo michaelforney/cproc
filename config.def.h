@@ -15,7 +15,8 @@ static char *preprocesscmd[] = {
 		"cpp", "-P",
 
 		/* specify the GNU C extensions we support */
-		"-U", "__GNUC__", "-D", "__GNUC__=4",
+		"-U", "__GNUC__", "-D", "__GNUC__=3",
+		"-U", "__GNUC_MINOR__", "-D", "__GNUC_MINOR__=3",
 
 		/* prevent glibc from using statement expressions for assert */
 		"-D", "__STRICT_ANSI__",
