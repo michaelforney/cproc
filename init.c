@@ -216,11 +216,14 @@ parseinit(struct scope *s, struct type *t)
 	struct expression *expr;
 	struct type *base;
 
+	t = typeunqual(t, NULL);
 	p.cur = NULL;
 	p.sub = p.obj;
 	p.sub->offset = 0;
-	p.sub->type = typeunqual(t, NULL);
+	p.sub->type = t;
 	p.sub->iscur = false;
+	if (t->incomplete && !(t->kind == TYPEARRAY && t->array.length == 0))
+		error(&tok.loc, "initializer specified for incomplete type");
 	for (;;) {
 		if (p.cur) {
 			if (tok.kind == TLBRACK || tok.kind == TPERIOD)
