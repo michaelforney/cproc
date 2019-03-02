@@ -555,6 +555,10 @@ declarator(struct scope *s, struct type *base, char **name, bool allowabstract)
 				error(&tok.loc, "function declarator specifies array return type");
 			break;
 		case TYPEARRAY:
+			if (base->incomplete)
+				error(&tok.loc, "array element has incomplete type");
+			if (base->kind == TYPEFUNC)
+				error(&tok.loc, "array element has function type");
 			t->align = base->align;
 			t->size = base->size * t->array.length;  // XXX: overflow?
 			break;
