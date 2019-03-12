@@ -336,6 +336,10 @@ again:
 		return TRBRACE;
 	case '.':
 		nextchar(s);
+		if (isdigit(s->chr)) {
+			bufadd(&s->buf, '.');
+			return number(s);
+		}
 		if (s->chr != '.')
 			return TPERIOD;
 		loc = s->loc;
