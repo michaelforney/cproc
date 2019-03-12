@@ -8,10 +8,8 @@ export
 function $f5(w %.1, d %.3) {
 @start.3
 	%.2 =l alloc4 4
-	storew 0, %.2
 	storew %.1, %.2
 	%.4 =l alloc8 8
-	storel 0, %.4
 	stored %.3, %.4
 @body.4
 	ret

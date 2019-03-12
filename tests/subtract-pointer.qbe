@@ -2,10 +2,8 @@ export
 function $f(l %.1, l %.3) {
 @start.1
 	%.2 =l alloc8 8
-	storel 0, %.2
 	storel %.1, %.2
 	%.4 =l alloc8 8
-	storel 0, %.4
 	storel %.3, %.4
 @body.2
 	%.5 =l loadl %.2

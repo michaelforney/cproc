@@ -2,26 +2,20 @@ export
 function $f(w %.1, ...) {
 @start.1
 	%.2 =l alloc4 4
-	storew 0, %.2
 	storew %.1, %.2
 	%.3 =l alloc8 24
 @body.2
-	storel 0, %.3
-	%.4 =l add %.3, 8
-	storel 0, %.4
-	%.5 =l add %.3, 16
-	storel 0, %.5
 	vastart %.3
 @while_cond.3
-	%.6 =w loadsw %.2
-	jnz %.6, @while_body.4, @while_join.5
+	%.4 =w loadsw %.2
+	jnz %.4, @while_body.4, @while_join.5
 @while_body.4
-	%.7 =w vaarg %.3
-	%.8 =s vaarg %.3
-	%.9 =l vaarg %.3
-	%.10 =w loadsw %.2
-	%.11 =w sub %.10, 1
-	storew %.11, %.2
+	%.5 =w vaarg %.3
+	%.6 =s vaarg %.3
+	%.7 =l vaarg %.3
+	%.8 =w loadsw %.2
+	%.9 =w sub %.8, 1
+	storew %.9, %.2
 	jmp @while_cond.3
 @while_join.5
 	ret
