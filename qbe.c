@@ -71,6 +71,15 @@ struct switchcase {
 	struct value *body;
 };
 
+struct function {
+	char *name;
+	struct declaration *namedecl;
+	struct type *type;
+	struct block *start, *end;
+	struct hashtable *gotos;
+	uint64_t lastid;
+};
+
 struct representation i8 = {'w', 'b'};
 struct representation i16 = {'w', 'h'};
 struct representation i32 = {'w', 'w'};
@@ -395,6 +404,12 @@ mkfunc(char *name, struct type *t, struct scope *s)
 	funclabel(f, mkblock("body"));
 
 	return f;
+}
+
+struct type *
+functype(struct function *f)
+{
+	return f->type;
 }
 
 void

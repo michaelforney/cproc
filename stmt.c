@@ -275,8 +275,9 @@ stmt(struct function *f, struct scope *s)
 		break;
 	case TRETURN:
 		next();
-		if (f->type->base != &typevoid) {
-			e = exprconvert(expr(s), f->type->base);
+		t = functype(f);
+		if (t->base != &typevoid) {
+			e = exprconvert(expr(s), t->base);
 			v = funcexpr(f, e);
 			delexpr(e);
 		} else {

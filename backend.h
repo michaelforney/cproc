@@ -3,15 +3,6 @@ struct gotolabel {
 	_Bool defined;
 };
 
-struct function {
-	char *name;
-	struct declaration *namedecl;
-	struct type *type;
-	struct block *start, *end;
-	struct hashtable *gotos;
-	uint64_t lastid;
-};
-
 struct switchcases {
 	void *root;
 	struct value *defaultlabel;
@@ -34,6 +25,7 @@ struct value *mkintconst(struct representation *, uint64_t);
 uint64_t intconstvalue(struct value *);
 
 struct function *mkfunc(char *, struct type *, struct scope *);
+struct type *functype(struct function *);
 void funclabel(struct function *, struct value *);
 struct value *funcexpr(struct function *, struct expression *);
 void funcjmp(struct function *, struct value *);
