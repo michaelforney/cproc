@@ -249,7 +249,8 @@ parseinit(struct scope *s, struct type *t)
 				if (expr->flags & EXPRFLAG_DECAYED && expr->unary.base->kind == EXPRSTRING) {
 					expr = expr->unary.base;
 					base = typeunqual(t->base, NULL);
-					if (!typecompatible(expr->type->base, base))
+					/* XXX: wide string literals */
+					if (!(typeprop(base) & PROPCHAR))
 						error(&tok.loc, "array initializer is string literal with incompatible type");
 					if (t->incomplete)
 						updatearray(t, expr->string.size);
