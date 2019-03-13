@@ -17,15 +17,16 @@ scopeinit(void)
 		char *name;
 		struct declaration decl;
 	} builtins[] = {
-		{"__builtin_alloca",   {.kind = DECLBUILTIN, .builtin = BUILTINALLOCA}},
-		{"__builtin_inff",     {.kind = DECLBUILTIN, .builtin = BUILTININFF}},
-		{"__builtin_nanf",     {.kind = DECLBUILTIN, .builtin = BUILTINNANF}},
-		{"__builtin_offsetof", {.kind = DECLBUILTIN, .builtin = BUILTINOFFSETOF}},
-		{"__builtin_va_arg",   {.kind = DECLBUILTIN, .builtin = BUILTINVAARG}},
-		{"__builtin_va_copy",  {.kind = DECLBUILTIN, .builtin = BUILTINVACOPY}},
-		{"__builtin_va_end",   {.kind = DECLBUILTIN, .builtin = BUILTINVAEND}},
-		{"__builtin_va_list",  {.kind = DECLTYPE, .type = &typevalist}},
-		{"__builtin_va_start", {.kind = DECLBUILTIN, .builtin = BUILTINVASTART}},
+		{"__builtin_alloca",     {.kind = DECLBUILTIN, .builtin = BUILTINALLOCA}},
+		{"__builtin_constant_p", {.kind = DECLBUILTIN, .builtin = BUILTINCONSTANTP}},
+		{"__builtin_inff",       {.kind = DECLBUILTIN, .builtin = BUILTININFF}},
+		{"__builtin_nanf",       {.kind = DECLBUILTIN, .builtin = BUILTINNANF}},
+		{"__builtin_offsetof",   {.kind = DECLBUILTIN, .builtin = BUILTINOFFSETOF}},
+		{"__builtin_va_arg",     {.kind = DECLBUILTIN, .builtin = BUILTINVAARG}},
+		{"__builtin_va_copy",    {.kind = DECLBUILTIN, .builtin = BUILTINVACOPY}},
+		{"__builtin_va_end",     {.kind = DECLBUILTIN, .builtin = BUILTINVAEND}},
+		{"__builtin_va_list",    {.kind = DECLTYPE, .type = &typevalist}},
+		{"__builtin_va_start",   {.kind = DECLBUILTIN, .builtin = BUILTINVASTART}},
 	};
 	struct builtin *b;
 

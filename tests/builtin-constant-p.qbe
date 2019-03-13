@@ -1,0 +1,2 @@
+export data $x = align 4 { w 1, }
+export data $y = align 4 { w 0, }
