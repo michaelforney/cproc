@@ -414,13 +414,35 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 	uint64_t offset;
 
 	switch (kind) {
-	case BUILTINVASTART:
-		e = mkexpr(EXPRBUILTIN, &typevoid, 0);
-		e->builtin.kind = BUILTINVASTART;
-		e->builtin.arg = exprconvert(assignexpr(s), &typevalistptr);
-		expect(TCOMMA, "after va_list");
-		free(expect(TIDENT, "after ','"));
-		// XXX: check that this was actually a parameter name?
+	case BUILTINALLOCA:
+		e = mkexpr(EXPRBUILTIN, mkpointertype(&typevoid), 0);
+		e->builtin.kind = BUILTINALLOCA;
+		e->builtin.arg = exprconvert(assignexpr(s), &typeulong);
+		break;
+	case BUILTININFF:
+		e = mkexpr(EXPRCONST, &typefloat, 0);
+		/* TODO: use INFINITY here when we can handle musl's math.h */
+		e->constant.f = strtod("inf", NULL);
+		break;
+	case BUILTINNANF:
+		e = assignexpr(s);
+		if (!(e->flags & EXPRFLAG_DECAYED) || e->unary.base->kind != EXPRSTRING || e->unary.base->string.size > 0)
+			error(&tok.loc, "__builtin_nanf currently only supports empty string literals");
+		e = mkexpr(EXPRCONST, &typefloat, 0);
+		/* TODO: use NAN here when we can handle musl's math.h */
+		e->constant.f = strtod("nan", NULL);
+		break;
+	case BUILTINOFFSETOF:
+		t = typename(s);
+		expect(TCOMMA, "after type name");
+		name = expect(TIDENT, "after ','");
+		if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
+			error(&tok.loc, "type is not a struct/union type");
+		offset = 0;
+		if (!typemember(t, name, &offset))
+			error(&tok.loc, "struct/union has no member named '%s'", name);
+		e = mkconstexpr(&typeulong, offset);
+		free(name);
 		break;
 	case BUILTINVAARG:
 		e = mkexpr(EXPRBUILTIN, NULL, 0);
@@ -441,35 +463,13 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->builtin.kind = BUILTINVAEND;
 		exprconvert(assignexpr(s), &typevalistptr);
 		break;
-	case BUILTINOFFSETOF:
-		t = typename(s);
-		expect(TCOMMA, "after type name");
-		name = expect(TIDENT, "after ','");
-		if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
-			error(&tok.loc, "type is not a struct/union type");
-		offset = 0;
-		if (!typemember(t, name, &offset))
-			error(&tok.loc, "struct/union has no member named '%s'", name);
-		e = mkconstexpr(&typeulong, offset);
-		free(name);
-		break;
-	case BUILTINALLOCA:
-		e = mkexpr(EXPRBUILTIN, mkpointertype(&typevoid), 0);
-		e->builtin.kind = BUILTINALLOCA;
-		e->builtin.arg = exprconvert(assignexpr(s), &typeulong);
-		break;
-	case BUILTINNANF:
-		e = assignexpr(s);
-		if (!(e->flags & EXPRFLAG_DECAYED) || e->unary.base->kind != EXPRSTRING || e->unary.base->string.size > 0)
-			error(&tok.loc, "__builtin_nanf currently only supports empty string literals");
-		e = mkexpr(EXPRCONST, &typefloat, 0);
-		/* TODO: use NAN here when we can handle musl's math.h */
-		e->constant.f = strtod("nan", NULL);
-		break;
-	case BUILTININFF:
-		e = mkexpr(EXPRCONST, &typefloat, 0);
-		/* TODO: use INFINITY here when we can handle musl's math.h */
-		e->constant.f = strtod("inf", NULL);
+	case BUILTINVASTART:
+		e = mkexpr(EXPRBUILTIN, &typevoid, 0);
+		e->builtin.kind = BUILTINVASTART;
+		e->builtin.arg = exprconvert(assignexpr(s), &typevalistptr);
+		expect(TCOMMA, "after va_list");
+		free(expect(TIDENT, "after ','"));
+		// XXX: check that this was actually a parameter name?
 		break;
 	default:
 		fatal("internal error; unknown builtin");
