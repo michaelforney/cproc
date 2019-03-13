@@ -99,6 +99,7 @@ OP(ICOPY,    1, 1, "copy")
 
 /* call */
 OP(ICALL,    1, -1, "call")
+OP(IVACALL,  1, -1, "call")
 
 /* variadic */
 OP(IVASTART, 0, 1, "vastart")

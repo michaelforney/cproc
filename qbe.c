@@ -35,7 +35,6 @@ struct value {
 		VALCONST,
 		VALLABEL,
 		VALTEMP,
-		VALELLIPSIS,
 	} kind;
 	struct representation *repr;
 	union {
@@ -579,7 +578,6 @@ extend(struct function *f, struct type *t, struct value *v)
 struct value *
 funcexpr(struct function *f, struct expression *e)
 {
-	static struct value ellipsis = {.kind = VALELLIPSIS};
 	enum instructionkind op = INONE;
 	struct declaration *d;
 	struct value *l, *r, *v, *addr, **argvals, **argval;
@@ -626,10 +624,9 @@ funcexpr(struct function *f, struct expression *e)
 			emittype(arg->type);
 			*argval = funcexpr(f, arg);
 		}
-		if (e->call.func->type->base->func.isvararg)
-			*argval++ = &ellipsis;
 		*argval = NULL;
-		return funcinstn(f, ICALL, e->type == &typevoid ? NULL : e->type->repr, argvals);
+		op = e->call.func->type->base->func.isvararg ? IVACALL : ICALL;
+		return funcinstn(f, op, e->type == &typevoid ? NULL : e->type->repr, argvals);
 		//if (e->call.func->type->base->func.isnoreturn)
 		//	funcret(f, NULL);
 	case EXPRUNARY:
@@ -978,9 +975,6 @@ emitvalue(struct value *v)
 		else
 			printf("%" PRIu64, v->i);
 		break;
-	case VALELLIPSIS:
-		fputs("...", stdout);
-		break;
 	default:
 		if (v->kind >= LEN(sigil) || !sigil[v->kind])
 			fatal("invalid value");
@@ -1053,24 +1047,25 @@ emitinst(struct instruction *inst)
 	if (instdesc[inst->kind].ret && inst->res.kind) {
 		emitvalue(&inst->res);
 		fputs(" =", stdout);
-		emitrepr(inst->res.repr, inst->kind == ICALL, false);
+		emitrepr(inst->res.repr, inst->kind == ICALL || inst->kind == IVACALL, false);
 		putchar(' ');
 	}
 	fputs(instdesc[inst->kind].str, stdout);
 	switch (inst->kind) {
 	case ICALL:
+	case IVACALL:
 		putchar(' ');
 		emitvalue(inst->arg[0]);
 		putchar('(');
 		for (arg = &inst->arg[1]; *arg; ++arg) {
 			if (arg != &inst->arg[1])
 				fputs(", ", stdout);
-			if ((*arg)->kind != VALELLIPSIS) {
-				emitrepr((*arg)->repr, true, false);
-				putchar(' ');
-			}
+			emitrepr((*arg)->repr, true, false);
+			putchar(' ');
 			emitvalue(*arg);
 		}
+		if (inst->kind == IVACALL)
+			fputs(", ...", stdout);
 		putchar(')');
 		break;
 	case IPHI:
