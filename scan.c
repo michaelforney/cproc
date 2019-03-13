@@ -122,8 +122,8 @@ static int
 ident(struct scanner *s)
 {
 	s->usebuf = true;
-	do nextchar(s);
-	while (isalnum(s->chr) || s->chr == '_');
+	while (isalnum(s->chr) || s->chr == '_')
+		nextchar(s);
 
 	return TIDENT;
 }
@@ -285,7 +285,6 @@ again:
 		return op2(s, TMOD, TMODASSIGN);
 	case '&':
 		return op3(s, TBAND, TBANDASSIGN, TLAND);
-	// TODO: u8, U, and L string literals
 	case '\'':
 		return charconst(s);
 	case '*':
@@ -367,6 +366,25 @@ again:
 	case ',':
 		nextchar(s);
 		return TCOMMA;
+	case 'L':
+	case 'U':
+	case 'u':
+		s->usebuf = true;
+		nextchar(s);
+		switch (s->chr) {
+		case '\'':
+			return charconst(s);
+		case '8':
+			if (s->buf.str[0] != 'u')
+				break;
+			nextchar(s);
+			if (s->chr != '"')
+				break;
+			/* fallthrough */
+		case '"':
+			return stringlit(s);
+		}
+		return ident(s);
 	case EOF:
 		return TEOF;
 	default:

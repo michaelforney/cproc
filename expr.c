@@ -342,7 +342,10 @@ primaryexpr(struct scope *s)
 		do {
 			e->string.data = xreallocarray(e->string.data, e->string.size + strlen(tok.lit), 1);
 			dst = e->string.data + e->string.size;
-			for (src = tok.lit + 1; *src != '"'; ++dst)
+			src = tok.lit;
+			if (*src != '"')
+				fatal("wide string literal not yet implemented");
+			for (++src; *src != '"'; ++dst)
 				*dst = unescape(&src);
 			e->string.size = dst - e->string.data;
 			next();
@@ -352,7 +355,10 @@ primaryexpr(struct scope *s)
 		e = decay(e);
 		break;
 	case TCHARCONST:
-		src = tok.lit + 1;
+		src = tok.lit;
+		if (*src != '\'')
+			fatal("wide character constant not yet implemented");
+		++src;
 		e = mkconstexpr(&typeint, unescape(&src));
 		if (*src != '\'')
 			error(&tok.loc, "character constant contains more than one character: %c", *src);
