@@ -35,38 +35,43 @@ struct type typevalist = {.kind = TYPEARRAY, .size = 24, .align = 8, .array = {1
 struct type typevalistptr = {.kind = TYPEPOINTER, .size = 8, .align = 8, .repr = &i64, .base = &typevaliststruct};
 
 struct type *
-mktype(enum typekind kind, struct type *base)
+mktype(enum typekind kind)
 {
 	struct type *t;
 
 	t = xmalloc(sizeof(*t));
 	t->kind = kind;
-	t->base = base;
 	t->incomplete = 0;
 
 	return t;
 }
 
 struct type *
-mkqualifiedtype(struct type *t, enum typequalifier tq)
+mkqualifiedtype(struct type *base, enum typequalifier tq)
 {
-	if (tq) {
-		t = mktype(TYPEQUALIFIED, t);
-		t->qualified.kind = tq;
-		if (t->base) {
-			t->size = t->base->size;
-			t->align = t->base->align;
-			t->repr = t->base->repr;
-		}
-		// XXX: incomplete?
+	struct type *t;
+
+	if (!tq)
+		return base;
+	t = mktype(TYPEQUALIFIED);
+	t->base = base;
+	t->qualified.kind = tq;
+	if (base) {
+		t->size = base->size;
+		t->align = base->align;
+		t->repr = base->repr;
 	}
+	// XXX: incomplete?
 	return t;
 }
 
 struct type *
-mkpointertype(struct type *t)
+mkpointertype(struct type *base)
 {
-	t = mktype(TYPEPOINTER, t);
+	struct type *t;
+
+	t = mktype(TYPEPOINTER);
+	t->base = base;
 	t->size = 8;
 	t->align = 8;
 	t->repr = &i64;
@@ -75,9 +80,12 @@ mkpointertype(struct type *t)
 }
 
 struct type *
-mkarraytype(struct type *t, uint64_t len)
+mkarraytype(struct type *base, uint64_t len)
 {
-	t = mktype(TYPEARRAY, t);
+	struct type *t;
+
+	t = mktype(TYPEARRAY);
+	t->base = base;
 	t->array.length = len;
 	t->incomplete = !len;
 	if (t->base) {

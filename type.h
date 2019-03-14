@@ -91,7 +91,7 @@ struct type {
 	};
 };
 
-struct type *mktype(enum typekind, struct type *base);
+struct type *mktype(enum typekind);
 struct type *mkqualifiedtype(struct type *, enum typequalifier);
 struct type *mkpointertype(struct type *);
 struct type *mkarraytype(struct type *, uint64_t);

@@ -176,7 +176,7 @@ tagspec(struct scope *s)
 		if (t->kind != kind)
 			error(&tok.loc, "redeclaration of tag '%s' with different kind", tag);
 	} else {
-		t = mktype(kind, NULL);
+		t = mktype(kind);
 		if (kind == TYPEBASIC) {
 			*t = typeint;
 			t->basic.kind = BASICENUM;
@@ -463,7 +463,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 		case TLPAREN:  /* function declarator */
 			next();
 		func:
-			t = mktype(TYPEFUNC, NULL);
+			t = mktype(TYPEFUNC);
 			t->func.isprototype = false;
 			t->func.isvararg = false;
 			t->func.isnoreturn = false;
