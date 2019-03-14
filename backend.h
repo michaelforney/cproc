@@ -8,10 +8,10 @@ struct switchcases {
 	struct value *defaultlabel;
 };
 
-struct representation;
-struct declaration;
-struct expression;
-struct initializer;
+struct repr;
+struct decl;
+struct expr;
+struct init;
 struct scope;
 struct type;
 
@@ -20,22 +20,22 @@ void switchcase(struct switchcases *, uint64_t, struct value *);
 
 struct value *mkblock(char *);
 struct value *mkglobal(char *, _Bool);
-struct value *mkintconst(struct representation *, uint64_t);
+struct value *mkintconst(struct repr *, uint64_t);
 
 uint64_t intconstvalue(struct value *);
 
-struct function *mkfunc(char *, struct type *, struct scope *);
-struct type *functype(struct function *);
-void funclabel(struct function *, struct value *);
-struct value *funcexpr(struct function *, struct expression *);
-void funcjmp(struct function *, struct value *);
-void funcjnz(struct function *, struct value *, struct value *, struct value *);
-void funcret(struct function *, struct value *);
-struct gotolabel *funcgoto(struct function *, char *);
-void funcswitch(struct function *, struct value *, struct switchcases *, struct value *);
-void funcinit(struct function *, struct declaration *, struct initializer *);
+struct func *mkfunc(char *, struct type *, struct scope *);
+struct type *functype(struct func *);
+void funclabel(struct func *, struct value *);
+struct value *funcexpr(struct func *, struct expr *);
+void funcjmp(struct func *, struct value *);
+void funcjnz(struct func *, struct value *, struct value *, struct value *);
+void funcret(struct func *, struct value *);
+struct gotolabel *funcgoto(struct func *, char *);
+void funcswitch(struct func *, struct value *, struct switchcases *, struct value *);
+void funcinit(struct func *, struct decl *, struct init *);
 
-void emitfunc(struct function *, _Bool);
-void emitdata(struct declaration *,  struct initializer *);
+void emitfunc(struct func *, _Bool);
+void emitdata(struct decl *,  struct init *);
 
-extern struct representation i8, i16, i32, i64, f32, f64;
+extern struct repr i8, i16, i32, i64, f32, f64;

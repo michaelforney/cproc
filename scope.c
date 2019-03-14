@@ -15,7 +15,7 @@ scopeinit(void)
 {
 	static struct builtin {
 		char *name;
-		struct declaration decl;
+		struct decl decl;
 	} builtins[] = {
 		{"__builtin_alloca",     {.kind = DECLBUILTIN, .builtin = BUILTINALLOCA}},
 		{"__builtin_constant_p", {.kind = DECLBUILTIN, .builtin = BUILTINCONSTANTP}},
@@ -64,10 +64,10 @@ delscope(struct scope *s)
 	return parent;
 }
 
-struct declaration *
+struct decl *
 scopegetdecl(struct scope *s, const char *name, bool recurse)
 {
-	struct declaration *d;
+	struct decl *d;
 	struct hashtablekey k;
 
 	htabstrkey(&k, name);
@@ -95,7 +95,7 @@ scopegettag(struct scope *s, const char *name, bool recurse)
 }
 
 void
-scopeputdecl(struct scope *s, const char *name, struct declaration *d)
+scopeputdecl(struct scope *s, const char *name, struct decl *d)
 {
 	struct hashtablekey k;
 

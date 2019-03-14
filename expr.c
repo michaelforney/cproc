@@ -17,10 +17,10 @@
 #include "token.h"
 #include "type.h"
 
-static struct expression *
-mkexpr(enum expressionkind k, struct type *t, enum expressionflags flags)
+static struct expr *
+mkexpr(enum exprkind k, struct type *t, enum exprflags flags)
 {
-	struct expression *e;
+	struct expr *e;
 
 	e = xmalloc(sizeof(*e));
 	e->type = flags & EXPRFLAG_LVAL || !t ? t : typeunqual(t, NULL);
@@ -31,10 +31,10 @@ mkexpr(enum expressionkind k, struct type *t, enum expressionflags flags)
 	return e;
 }
 
-static struct expression *
+static struct expr *
 mkconstexpr(struct type *t, uint64_t n)
 {
-	struct expression *e;
+	struct expr *e;
 
 	e = mkexpr(EXPRCONST, t, 0);
 	e->constant.i = n;
@@ -43,19 +43,19 @@ mkconstexpr(struct type *t, uint64_t n)
 }
 
 void
-delexpr(struct expression *e)
+delexpr(struct expr *e)
 {
 	free(e);
 }
 
-static struct expression *mkunaryexpr(enum tokenkind, struct expression *);
+static struct expr *mkunaryexpr(enum tokenkind, struct expr *);
 
 /* 6.3.2.1 Conversion of arrays and function designators */
-static struct expression *
-decay(struct expression *e)
+static struct expr *
+decay(struct expr *e)
 {
 	struct type *t;
-	enum typequalifier tq = QUALNONE;
+	enum typequal tq = QUALNONE;
 
 	// XXX: combine with decl.c:adjust in some way?
 	t = typeunqual(e->type, &tq);
@@ -75,16 +75,16 @@ decay(struct expression *e)
 }
 
 static void
-lvalueconvert(struct expression *e)
+lvalueconvert(struct expr *e)
 {
 	e->type = typeunqual(e->type, NULL);
 	e->flags &= ~EXPRFLAG_LVAL;
 }
 
-static struct expression *
-mkunaryexpr(enum tokenkind op, struct expression *base)
+static struct expr *
+mkunaryexpr(enum tokenkind op, struct expr *base)
 {
-	struct expression *expr;
+	struct expr *expr;
 
 	switch (op) {
 	case TBAND:
@@ -110,7 +110,7 @@ mkunaryexpr(enum tokenkind op, struct expression *base)
 }
 
 static struct type *
-commonreal(struct expression **e1, struct expression **e2)
+commonreal(struct expr **e1, struct expr **e2)
 {
 	struct type *t;
 
@@ -121,12 +121,12 @@ commonreal(struct expression **e1, struct expression **e2)
 	return t;
 }
 
-static struct expression *
-mkbinaryexpr(struct location *loc, enum tokenkind op, struct expression *l, struct expression *r)
+static struct expr *
+mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct expr *r)
 {
-	struct expression *e;
+	struct expr *e;
 	struct type *t = NULL;
-	enum typeproperty lp, rp;
+	enum typeprop lp, rp;
 
 	lvalueconvert(l);
 	lvalueconvert(r);
@@ -316,11 +316,11 @@ unescape(char **p)
 }
 
 /* 6.5 Expressions */
-static struct expression *
+static struct expr *
 primaryexpr(struct scope *s)
 {
-	struct expression *e;
-	struct declaration *d;
+	struct expr *e;
+	struct decl *d;
 	char *src, *dst, *end;
 	int base;
 
@@ -405,12 +405,12 @@ primaryexpr(struct scope *s)
 	return e;
 }
 
-static struct expression *condexpr(struct scope *);
+static struct expr *condexpr(struct scope *);
 
-static struct expression *
+static struct expr *
 builtinfunc(struct scope *s, enum builtinkind kind)
 {
-	struct expression *e;
+	struct expr *e;
 	struct type *t;
 	char *name;
 	uint64_t offset;
@@ -483,13 +483,13 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 	return e;
 }
 
-static struct expression *
-postfixexpr(struct scope *s, struct expression *r)
+static struct expr *
+postfixexpr(struct scope *s, struct expr *r)
 {
-	struct expression *e, *arr, *idx, *tmp, **end;
+	struct expr *e, *arr, *idx, *tmp, **end;
 	struct type *t;
-	enum typequalifier tq;
-	struct parameter *p;
+	enum typequal tq;
+	struct param *p;
 	uint64_t offset;
 	enum tokenkind op;
 	bool lvalue;
@@ -601,13 +601,13 @@ postfixexpr(struct scope *s, struct expression *r)
 	}
 }
 
-static struct expression *castexpr(struct scope *);
+static struct expr *castexpr(struct scope *);
 
-static struct expression *
+static struct expr *
 unaryexpr(struct scope *s)
 {
 	enum tokenkind op;
-	struct expression *e, *l;
+	struct expr *e, *l;
 	struct type *t;
 
 	op = tok.kind;
@@ -695,11 +695,11 @@ unaryexpr(struct scope *s)
 	return e;
 }
 
-static struct expression *
+static struct expr *
 castexpr(struct scope *s)
 {
 	struct type *t;
-	struct expression *r, *e, **end;
+	struct expr *r, *e, **end;
 
 	end = &r;
 	while (consume(TLPAREN)) {
@@ -758,7 +758,7 @@ ismultiplicative(enum tokenkind t)
 	return t == TMUL || t == TDIV || t == TMOD;
 }
 
-static struct expression *
+static struct expr *
 binaryexpr(struct scope *s, size_t i)
 {
 	static const struct {
@@ -777,7 +777,7 @@ binaryexpr(struct scope *s, size_t i)
 		{.fn = isadditive},
 		{.fn = ismultiplicative},
 	};
-	struct expression *e, *l, *r;
+	struct expr *e, *l, *r;
 	struct location loc;
 	enum tokenkind op;
 
@@ -797,7 +797,7 @@ binaryexpr(struct scope *s, size_t i)
 }
 
 static bool
-nullpointer(struct expression *e)
+nullpointer(struct expr *e)
 {
 	if (e->kind != EXPRCONST)
 		return false;
@@ -806,12 +806,12 @@ nullpointer(struct expression *e)
 	return e->constant.i == 0;
 }
 
-static struct expression *
+static struct expr *
 condexpr(struct scope *s)
 {
-	struct expression *r, *e;
+	struct expr *r, *e;
 	struct type *t, *f;
-	enum typequalifier tq;
+	enum typequal tq;
 
 	r = binaryexpr(s, 0);
 	if (!consume(TQUESTION))
@@ -861,7 +861,7 @@ condexpr(struct scope *s)
 uint64_t
 intconstexpr(struct scope *s, bool allowneg)
 {
-	struct expression *e;
+	struct expr *e;
 
 	e = eval(condexpr(s));
 	if (e->kind != EXPRCONST || !(typeprop(e->type) & PROPINT))
@@ -871,10 +871,10 @@ intconstexpr(struct scope *s, bool allowneg)
 	return e->constant.i;
 }
 
-struct expression *
+struct expr *
 assignexpr(struct scope *s)
 {
-	struct expression *e, *l, *r, *tmp = NULL, **res = &e;
+	struct expr *e, *l, *r, *tmp = NULL, **res = &e;
 	enum tokenkind op;
 
 	l = condexpr(s);
@@ -920,10 +920,10 @@ assignexpr(struct scope *s)
 	return e;
 }
 
-struct expression *
+struct expr *
 expr(struct scope *s)
 {
-	struct expression *r, *e, **end;
+	struct expr *r, *e, **end;
 
 	end = &r;
 	for (;;) {
@@ -942,10 +942,10 @@ expr(struct scope *s)
 	return e;
 }
 
-struct expression *
-exprconvert(struct expression *e, struct type *t)
+struct expr *
+exprconvert(struct expr *e, struct type *t)
 {
-	struct expression *cast;
+	struct expr *cast;
 
 	if (typecompatible(e->type, t))
 		return e;

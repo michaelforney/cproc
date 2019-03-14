@@ -22,7 +22,7 @@ struct name {
 	uint64_t id;
 };
 
-struct representation {
+struct repr {
 	char base;
 	char ext;
 	struct name abi;
@@ -36,7 +36,7 @@ struct value {
 		VALLABEL,
 		VALTEMP,
 	} kind;
-	struct representation *repr;
+	struct repr *repr;
 	union {
 		struct name name;
 		uint64_t i;
@@ -44,7 +44,7 @@ struct value {
 	};
 };
 
-enum instructionkind {
+enum instkind {
 	INONE,
 
 #define OP(op, ret, arg, name) op,
@@ -52,8 +52,8 @@ enum instructionkind {
 #undef OP
 };
 
-struct instruction {
-	enum instructionkind kind;
+struct inst {
+	enum instkind kind;
 	struct value res, *arg[];
 };
 
@@ -70,22 +70,22 @@ struct switchcase {
 	struct value *body;
 };
 
-struct function {
+struct func {
 	char *name;
-	struct declaration *namedecl;
+	struct decl *namedecl;
 	struct type *type;
 	struct block *start, *end;
 	struct hashtable *gotos;
 	uint64_t lastid;
 };
 
-struct representation i8 = {'w', 'b'};
-struct representation i16 = {'w', 'h'};
-struct representation i32 = {'w', 'w'};
-struct representation i64 = {'l', 'l'};
-struct representation f32 = {'s', 's'};
-struct representation f64 = {'d', 'd'};
-struct representation iptr = {'l', 'l'};
+struct repr i8 = {'w', 'b'};
+struct repr i16 = {'w', 'h'};
+struct repr i32 = {'w', 'w'};
+struct repr i64 = {'l', 'l'};
+struct repr f32 = {'s', 's'};
+struct repr f64 = {'d', 'd'};
+struct repr iptr = {'l', 'l'};
 
 void
 switchcase(struct switchcases *cases, uint64_t i, struct value *v)
@@ -121,14 +121,14 @@ static void emittype(struct type *);
 static void emitvalue(struct value *);
 
 static void
-funcname(struct function *f, struct name *n, char *s)
+funcname(struct func *f, struct name *n, char *s)
 {
 	n->id = ++f->lastid;
 	n->str = s;
 }
 
 static void
-functemp(struct function *f, struct value *v, struct representation *repr)
+functemp(struct func *f, struct value *v, struct repr *repr)
 {
 	if (!repr)
 		fatal("temp has no type");
@@ -147,9 +147,9 @@ static struct {
 };
 
 static struct value *
-funcinstn(struct function *f, int op, struct representation *repr, struct value *args[])
+funcinstn(struct func *f, int op, struct repr *repr, struct value *args[])
 {
-	struct instruction *inst;
+	struct inst *inst;
 	size_t n;
 
 	if (f->end->terminated)
@@ -179,7 +179,7 @@ funcinstn(struct function *f, int op, struct representation *repr, struct value 
 #define funcinst(f, op, repr, ...) funcinstn(f, op, repr, (struct value *[]){__VA_ARGS__})
 
 struct value *
-mkintconst(struct representation *r, uint64_t n)
+mkintconst(struct repr *r, uint64_t n)
 {
 	struct value *v;
 
@@ -199,7 +199,7 @@ intconstvalue(struct value *v)
 }
 
 static struct value *
-mkfltconst(struct representation *r, double n)
+mkfltconst(struct repr *r, double n)
 {
 	struct value *v;
 
@@ -212,10 +212,10 @@ mkfltconst(struct representation *r, double n)
 }
 
 static void
-funcalloc(struct function *f, struct declaration *d)
+funcalloc(struct func *f, struct decl *d)
 {
-	enum instructionkind op;
-	struct instruction *inst;
+	enum instkind op;
+	struct inst *inst;
 
 	assert(!d->type->incomplete);
 	assert(d->type->size > 0);
@@ -241,10 +241,10 @@ funcalloc(struct function *f, struct declaration *d)
 }
 
 static void
-funcstore(struct function *f, struct type *t, struct value *addr, struct value *v)
+funcstore(struct func *f, struct type *t, struct value *addr, struct value *v)
 {
-	enum instructionkind op;
-	enum typequalifier tq = QUALNONE;
+	enum instkind op;
+	enum typequal tq = QUALNONE;
 
 	t = typeunqual(t, &tq);
 	if (tq & QUALVOLATILE)
@@ -268,7 +268,7 @@ funcstore(struct function *f, struct type *t, struct value *addr, struct value *
 	case TYPESTRUCT:
 	case TYPEUNION:
 	case TYPEARRAY: {
-		enum instructionkind loadop, op;
+		enum instkind loadop, op;
 		struct value *src, *dst, *tmp, *align;
 		uint64_t offset;
 
@@ -298,11 +298,11 @@ funcstore(struct function *f, struct type *t, struct value *addr, struct value *
 }
 
 static struct value *
-funcload(struct function *f, struct type *t, struct value *addr)
+funcload(struct func *f, struct type *t, struct value *addr)
 {
 	struct value *v;
-	enum instructionkind op;
-	enum typequalifier tq;
+	enum instkind op;
+	enum typequal tq;
 
 	t = typeunqual(t, &tq);
 	switch (t->kind) {
@@ -353,12 +353,12 @@ parameter affected by default argument promotion, we need to emit a QBE
 function with the promoted type and implicitly convert to the declared
 parameter type before storing into the allocated memory for the parameter.
 */
-struct function *
+struct func *
 mkfunc(char *name, struct type *t, struct scope *s)
 {
-	struct function *f;
-	struct parameter *p;
-	struct declaration *d;
+	struct func *f;
+	struct param *p;
+	struct decl *d;
 
 	f = xmalloc(sizeof(*f));
 	f->name = name;
@@ -406,13 +406,13 @@ mkfunc(char *name, struct type *t, struct scope *s)
 }
 
 struct type *
-functype(struct function *f)
+functype(struct func *f)
 {
 	return f->type;
 }
 
 void
-funclabel(struct function *f, struct value *v)
+funclabel(struct func *f, struct value *v)
 {
 	assert(v->kind == VALLABEL);
 	f->end->next = (struct block *)v;
@@ -420,28 +420,28 @@ funclabel(struct function *f, struct value *v)
 }
 
 void
-funcjmp(struct function *f, struct value *v)
+funcjmp(struct func *f, struct value *v)
 {
 	funcinst(f, IJMP, NULL, v);
 	f->end->terminated = true;
 }
 
 void
-funcjnz(struct function *f, struct value *v, struct value *l1, struct value *l2)
+funcjnz(struct func *f, struct value *v, struct value *l1, struct value *l2)
 {
 	funcinst(f, IJNZ, NULL, v, l1, l2);
 	f->end->terminated = true;
 }
 
 void
-funcret(struct function *f, struct value *v)
+funcret(struct func *f, struct value *v)
 {
 	funcinst(f, IRET, NULL, v);
 	f->end->terminated = true;
 }
 
 struct gotolabel *
-funcgoto(struct function *f, char *name)
+funcgoto(struct func *f, char *name)
 {
 	void **entry;
 	struct gotolabel *g;
@@ -460,9 +460,9 @@ funcgoto(struct function *f, char *name)
 }
 
 static struct value *
-objectaddr(struct function *f, struct expression *e)
+objectaddr(struct func *f, struct expr *e)
 {
-	struct declaration *d;
+	struct decl *d;
 
 	switch (e->kind) {
 	case EXPRIDENT:
@@ -497,7 +497,7 @@ objectaddr(struct function *f, struct expression *e)
 
 /* TODO: move these conversions to QBE */
 static struct value *
-utof(struct function *f, struct representation *r, struct value *v)
+utof(struct func *f, struct repr *r, struct value *v)
 {
 	struct value *odd, *big, *phi[5] = {0}, *join;
 
@@ -529,10 +529,10 @@ utof(struct function *f, struct representation *r, struct value *v)
 }
 
 static struct value *
-ftou(struct function *f, struct representation *r, struct value *v)
+ftou(struct func *f, struct repr *r, struct value *v)
 {
 	struct value *big, *phi[5] = {0}, *join, *maxflt, *maxint;
-	enum instructionkind op = v->repr->base == 's' ? ISTOSI : IDTOSI;
+	enum instkind op = v->repr->base == 's' ? ISTOSI : IDTOSI;
 
 	if (r->base == 'w') {
 		v = funcinst(f, op, &i64, v);
@@ -563,9 +563,9 @@ ftou(struct function *f, struct representation *r, struct value *v)
 }
 
 static struct value *
-extend(struct function *f, struct type *t, struct value *v)
+extend(struct func *f, struct type *t, struct value *v)
 {
-	enum instructionkind op;
+	enum instkind op;
 
 	switch (t->size) {
 	case 1: op = t->basic.issigned ? IEXTSB : IEXTUB; break;
@@ -576,12 +576,12 @@ extend(struct function *f, struct type *t, struct value *v)
 }
 
 struct value *
-funcexpr(struct function *f, struct expression *e)
+funcexpr(struct func *f, struct expr *e)
 {
-	enum instructionkind op = INONE;
-	struct declaration *d;
+	enum instkind op = INONE;
+	struct decl *d;
 	struct value *l, *r, *v, *addr, **argvals, **argval;
-	struct expression *arg;
+	struct expr *arg;
 	struct value *label[5];
 	struct type *t;
 
@@ -865,9 +865,9 @@ funcexpr(struct function *f, struct expression *e)
 }
 
 static void
-zero(struct function *func, struct value *addr, int align, uint64_t offset, uint64_t end)
+zero(struct func *func, struct value *addr, int align, uint64_t offset, uint64_t end)
 {
-	enum instructionkind store[] = {
+	enum instkind store[] = {
 		[1] = ISTOREB,
 		[2] = ISTOREH,
 		[4] = ISTOREW,
@@ -889,7 +889,7 @@ zero(struct function *func, struct value *addr, int align, uint64_t offset, uint
 }
 
 void
-funcinit(struct function *func, struct declaration *d, struct initializer *init)
+funcinit(struct func *func, struct decl *d, struct init *init)
 {
 	struct value *src, *dst;
 	uint64_t offset = 0;
@@ -917,7 +917,7 @@ funcinit(struct function *func, struct declaration *d, struct initializer *init)
 }
 
 static void
-casesearch(struct function *f, struct value *v, struct switchcase *c, struct value *defaultlabel)
+casesearch(struct func *f, struct value *v, struct switchcase *c, struct value *defaultlabel)
 {
 	struct value *res, *label[3], *key;
 
@@ -943,7 +943,7 @@ casesearch(struct function *f, struct value *v, struct switchcase *c, struct val
 }
 
 void
-funcswitch(struct function *f, struct value *v, struct switchcases *c, struct value *defaultlabel)
+funcswitch(struct func *f, struct value *v, struct switchcases *c, struct value *defaultlabel)
 {
 	casesearch(f, v, c->root, defaultlabel);
 }
@@ -986,7 +986,7 @@ emitvalue(struct value *v)
 }
 
 static void
-emitrepr(struct representation *r, bool abi, bool ext)
+emitrepr(struct repr *r, bool abi, bool ext)
 {
 	if (abi && r->abi.id) {
 		putchar(':');
@@ -1038,7 +1038,7 @@ emittype(struct type *t)
 }
 
 static void
-emitinst(struct instruction *inst)
+emitinst(struct inst *inst)
 {
 	struct value **arg;
 
@@ -1098,11 +1098,11 @@ emitinst(struct instruction *inst)
 }
 
 void
-emitfunc(struct function *f, bool global)
+emitfunc(struct func *f, bool global)
 {
 	struct block *b;
-	struct instruction **inst;
-	struct parameter *p;
+	struct inst **inst;
+	struct param *p;
 	size_t n;
 
 	if (!f->end->terminated)
@@ -1136,9 +1136,9 @@ emitfunc(struct function *f, bool global)
 }
 
 static void
-dataitem(struct expression *expr, uint64_t size)
+dataitem(struct expr *expr, uint64_t size)
 {
-	struct declaration *decl;
+	struct decl *decl;
 	size_t i;
 	char c;
 
@@ -1186,10 +1186,10 @@ dataitem(struct expression *expr, uint64_t size)
 }
 
 void
-emitdata(struct declaration *d, struct initializer *init)
+emitdata(struct decl *d, struct init *init)
 {
 	uint64_t offset = 0;
-	struct initializer *cur;
+	struct init *cur;
 
 	if (!d->align)
 		d->align = d->type->align;

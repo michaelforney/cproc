@@ -15,7 +15,7 @@
 #include "type.h"
 
 static bool
-gotolabel(struct function *f)
+gotolabel(struct func *f)
 {
 	char *name;
 	struct gotolabel *g;
@@ -33,10 +33,10 @@ gotolabel(struct function *f)
 
 /* 6.8 Statements and blocks */
 void
-stmt(struct function *f, struct scope *s)
+stmt(struct func *f, struct scope *s)
 {
 	char *name;
-	struct expression *e;
+	struct expr *e;
 	struct type *t;
 	struct value *v, *label[4];
 	struct switchcases swtch = {0};
@@ -54,7 +54,7 @@ stmt(struct function *f, struct scope *s)
 		funclabel(f, label[0]);
 		i = intconstexpr(s, true);
 		switchcase(s->switchcases, i, label[0]);
-		expect(TCOLON, "after case expression");
+		expect(TCOLON, "after case expr");
 		stmt(f, s);
 		break;
 	case TDEFAULT:

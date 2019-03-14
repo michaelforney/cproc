@@ -47,7 +47,7 @@ mktype(enum typekind kind)
 }
 
 struct type *
-mkqualifiedtype(struct type *base, enum typequalifier tq)
+mkqualifiedtype(struct type *base, enum typequal tq)
 {
 	struct type *t;
 
@@ -96,10 +96,10 @@ mkarraytype(struct type *base, uint64_t len)
 	return t;
 }
 
-enum typeproperty
+enum typeprop
 typeprop(struct type *t)
 {
-	enum typeproperty p = PROPNONE;
+	enum typeprop p = PROPNONE;
 
 	switch (t->kind) {
 	case TYPEVOID:
@@ -163,7 +163,7 @@ bool
 typecompatible(struct type *t1, struct type *t2)
 {
 	struct type *tmp;
-	struct parameter *p1, *p2;
+	struct param *p1, *p2;
 
 	if (t1 == t2)
 		return true;
@@ -232,7 +232,7 @@ typecomposite(struct type *t1, struct type *t2)
 }
 
 struct type *
-typeunqual(struct type *t, enum typequalifier *tq)
+typeunqual(struct type *t, enum typequal *tq)
 {
 	while (t->kind == TYPEQUALIFIED) {
 		if (tq)
@@ -319,10 +319,10 @@ typemember(struct type *t, const char *name, uint64_t *offset)
 	return NULL;
 }
 
-struct parameter *
+struct param *
 mkparam(char *name, struct type *t)
 {
-	struct parameter *p;
+	struct param *p;
 
 	p = xmalloc(sizeof(*p));
 	p->name = name;

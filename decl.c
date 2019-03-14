@@ -31,7 +31,7 @@ enum storageclass {
 	SCTHREADLOCAL = 1<<6,
 };
 
-enum typespecifier {
+enum typespec {
 	SPECNONE,
 
 	SPECVOID     = 1<<1,
@@ -50,17 +50,17 @@ enum typespecifier {
 	SPECLONGLONG = SPECLONG|SPECLONG2,
 };
 
-enum funcspecifier {
+enum funcspec {
 	FUNCNONE,
 
 	FUNCINLINE   = 1<<1,
 	FUNCNORETURN = 1<<2,
 };
 
-struct declaration *
-mkdecl(enum declarationkind k, struct type *t, enum linkage linkage)
+struct decl *
+mkdecl(enum declkind k, struct type *t, enum linkage linkage)
 {
-	struct declaration *d;
+	struct decl *d;
 
 	d = xmalloc(sizeof(*d));
 	d->kind = k;
@@ -108,7 +108,7 @@ storageclass(enum storageclass *sc)
 
 /* 6.7.3 Type qualifiers */
 static int
-typequal(enum typequalifier *tq)
+typequal(enum typequal *tq)
 {
 	switch (tok.kind) {
 	case TCONST:    *tq |= QUALCONST;    break;
@@ -124,9 +124,9 @@ typequal(enum typequalifier *tq)
 
 /* 6.7.4 Function specifiers */
 static int
-funcspec(enum funcspecifier *fs)
+funcspec(enum funcspec *fs)
 {
-	enum funcspecifier new;
+	enum funcspec new;
 
 	switch (tok.kind) {
 	case TINLINE:    new = FUNCINLINE;   break;
@@ -149,7 +149,7 @@ tagspec(struct scope *s)
 	struct type *t;
 	char *tag;
 	enum typekind kind;
-	struct declaration *d;
+	struct decl *d;
 	struct member **end;
 	uint64_t i;
 
@@ -226,12 +226,12 @@ tagspec(struct scope *s)
 
 /* 6.7 Declarations */
 static struct type *
-declspecs(struct scope *s, enum storageclass *sc, enum funcspecifier *fs, int *align)
+declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 {
 	struct type *t;
-	struct declaration *d;
-	enum typespecifier ts = SPECNONE;
-	enum typequalifier tq = QUALNONE;
+	struct decl *d;
+	enum typespec ts = SPECNONE;
+	enum typequal tq = QUALNONE;
 	int ntypes = 0;
 	uint64_t i;
 
@@ -401,7 +401,7 @@ done:
 }
 
 /* 6.7.6 Declarators */
-static struct parameter *parameter(struct scope *);
+static struct param *parameter(struct scope *);
 
 struct partialtype {
 	struct type *outer;
@@ -411,7 +411,7 @@ struct partialtype {
 static bool
 istypename(struct scope *s, const char *name)
 {
-	struct declaration *d;
+	struct decl *d;
 
 	d = scopegetdecl(s, name, 1);
 	return d && d->kind == DECLTYPE;
@@ -422,9 +422,9 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 {
 	struct list *ptr;
 	struct type *t;
-	struct parameter **p;
+	struct param **p;
 	uint64_t i;
-	enum typequalifier tq;
+	enum typequal tq;
 
 	while (consume(TMUL)) {
 		t = mkpointertype(NULL);
@@ -577,7 +577,7 @@ declarator(struct scope *s, struct type *base, char **name, bool allowabstract)
 static struct type *
 adjust(struct type *t)
 {
-	enum typequalifier tq = QUALNONE;
+	enum typequal tq = QUALNONE;
 
 	t = typeunqual(t, &tq);
 	switch (t->kind) {
@@ -592,10 +592,10 @@ adjust(struct type *t)
 	return t;
 }
 
-static struct parameter *
+static struct param *
 parameter(struct scope *s)
 {
-	struct parameter *p;
+	struct param *p;
 	struct type *t;
 	enum storageclass sc;
 
@@ -611,9 +611,9 @@ parameter(struct scope *s)
 }
 
 static bool
-paramdecl(struct scope *s, struct parameter *params)
+paramdecl(struct scope *s, struct param *params)
 {
-	struct parameter *p;
+	struct param *p;
 	struct type *t, *base;
 	char *name;
 
@@ -708,17 +708,17 @@ typename(struct scope *s)
 }
 
 bool
-decl(struct scope *s, struct function *f)
+decl(struct scope *s, struct func *f)
 {
 	struct type *t, *base;
 	enum storageclass sc;
-	enum funcspecifier fs;
-	struct initializer *init;
-	struct parameter *p;
+	enum funcspec fs;
+	struct init *init;
+	struct param *p;
 	char *name;
 	int allowfunc = !f;
-	struct declaration *d;
-	enum declarationkind kind;
+	struct decl *d;
+	enum declkind kind;
 	enum linkage linkage;
 	uint64_t c;
 	int align;
@@ -892,12 +892,12 @@ decl(struct scope *s, struct function *f)
 	}
 }
 
-struct declaration *stringdecl(struct expression *expr)
+struct decl *stringdecl(struct expr *expr)
 {
 	static struct hashtable *strings;
 	struct hashtablekey key;
 	void **entry;
-	struct declaration *d;
+	struct decl *d;
 
 	if (!strings)
 		strings = mkhtab(64);
@@ -920,5 +920,5 @@ emittentativedefns(void)
 	struct list *l;
 
 	for (l = tentativedefns.next; l != &tentativedefns; l = l->next)
-		emitdata(listelement(l, struct declaration, link), NULL);
+		emitdata(listelement(l, struct decl, link), NULL);
 }

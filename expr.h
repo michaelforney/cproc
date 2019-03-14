@@ -1,4 +1,4 @@
-enum expressionkind {
+enum exprkind {
 	/* primary expression */
 	EXPRIDENT,
 	EXPRCONST,
@@ -22,19 +22,19 @@ enum expressionkind {
 	EXPRTEMP,
 };
 
-enum expressionflags {
+enum exprflags {
 	EXPRFLAG_LVAL    = 1<<0,
 	EXPRFLAG_DECAYED = 1<<1,
 };
 
-struct expression {
-	enum expressionkind kind;
-	enum expressionflags flags;
+struct expr {
+	enum exprkind kind;
+	enum exprflags flags;
 	struct type *type;
-	struct expression *next;
+	struct expr *next;
 	union {
 		struct {
-			struct declaration *decl;
+			struct decl *decl;
 		} ident;
 		union {
 			uint64_t i;
@@ -45,40 +45,40 @@ struct expression {
 			size_t size;
 		} string;
 		struct {
-			struct expression *func, *args;
+			struct expr *func, *args;
 			size_t nargs;
 		} call;
 		struct {
-			struct initializer *init;
+			struct init *init;
 		} compound;
 		struct {
 			int op;
 			_Bool post;
-			struct expression *base;
+			struct expr *base;
 		} incdec;
 		struct {
 			int op;
-			struct expression *base;
+			struct expr *base;
 		} unary;
 		struct {
-			struct expression *e;
+			struct expr *e;
 		} cast;
 		struct {
 			int op;
-			struct expression *l, *r;
+			struct expr *l, *r;
 		} binary;
 		struct {
-			struct expression *e, *t, *f;
+			struct expr *e, *t, *f;
 		} cond;
 		struct {
-			struct expression *l, *r;
+			struct expr *l, *r;
 		} assign;
 		struct {
-			struct expression *exprs;
+			struct expr *exprs;
 		} comma;
 		struct {
 			int kind;
-			struct expression *arg;
+			struct expr *arg;
 		} builtin;
 		struct value *temp;
 	};
@@ -86,9 +86,9 @@ struct expression {
 
 struct scope;
 
-struct expression *expr(struct scope *);
-struct expression *assignexpr(struct scope *);
+struct expr *expr(struct scope *);
+struct expr *assignexpr(struct scope *);
 uint64_t intconstexpr(struct scope *, _Bool);
-void delexpr(struct expression *);
+void delexpr(struct expr *);
 
-struct expression *exprconvert(struct expression *, struct type *);
+struct expr *exprconvert(struct expr *, struct type *);

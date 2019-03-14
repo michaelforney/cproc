@@ -1,1 +1,1 @@
-struct expression *eval(struct expression *);
+struct expr *eval(struct expr *);

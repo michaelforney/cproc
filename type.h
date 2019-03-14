@@ -1,4 +1,4 @@
-enum typequalifier {
+enum typequal {
 	QUALNONE,
 
 	QUALCONST    = 1<<1,
@@ -20,7 +20,7 @@ enum typekind {
 	TYPEUNION,
 };
 
-enum typeproperty {
+enum typeprop {
 	PROPNONE,
 
 	PROPOBJECT  = 1<<0,
@@ -34,11 +34,11 @@ enum typeproperty {
 	PROPFLOAT   = 1<<8,
 };
 
-struct parameter {
+struct param {
 	char *name;
 	struct type *type;
 	struct value *value;
-	struct parameter *next;
+	struct param *next;
 };
 
 struct member {
@@ -52,7 +52,7 @@ struct type {
 	enum typekind kind;
 	int align;
 	uint64_t size;
-	struct representation *repr;
+	struct repr *repr;
 	union {
 		struct type *base;
 		struct list link;  /* used only during construction of type */
@@ -60,7 +60,7 @@ struct type {
 	_Bool incomplete;
 	union {
 		struct {
-			enum typequalifier kind;
+			enum typequal kind;
 		} qualified;
 		struct {
 			enum {
@@ -82,7 +82,7 @@ struct type {
 		} array;
 		struct {
 			_Bool isprototype, isvararg, isnoreturn, paraminfo;
-			struct parameter *params;
+			struct param *params;
 		} func;
 		struct {
 			char *tag;
@@ -92,21 +92,21 @@ struct type {
 };
 
 struct type *mktype(enum typekind);
-struct type *mkqualifiedtype(struct type *, enum typequalifier);
+struct type *mkqualifiedtype(struct type *, enum typequal);
 struct type *mkpointertype(struct type *);
 struct type *mkarraytype(struct type *, uint64_t);
 
 _Bool typecompatible(struct type *, struct type *);
 _Bool typesame(struct type *, struct type *);
 struct type *typecomposite(struct type *, struct type *);
-struct type *typeunqual(struct type *, enum typequalifier *);
+struct type *typeunqual(struct type *, enum typequal *);
 struct type *typecommonreal(struct type *, struct type *);
 struct type *typeargpromote(struct type *);
 struct type *typeintpromote(struct type *);
-enum typeproperty typeprop(struct type *);
+enum typeprop typeprop(struct type *);
 struct type *typemember(struct type *, const char *, uint64_t *);
 
-struct parameter *mkparam(char *, struct type *);
+struct param *mkparam(char *, struct type *);
 
 extern struct type typevoid;
 extern struct type typebool;

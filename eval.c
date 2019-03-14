@@ -10,7 +10,7 @@
 #include "type.h"
 
 static void
-binary(struct expression *expr, enum tokenkind op, struct expression *l, struct expression *r)
+binary(struct expr *expr, enum tokenkind op, struct expr *l, struct expr *r)
 {
 	expr->kind = EXPRCONST;
 #define F (1<<8)
@@ -69,11 +69,11 @@ binary(struct expression *expr, enum tokenkind op, struct expression *l, struct 
 #undef S
 }
 
-struct expression *
-eval(struct expression *expr)
+struct expr *
+eval(struct expr *expr)
 {
-	struct expression *l, *r, *c;
-	struct declaration *d;
+	struct expr *l, *r, *c;
+	struct decl *d;
 
 	switch (expr->kind) {
 	case EXPRIDENT:

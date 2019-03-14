@@ -29,10 +29,10 @@ struct initparser {
 	struct object obj[32], *cur, *sub;
 };
 
-struct initializer *
-mkinit(uint64_t start, uint64_t end, struct expression *expr)
+struct init *
+mkinit(uint64_t start, uint64_t end, struct expr *expr)
 {
-	struct initializer *init;
+	struct init *init;
 
 	init = xmalloc(sizeof(*init));
 	init->start = start;
@@ -44,9 +44,9 @@ mkinit(uint64_t start, uint64_t end, struct expression *expr)
 }
 
 static void
-initadd(struct initializer **init, struct initializer *new)
+initadd(struct init **init, struct init *new)
 {
-	struct initializer *next, *sub, *last;
+	struct init *next, *sub, *last;
 	uint64_t offset;
 
 	while (*init && new->start >= (*init)->end)
@@ -208,12 +208,12 @@ advance(struct initparser *p)
 }
 
 /* 6.7.9 Initialization */
-struct initializer *
+struct init *
 parseinit(struct scope *s, struct type *t)
 {
 	struct initparser p;
-	struct initializer *init = NULL;
-	struct expression *expr;
+	struct init *init = NULL;
+	struct expr *expr;
 	struct type *base;
 
 	t = typeunqual(t, NULL);

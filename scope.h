@@ -11,9 +11,9 @@ void scopeinit(void);
 struct scope *mkscope(struct scope *);
 struct scope *delscope(struct scope *);
 
-struct declaration;
-void scopeputdecl(struct scope *, const char *, struct declaration *);
-struct declaration *scopegetdecl(struct scope *, const char *, _Bool);
+struct decl;
+void scopeputdecl(struct scope *, const char *, struct decl *);
+struct decl *scopegetdecl(struct scope *, const char *, _Bool);
 
 struct type;
 void scopeputtag(struct scope *, const char *, struct type *);
