@@ -729,70 +729,50 @@ castexpr(struct scope *s)
 }
 
 static int
-isequality(enum tokenkind t)
+precedence(enum tokenkind t)
 {
-	return t == TEQL || t == TNEQ;
-}
-
-static int
-isrelational(enum tokenkind t)
-{
-	return t == TLESS || t == TGREATER || t == TLEQ || t == TGEQ;
-}
-
-static int
-isshift(enum tokenkind t)
-{
-	return t == TSHL || t == TSHR;
-}
-
-static int
-isadditive(enum tokenkind t)
-{
-	return t == TADD || t == TSUB;
-}
-
-static int
-ismultiplicative(enum tokenkind t)
-{
-	return t == TMUL || t == TDIV || t == TMOD;
+	switch (t) {
+	case TLOR:     return 0;
+	case TLAND:    return 1;
+	case TBOR:     return 2;
+	case TXOR:     return 3;
+	case TBAND:    return 4;
+	case TEQL:
+	case TNEQ:     return 5;
+	case TLESS:
+	case TGREATER:
+	case TLEQ:
+	case TGEQ:     return 6;
+	case TSHL:
+	case TSHR:     return 7;
+	case TADD:
+	case TSUB:     return 8;
+	case TMUL:
+	case TDIV:
+	case TMOD:     return 9;
+	}
+	return -1;
 }
 
 static struct expr *
-binaryexpr(struct scope *s, size_t i)
+binaryexpr(struct scope *s, struct expr *l, int i)
 {
-	static const struct {
-		int tok;
-		int (*fn)(enum tokenkind);
-	} prec[] = {
-		// XXX: bitmask?
-		{.tok = TLOR},
-		{.tok = TLAND},
-		{.tok = TBOR},
-		{.tok = TXOR},
-		{.tok = TBAND},
-		{.fn = isequality},
-		{.fn = isrelational},
-		{.fn = isshift},
-		{.fn = isadditive},
-		{.fn = ismultiplicative},
-	};
-	struct expr *e, *l, *r;
+	struct expr *r;
 	struct location loc;
 	enum tokenkind op;
+	int j, k;
 
-	if (i >= LEN(prec))
-		return castexpr(s);
-	l = binaryexpr(s, i + 1);
-	while (tok.kind == prec[i].tok || (prec[i].fn && prec[i].fn(tok.kind))) {
+	if (!l)
+		l = castexpr(s);
+	while ((j = precedence(tok.kind)) >= i) {
 		op = tok.kind;
 		loc = tok.loc;
 		next();
-		r = binaryexpr(s, i + 1);
-		e = mkbinaryexpr(&loc, op, l, r);
-		l = e;
+		r = castexpr(s);
+		while ((k = precedence(tok.kind)) > j)
+			r = binaryexpr(s, r, k);
+		l = mkbinaryexpr(&loc, op, l, r);
 	}
-
 	return l;
 }
 
@@ -813,7 +793,7 @@ condexpr(struct scope *s)
 	struct type *t, *f;
 	enum typequal tq;
 
-	r = binaryexpr(s, 0);
+	r = binaryexpr(s, NULL, 0);
 	if (!consume(TQUESTION))
 		return r;
 	e = mkexpr(EXPRCOND, NULL, 0);
