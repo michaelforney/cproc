@@ -241,12 +241,6 @@ inttype(uint64_t val, bool decimal, char *end)
 		{&typellong,  "ll",  NULL},
 		{&typeullong, "ull", "llu"},
 	};
-	static const uint64_t max[] = {
-		[1] = 0xff,
-		[2] = 0xffff,
-		[4] = 0xffffffff,
-		[8] = 0xffffffffffffffff,
-	};
 	struct type *t;
 	size_t i, step;
 
@@ -263,7 +257,7 @@ inttype(uint64_t val, bool decimal, char *end)
 	step = i % 2 || decimal ? 2 : 1;
 	for (; i < LEN(limits); i += step) {
 		t = limits[i].type;
-		if (val <= max[t->size] >> t->basic.issigned)
+		if (val <= (uint64_t)-1 >> (8 - t->size << 3) + t->basic.issigned)
 			return t;
 	}
 	error(&tok.loc, "no suitable type for constant '%s'", tok.lit);
