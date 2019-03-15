@@ -416,7 +416,6 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->builtin.arg = exprconvert(assignexpr(s), &typeulong);
 		break;
 	case BUILTINCONSTANTP:
-		/* XXX: does this need to consider address constants? */
 		e = mkconstexpr(&typeint, eval(condexpr(s))->kind == EXPRCONST);
 		break;
 	case BUILTININFF:
