@@ -1,7 +1,7 @@
 struct init {
 	uint64_t start, end;
 	struct expr *expr;
-	struct init *next, *subinit;
+	struct init *next;
 };
 
 struct scope;

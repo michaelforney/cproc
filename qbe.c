@@ -892,7 +892,7 @@ void
 funcinit(struct func *func, struct decl *d, struct init *init)
 {
 	struct value *src, *dst;
-	uint64_t offset = 0;
+	uint64_t offset = 0, max = 0;
 	size_t i;
 
 	funcalloc(func, d);
@@ -912,8 +912,10 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 			funcstore(func, init->expr->type, dst, src);
 			offset = init->end;
 		}
+		if (max < offset)
+			max = offset;
 	}
-	zero(func, d->value, d->type->align, offset, d->type->size);
+	zero(func, d->value, d->type->align, max, d->type->size);
 }
 
 static void
@@ -1203,12 +1205,15 @@ emitdata(struct decl *d, struct init *init)
 	emitvalue(d->value);
 	printf(" = align %d { ", d->align);
 
-	for (; init; offset = init->end, init = init->next) {
+	for (; init; init = init->next) {
+		if (init->start < offset)  /* XXX: sub-initializer may overlap */
+			continue;
 		if (offset < init->start)
 			printf("z %" PRIu64 ", ", init->start - offset);
 		printf("%c ", init->expr->type->kind == TYPEARRAY ? init->expr->type->base->repr->ext : init->expr->type->repr->ext);
 		dataitem(init->expr, init->end - init->start);
 		fputs(", ", stdout);
+		offset = init->end;
 	}
 	assert(offset <= d->type->size);
 	if (offset < d->type->size)

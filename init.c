@@ -46,29 +46,24 @@ mkinit(uint64_t start, uint64_t end, struct expr *expr)
 static void
 initadd(struct init **init, struct init *new)
 {
-	struct init *next, *sub, *last;
-	uint64_t offset;
+	struct init *old;
 
-	while (*init && new->start >= (*init)->end)
-		init = &(*init)->next;
-	next = *init;
-	if (next && next->start <= new->start && new->end < next->end) {
-		initadd(&next->subinit, new);
-		last = NULL;  /* silence gcc, we know that next->subinit has at least one member */
-		for (offset = next->start, sub = next->subinit; sub; offset = sub->end, last = sub, sub = sub->next) {
-			if (sub->start != offset)
-				return;
+	for (; old = *init; init = &old->next) {
+		if (new->start >= old->end)
+			continue;
+		/* no overlap, insert before `old` */
+		if (new->end <= old->start)
+			break;
+		/* replace any initializers that `new` covers */
+		if (new->end >= old->end) {
+			do old = old->next;
+			while (old && new->end >= old->end);
+			break;
 		}
-		if (offset == next->end) {
-			*init = next->subinit;
-			last->next = next->next;
-		}
-	} else {
-		*init = new;
-		while (next && next->start < (*init)->end)
-			next = next->next;
-		(*init)->next = next;
+		/* `old` covers `new`, keep looking */
 	}
+	new->next = old;
+	*init = new;
 }
 
 static void
