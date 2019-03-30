@@ -403,11 +403,6 @@ done:
 /* 6.7.6 Declarators */
 static struct param *parameter(struct scope *);
 
-struct partialtype {
-	struct type *outer;
-	struct type **inner;
-};
-
 static bool
 istypename(struct scope *s, const char *name)
 {
