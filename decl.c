@@ -57,6 +57,11 @@ enum funcspec {
 	FUNCNORETURN = 1<<2,
 };
 
+struct structbuilder {
+	struct type *type;
+	struct member **last;
+};
+
 struct decl *
 mkdecl(enum declkind k, struct type *t, enum linkage linkage)
 {
@@ -141,7 +146,7 @@ funcspec(enum funcspec *fs)
 	return 1;
 }
 
-static void structdecl(struct scope *, struct type *, struct member ***);
+static void structdecl(struct scope *, struct structbuilder *);
 
 static struct type *
 tagspec(struct scope *s)
@@ -150,7 +155,7 @@ tagspec(struct scope *s)
 	char *tag;
 	enum typekind kind;
 	struct decl *d;
-	struct member **end;
+	struct structbuilder b;
 	uint64_t i;
 
 	switch (tok.kind) {
@@ -199,8 +204,9 @@ tagspec(struct scope *s)
 	switch (t->kind) {
 	case TYPESTRUCT:
 	case TYPEUNION:
-		end = &t->structunion.members;
-		do structdecl(s, t, &end);
+		b.type = t;
+		b.last = &t->structunion.members;
+		do structdecl(s, &b);
 		while (tok.kind != TRBRACE);
 		next();
 		t->size = ALIGNUP(t->size, t->align);
@@ -634,16 +640,17 @@ paramdecl(struct scope *s, struct param *params)
 }
 
 static void
-addmember(struct type *t, struct member ***end, struct type *mt, char *name, int align)
+addmember(struct structbuilder *b, struct type *mt, char *name, int align)
 {
+	struct type *t = b->type;
 	struct member *m;
 
 	m = xmalloc(sizeof(*m));
 	m->type = mt;
 	m->name = name;
 	m->next = NULL;
-	**end = m;
-	*end = &m->next;
+	*b->last = m;
+	b->last = &m->next;
 
 	assert(mt->align > 0);
 	if (align < mt->align)
@@ -662,7 +669,7 @@ addmember(struct type *t, struct member ***end, struct type *mt, char *name, int
 }
 
 static void
-structdecl(struct scope *s, struct type *t, struct member ***end)
+structdecl(struct scope *s, struct structbuilder *b)
 {
 	struct type *base, *mt;
 	char *name;
@@ -675,13 +682,13 @@ structdecl(struct scope *s, struct type *t, struct member ***end)
 		if ((base->kind != TYPESTRUCT && base->kind != TYPEUNION) || base->structunion.tag)
 			error(&tok.loc, "struct declaration must declare at least one member");
 		next();
-		addmember(t, end, base, NULL, align);
+		addmember(b, base, NULL, align);
 		return;
 	}
 	for (;;) {
 		if (tok.kind != TCOLON) {
 			mt = declarator(s, base, &name, false);
-			addmember(t, end, mt, name, align);
+			addmember(b, mt, name, align);
 		}
 		if (tok.kind == TCOLON)
 			error(&tok.loc, "bit-fields are not yet supported");
