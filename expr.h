@@ -6,7 +6,7 @@ enum exprkind {
 
 	/* postfix expression */
 	EXPRCALL,
-	/* member E.M gets transformed to *(typeof(E.M) *)((char *)E + offsetof(typeof(E), M)) */
+	EXPRMEMBER,
 	EXPRINCDEC,
 	EXPRCOMPOUND,
 	/* subscript E1[E2] gets transformed to *((E1)+(E2)) */
@@ -49,13 +49,17 @@ struct expr {
 			size_t nargs;
 		} call;
 		struct {
-			struct init *init;
-		} compound;
+			struct expr *base;
+			size_t offset;
+		} member;
 		struct {
 			int op;
 			_Bool post;
 			struct expr *base;
 		} incdec;
+		struct {
+			struct init *init;
+		} compound;
 		struct {
 			int op;
 			struct expr *base;

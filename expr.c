@@ -483,9 +483,7 @@ postfixexpr(struct scope *s, struct expr *r)
 	struct type *t;
 	enum typequal tq;
 	struct param *p;
-	uint64_t offset;
 	enum tokenkind op;
-	bool lvalue;
 
 	if (!r)
 		r = primaryexpr(s);
@@ -566,17 +564,19 @@ postfixexpr(struct scope *s, struct expr *r)
 			next();
 			if (tok.kind != TIDENT)
 				error(&tok.loc, "expected identifier after '->' operator");
-			lvalue = op == TARROW || r->unary.base->flags & EXPRFLAG_LVAL;
-			r = exprconvert(r, mkpointertype(&typechar));
-			offset = 0;
-			t = typemember(t, tok.lit, &offset);
-			if (!t)
+			e = mkexpr(EXPRMEMBER, NULL, 0);
+			e->member.base = r;
+			e->member.offset = 0;
+			e->type = typemember(t, tok.lit, &e->member.offset);
+			if (!e->type)
 				error(&tok.loc, "struct/union has no member named '%s'", tok.lit);
-			r = mkbinaryexpr(&tok.loc, TADD, r, mkconstexpr(&typeulong, offset));
-			r = exprconvert(r, mkpointertype(mkqualifiedtype(t, tq)));
-			e = mkunaryexpr(TMUL, r);
-			if (!lvalue)
-				e->flags &= ~EXPRFLAG_LVAL;
+			if (op == TARROW || r->unary.base->flags & EXPRFLAG_LVAL) {
+				e->type = mkqualifiedtype(e->type, tq);
+				e->flags |= EXPRFLAG_LVAL;
+			} else {
+				e->type = typeunqual(e->type, NULL);
+			}
+			e = decay(e);
 			next();
 			break;
 		case TINC:
