@@ -479,8 +479,6 @@ objectaddr(struct func *f, struct expr *e)
 	case EXPRSTRING:
 		d = stringdecl(e);
 		return d->value;
-	case EXPRMEMBER:
-		return funcinst(f, IADD, &iptr, funcexpr(f, e->member.base), mkintconst(&iptr, e->member.offset));
 	case EXPRCOMPOUND:
 		d = mkdecl(DECLOBJECT, e->type, LINKNONE);
 		funcinit(f, d, e->compound.init);
@@ -601,7 +599,6 @@ funcexpr(struct func *f, struct expr *e)
 		if (typeprop(e->type) & PROPINT || e->type->kind == TYPEPOINTER)
 			return mkintconst(e->type->repr, e->constant.i);
 		return mkfltconst(e->type->repr, e->constant.f);
-	case EXPRMEMBER:
 	case EXPRCOMPOUND:
 		l = objectaddr(f, e);
 		return funcload(f, e->type, l);
