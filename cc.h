@@ -1,3 +1,8 @@
+struct expr;
+struct func;
+struct scope;
+struct type;
+
 /* token */
 
 enum tokenkind {
@@ -130,7 +135,6 @@ struct token;
 
 int scanfrom(const char *file);
 void scan(struct token *);
-struct location;
 
 void ppinit(const char *);
 
@@ -311,14 +315,10 @@ struct decl {
 	enum builtinkind builtin;
 };
 
-struct scope;
-struct func;
-
 struct decl *mkdecl(enum declkind, struct type *, enum linkage);
 _Bool decl(struct scope *, struct func *);
 struct type *typename(struct scope *);
 
-struct expr;
 struct decl *stringdecl(struct expr *);
 
 void emittentativedefns(void);
@@ -338,11 +338,9 @@ void scopeinit(void);
 struct scope *mkscope(struct scope *);
 struct scope *delscope(struct scope *);
 
-struct decl;
 void scopeputdecl(struct scope *, const char *, struct decl *);
 struct decl *scopegetdecl(struct scope *, const char *, _Bool);
 
-struct type;
 void scopeputtag(struct scope *, const char *, struct type *);
 struct type *scopegettag(struct scope *, const char *, _Bool);
 
@@ -436,8 +434,6 @@ struct expr {
 	};
 };
 
-struct scope;
-
 struct expr *expr(struct scope *);
 struct expr *assignexpr(struct scope *);
 uint64_t intconstexpr(struct scope *, _Bool);
@@ -457,13 +453,8 @@ struct init {
 	struct init *next;
 };
 
-struct scope;
-struct type;
-
 struct init *mkinit(uint64_t, uint64_t, struct expr *);
 struct init *parseinit(struct scope *, struct type *);
-struct func;
-struct scope;
 
 void stmt(struct func *, struct scope *);
 
@@ -480,11 +471,6 @@ struct switchcases {
 };
 
 struct repr;
-struct decl;
-struct expr;
-struct init;
-struct scope;
-struct type;
 
 struct switchcases *mkswitch(void);
 void switchcase(struct switchcases *, uint64_t, struct value *);
