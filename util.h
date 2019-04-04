@@ -10,7 +10,8 @@ struct array {
 extern char *argv0;
 
 #define LEN(a) (sizeof(a) / sizeof((a)[0]))
-#define ALIGNUP(x, n) (((x) + (n) - 1) & ~((n) - 1))
+#define ALIGNDOWN(x, n) ((x) & -(n))
+#define ALIGNUP(x, n) ALIGNDOWN((x) + (n) - 1, n)
 
 void warn(const char *, ...);
 _Noreturn void fatal(const char *fmt, ...);

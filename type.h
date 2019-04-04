@@ -41,10 +41,16 @@ struct param {
 	struct param *next;
 };
 
+struct bitfield {
+	short before;  /* number of bits in the storage unit before the bit-field */
+	short after;   /* number of bits in the storage unit after the bit-field */
+};
+
 struct member {
 	char *name;
 	struct type *type;
 	uint64_t offset;
+	struct bitfield bits;
 	struct member *next;
 };
 

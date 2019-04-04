@@ -60,6 +60,7 @@ enum funcspec {
 struct structbuilder {
 	struct type *type;
 	struct member **last;
+	int bits;  /* number of bits remaining in the last byte */
 };
 
 struct decl *
@@ -206,6 +207,7 @@ tagspec(struct scope *s)
 	case TYPEUNION:
 		b.type = t;
 		b.last = &t->structunion.members;
+		b.bits = 0;
 		do structdecl(s, &b);
 		while (tok.kind != TRBRACE);
 		next();
@@ -640,29 +642,59 @@ paramdecl(struct scope *s, struct param *params)
 }
 
 static void
-addmember(struct structbuilder *b, struct type *mt, char *name, int align)
+addmember(struct structbuilder *b, struct type *mt, char *name, int align, uint64_t width)
 {
 	struct type *t = b->type;
 	struct member *m;
-
-	m = xmalloc(sizeof(*m));
-	m->type = mt;
-	m->name = name;
-	m->next = NULL;
-	*b->last = m;
-	b->last = &m->next;
+	size_t end;
 
 	assert(mt->align > 0);
-	if (align < mt->align)
+	if (name || width == -1) {
+		m = xmalloc(sizeof(*m));
+		m->type = mt;
+		m->name = name;
+		m->next = NULL;
+		*b->last = m;
+		b->last = &m->next;
+	}
+	if (width == -1) {
+		m->bits.before = 0;
+		m->bits.after = 0;
+		if (align < mt->align)
+			align = mt->align;
+		t->size = ALIGNUP(t->size, align);
+		if (t->kind == TYPESTRUCT) {
+			m->offset = t->size;
+			t->size += mt->size;
+		} else {
+			m->offset = 0;
+			if (t->size < mt->size)
+				t->size = mt->size;
+		}
+	} else {  /* bit-field */
+		if (!(typeprop(mt) & PROPINT))
+			error(&tok.loc, "bit-field has invalid type");
+		if (align)
+			error(&tok.loc, "alignment specified for bit-field");
+		if (!width && name)
+			error(&tok.loc, "bit-field with zero width must not have declarator");
+		if (width > mt->size * 8)
+			error(&tok.loc, "bit-field exceeds width of underlying type");
+		/* calculate end of the storage-unit for this bit-field */
+		end = ALIGNUP(t->size, mt->size);
+		if (!width || width > (end - t->size) * 8 + b->bits) {
+			/* no room, allocate a new storage-unit */
+			t->size = end;
+			b->bits = 0;
+		}
+		if (width) {
+			m->offset = ALIGNDOWN(t->size - !!b->bits, mt->size);
+			m->bits.before = (t->size - m->offset) * 8 - b->bits;
+			m->bits.after = mt->size * 8 - width - m->bits.before;
+			t->size += (width - b->bits + 7) / 8;
+			b->bits = m->bits.after % 8;
+		}
 		align = mt->align;
-	t->size = ALIGNUP(t->size, align);
-	if (t->kind == TYPESTRUCT) {
-		m->offset = t->size;
-		t->size += mt->size;
-	} else {
-		m->offset = 0;
-		if (t->size < mt->size)
-			t->size = mt->size;
 	}
 	if (t->align < align)
 		t->align = align;
@@ -673,6 +705,7 @@ structdecl(struct scope *s, struct structbuilder *b)
 {
 	struct type *base, *mt;
 	char *name;
+	uint64_t width;
 	int align;
 
 	base = declspecs(s, NULL, NULL, &align);
@@ -682,16 +715,18 @@ structdecl(struct scope *s, struct structbuilder *b)
 		if ((base->kind != TYPESTRUCT && base->kind != TYPEUNION) || base->structunion.tag)
 			error(&tok.loc, "struct declaration must declare at least one member");
 		next();
-		addmember(b, base, NULL, align);
+		addmember(b, base, NULL, align, -1);
 		return;
 	}
 	for (;;) {
-		if (tok.kind != TCOLON) {
+		if (consume(TCOLON)) {
+			width = intconstexpr(s, false);
+			addmember(b, base, NULL, 0, width);
+		} else {
 			mt = declarator(s, base, &name, false);
-			addmember(b, mt, name, align);
+			width = consume(TCOLON) ? intconstexpr(s, false) : -1;
+			addmember(b, mt, name, align, width);
 		}
-		if (tok.kind == TCOLON)
-			error(&tok.loc, "bit-fields are not yet supported");
 		if (tok.kind == TSEMICOLON)
 			break;
 		expect(TCOMMA, "or ';' after declarator");
