@@ -481,9 +481,10 @@ postfixexpr(struct scope *s, struct expr *r)
 {
 	struct expr *e, *arr, *idx, *tmp, **end;
 	struct type *t;
-	enum typequal tq;
 	struct param *p;
+	struct member *m;
 	uint64_t offset;
+	enum typequal tq;
 	enum tokenkind op;
 	bool lvalue;
 
@@ -569,11 +570,13 @@ postfixexpr(struct scope *s, struct expr *r)
 			lvalue = op == TARROW || r->unary.base->flags & EXPRFLAG_LVAL;
 			r = exprconvert(r, mkpointertype(&typechar));
 			offset = 0;
-			t = typemember(t, tok.lit, &offset);
-			if (!t)
+			m = typemember(t, tok.lit, &offset);
+			if (!m)
 				error(&tok.loc, "struct/union has no member named '%s'", tok.lit);
+			if (m->bits.before || m->bits.after)
+				error(&tok.loc, "bit-field access is not yet supported");
 			r = mkbinaryexpr(&tok.loc, TADD, r, mkconstexpr(&typeulong, offset));
-			r = exprconvert(r, mkpointertype(mkqualifiedtype(t, tq)));
+			r = exprconvert(r, mkpointertype(mkqualifiedtype(m->type, tq)));
 			e = mkunaryexpr(TMUL, r);
 			if (!lvalue)
 				e->flags &= ~EXPRFLAG_LVAL;

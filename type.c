@@ -296,23 +296,23 @@ typecommonreal(struct type *t1, struct type *t2)
 	fatal("internal error; could not find common real type");
 }
 
-struct type *
+struct member *
 typemember(struct type *t, const char *name, uint64_t *offset)
 {
-	struct member *m;
+	struct member *m, *sub;
 
 	assert(t->kind == TYPESTRUCT || t->kind == TYPEUNION);
 	for (m = t->structunion.members; m; m = m->next) {
 		if (m->name) {
 			if (strcmp(m->name, name) == 0) {
 				*offset += m->offset;
-				return m->type;
+				return m;
 			}
 		} else {
-			t = typemember(m->type, name, offset);
-			if (t) {
+			sub = typemember(m->type, name, offset);
+			if (sub) {
 				*offset += m->offset;
-				return t;
+				return sub;
 			}
 		}
 	}

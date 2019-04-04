@@ -110,7 +110,7 @@ struct type *typecommonreal(struct type *, struct type *);
 struct type *typeargpromote(struct type *);
 struct type *typeintpromote(struct type *);
 enum typeprop typeprop(struct type *);
-struct type *typemember(struct type *, const char *, uint64_t *);
+struct member *typemember(struct type *, const char *, uint64_t *);
 
 struct param *mkparam(char *, struct type *);
 
