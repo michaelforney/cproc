@@ -1,9 +1,4 @@
-struct expr;
 struct func;
-struct scope;
-struct type;
-
-/* token */
 
 enum tokenkind {
 	TNONE,
@@ -125,26 +120,6 @@ struct token {
 	char *lit;
 };
 
-extern struct token tok;
-
-void tokprint(const struct token *);
-_Noreturn void error(const struct location *, const char *, ...);
-struct token;
-
-/* scan */
-
-int scanfrom(const char *file);
-void scan(struct token *);
-
-void ppinit(const char *);
-
-void next(void);
-_Bool peek(int);
-char *expect(int, const char *);
-_Bool consume(int);
-
-/* type */
-
 enum typequal {
 	QUALNONE,
 
@@ -244,35 +219,6 @@ struct type {
 	};
 };
 
-struct type *mktype(enum typekind);
-struct type *mkqualifiedtype(struct type *, enum typequal);
-struct type *mkpointertype(struct type *);
-struct type *mkarraytype(struct type *, uint64_t);
-
-_Bool typecompatible(struct type *, struct type *);
-_Bool typesame(struct type *, struct type *);
-struct type *typecomposite(struct type *, struct type *);
-struct type *typeunqual(struct type *, enum typequal *);
-struct type *typecommonreal(struct type *, struct type *);
-struct type *typeargpromote(struct type *);
-struct type *typeintpromote(struct type *);
-enum typeprop typeprop(struct type *);
-struct member *typemember(struct type *, const char *, uint64_t *);
-
-struct param *mkparam(char *, struct type *);
-
-extern struct type typevoid;
-extern struct type typebool;
-extern struct type typechar, typeschar, typeuchar;
-extern struct type typeshort, typeushort;
-extern struct type typeint, typeuint;
-extern struct type typelong, typeulong;
-extern struct type typellong, typeullong;
-extern struct type typefloat, typedouble, typelongdouble;
-extern struct type typevalist, typevalistptr;
-
-/* decl */
-
 enum declkind {
 	DECLTYPE,
 	DECLOBJECT,
@@ -315,16 +261,6 @@ struct decl {
 	enum builtinkind builtin;
 };
 
-struct decl *mkdecl(enum declkind, struct type *, enum linkage);
-_Bool decl(struct scope *, struct func *);
-struct type *typename(struct scope *);
-
-struct decl *stringdecl(struct expr *);
-
-void emittentativedefns(void);
-
-/* scope */
-
 struct scope {
 	struct hashtable *tags;
 	struct hashtable *decls;
@@ -333,20 +269,6 @@ struct scope {
 	struct switchcases *switchcases;
 	struct scope *parent;
 };
-
-void scopeinit(void);
-struct scope *mkscope(struct scope *);
-struct scope *delscope(struct scope *);
-
-void scopeputdecl(struct scope *, const char *, struct decl *);
-struct decl *scopegetdecl(struct scope *, const char *, _Bool);
-
-void scopeputtag(struct scope *, const char *, struct type *);
-struct type *scopegettag(struct scope *, const char *, _Bool);
-
-extern struct scope filescope;
-
-/* expr */
 
 enum exprkind {
 	/* primary expression */
@@ -434,6 +356,87 @@ struct expr {
 	};
 };
 
+struct init {
+	uint64_t start, end;
+	struct expr *expr;
+	struct init *next;
+};
+
+/* token */
+
+extern struct token tok;
+
+void tokprint(const struct token *);
+_Noreturn void error(const struct location *, const char *, ...);
+struct token;
+
+/* scan */
+
+int scanfrom(const char *file);
+void scan(struct token *);
+
+void ppinit(const char *);
+
+void next(void);
+_Bool peek(int);
+char *expect(int, const char *);
+_Bool consume(int);
+
+/* type */
+
+struct type *mktype(enum typekind);
+struct type *mkqualifiedtype(struct type *, enum typequal);
+struct type *mkpointertype(struct type *);
+struct type *mkarraytype(struct type *, uint64_t);
+
+_Bool typecompatible(struct type *, struct type *);
+_Bool typesame(struct type *, struct type *);
+struct type *typecomposite(struct type *, struct type *);
+struct type *typeunqual(struct type *, enum typequal *);
+struct type *typecommonreal(struct type *, struct type *);
+struct type *typeargpromote(struct type *);
+struct type *typeintpromote(struct type *);
+enum typeprop typeprop(struct type *);
+struct member *typemember(struct type *, const char *, uint64_t *);
+
+struct param *mkparam(char *, struct type *);
+
+extern struct type typevoid;
+extern struct type typebool;
+extern struct type typechar, typeschar, typeuchar;
+extern struct type typeshort, typeushort;
+extern struct type typeint, typeuint;
+extern struct type typelong, typeulong;
+extern struct type typellong, typeullong;
+extern struct type typefloat, typedouble, typelongdouble;
+extern struct type typevalist, typevalistptr;
+
+/* decl */
+
+struct decl *mkdecl(enum declkind, struct type *, enum linkage);
+_Bool decl(struct scope *, struct func *);
+struct type *typename(struct scope *);
+
+struct decl *stringdecl(struct expr *);
+
+void emittentativedefns(void);
+
+/* scope */
+
+void scopeinit(void);
+struct scope *mkscope(struct scope *);
+struct scope *delscope(struct scope *);
+
+void scopeputdecl(struct scope *, const char *, struct decl *);
+struct decl *scopegetdecl(struct scope *, const char *, _Bool);
+
+void scopeputtag(struct scope *, const char *, struct type *);
+struct type *scopegettag(struct scope *, const char *, _Bool);
+
+extern struct scope filescope;
+
+/* expr */
+
 struct expr *expr(struct scope *);
 struct expr *assignexpr(struct scope *);
 uint64_t intconstexpr(struct scope *, _Bool);
@@ -446,12 +449,6 @@ struct expr *exprconvert(struct expr *, struct type *);
 struct expr *eval(struct expr *);
 
 /* init */
-
-struct init {
-	uint64_t start, end;
-	struct expr *expr;
-	struct init *next;
-};
 
 struct init *mkinit(uint64_t, uint64_t, struct expr *);
 struct init *parseinit(struct scope *, struct type *);
