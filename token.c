@@ -1,8 +1,9 @@
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "util.h"
-#include "token.h"
+#include "cc.h"
 
 struct token tok;
 

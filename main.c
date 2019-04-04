@@ -5,10 +5,7 @@
 #include <stdnoreturn.h>
 #include "util.h"
 #include "arg.h"
-#include "decl.h"
-#include "pp.h"
-#include "scope.h"
-#include "token.h"
+#include "cc.h"
 
 static noreturn void
 usage(void)

@@ -7,16 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
-#include "backend.h"
-#include "decl.h"
-#include "expr.h"
+#include "cc.h"
 #include "htab.h"
-#include "init.h"
-#include "pp.h"
-#include "scope.h"
-#include "stmt.h"
-#include "token.h"
-#include "type.h"
 
 static struct list tentativedefns = {&tentativedefns, &tentativedefns};
 

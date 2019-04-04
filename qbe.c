@@ -6,16 +6,9 @@
 #include <string.h>
 #include <inttypes.h>
 #include "util.h"
-#include "backend.h"
-#include "decl.h"
-#include "eval.h"
-#include "expr.h"
+#include "cc.h"
 #include "htab.h"
-#include "init.h"
-#include "scope.h"
-#include "token.h"
 #include "tree.h"
-#include "type.h"
 
 struct name {
 	char *str;

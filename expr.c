@@ -8,14 +8,7 @@
 #include <string.h>
 #include <strings.h>
 #include "util.h"
-#include "decl.h"
-#include "eval.h"
-#include "expr.h"
-#include "init.h"
-#include "pp.h"
-#include "scope.h"
-#include "token.h"
-#include "type.h"
+#include "cc.h"
 
 static struct expr *
 mkexpr(enum exprkind k, struct type *t, enum exprflags flags)

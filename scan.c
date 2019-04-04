@@ -1,12 +1,12 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
-#include "scan.h"
-#include "token.h"
+#include "cc.h"
 
 struct buffer {
 	char *str;

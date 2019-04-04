@@ -5,14 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
-#include "backend.h"
-#include "decl.h"
-#include "expr.h"
-#include "pp.h"
-#include "scope.h"
-#include "stmt.h"
-#include "token.h"
-#include "type.h"
+#include "cc.h"
 
 static bool
 gotolabel(struct func *f)

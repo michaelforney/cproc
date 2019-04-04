@@ -3,10 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 #include "util.h"
-#include "decl.h"
+#include "cc.h"
 #include "htab.h"
-#include "scope.h"
-#include "type.h"
 
 struct scope filescope;
 

@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "util.h"
-#include "backend.h"
-#include "type.h"
+#include "cc.h"
 
 struct type typevoid       = {.kind = TYPEVOID, .incomplete = true};
 

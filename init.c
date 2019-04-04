@@ -6,12 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
-#include "decl.h"
-#include "expr.h"
-#include "init.h"
-#include "pp.h"
-#include "token.h"
-#include "type.h"
+#include "cc.h"
 
 struct object {
 	uint64_t offset;
