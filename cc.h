@@ -402,19 +402,19 @@ struct expr {
 			struct init *init;
 		} compound;
 		struct {
-			int op;
+			enum tokenkind op;
 			_Bool post;
 			struct expr *base;
 		} incdec;
 		struct {
-			int op;
+			enum tokenkind op;
 			struct expr *base;
 		} unary;
 		struct {
 			struct expr *e;
 		} cast;
 		struct {
-			int op;
+			enum tokenkind op;
 			struct expr *l, *r;
 		} binary;
 		struct {
