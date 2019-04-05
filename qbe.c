@@ -364,7 +364,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 		if (!t->func.isprototype && !typecompatible(p->type, typeargpromote(p->type)))
 			error(&tok.loc, "old-style function definition with parameter type incompatible with promoted type is not yet supported");
 		emittype(p->type);
-		d = mkdecl(DECLOBJECT, p->type, LINKNONE);
+		d = mkdecl(DECLOBJECT, mkqualifiedtype(p->type, p->qual), LINKNONE);
 		p->value = xmalloc(sizeof(*p->value));
 		functemp(f, p->value, p->type->repr);
 		if (p->type->repr->abi.id) {
@@ -373,7 +373,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 			d->value->repr = &iptr;
 		} else {
 			funcinit(f, d, NULL);
-			funcstore(f, typeunqual(p->type, NULL), QUALNONE, d->value, p->value);
+			funcstore(f, p->type, QUALNONE, d->value, p->value);
 		}
 		scopeputdecl(s, p->name, d);
 	}

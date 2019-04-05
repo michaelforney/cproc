@@ -159,6 +159,7 @@ enum typeprop {
 struct param {
 	char *name;
 	struct type *type;
+	enum typequal qual;
 	struct value *value;
 	struct param *next;
 };

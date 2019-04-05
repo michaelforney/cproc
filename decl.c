@@ -490,7 +490,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 						break;
 					}
 				}
-				if (typeunqual(t->func.params->type, NULL)->kind == TYPEVOID && !t->func.params->next)
+				if (t->func.params->type->kind == TYPEVOID && !t->func.params->next)
 					t->func.params = NULL;
 				break;
 			case TRPAREN:
@@ -600,7 +600,7 @@ parameter(struct scope *s)
 	if (sc && sc != SCREGISTER)
 		error(&tok.loc, "parameter declaration has invalid storage-class specifier");
 	p = mkparam(NULL, t);
-	p->type = adjust(declarator(s, p->type, &p->name, true));
+	p->type = typeunqual(adjust(declarator(s, p->type, &p->name, true)), &p->qual);
 
 	return p;
 }
@@ -619,7 +619,7 @@ paramdecl(struct scope *s, struct param *params)
 		t = adjust(declarator(s, base, &name, false));
 		for (p = params; p; p = p->next) {
 			if (strcmp(name, p->name) == 0) {
-				p->type = t;
+				p->type = typeunqual(t, &p->qual);
 				break;
 			}
 		}
