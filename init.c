@@ -236,7 +236,7 @@ parseinit(struct scope *s, struct type *t)
 			t = p.sub->type;
 			switch (t->kind) {
 			case TYPEARRAY:
-				if (expr->flags & EXPRFLAG_DECAYED && expr->unary.base->kind == EXPRSTRING) {
+				if (expr->decayed && expr->unary.base->kind == EXPRSTRING) {
 					expr = expr->unary.base;
 					base = typeunqual(t->base, NULL);
 					/* XXX: wide string literals */

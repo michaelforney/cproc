@@ -294,14 +294,9 @@ enum exprkind {
 	EXPRTEMP,
 };
 
-enum exprflags {
-	EXPRFLAG_LVAL    = 1<<0,
-	EXPRFLAG_DECAYED = 1<<1,
-};
-
 struct expr {
 	enum exprkind kind;
-	enum exprflags flags;
+	_Bool lvalue, decayed;
 	struct type *type;
 	struct expr *next;
 	union {

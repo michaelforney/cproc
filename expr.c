@@ -11,13 +11,14 @@
 #include "cc.h"
 
 static struct expr *
-mkexpr(enum exprkind k, struct type *t, enum exprflags flags)
+mkexpr(enum exprkind k, struct type *t, bool lvalue)
 {
 	struct expr *e;
 
 	e = xmalloc(sizeof(*e));
-	e->type = flags & EXPRFLAG_LVAL || !t ? t : typeunqual(t, NULL);
-	e->flags = flags;
+	e->type = lvalue || !t ? t : typeunqual(t, NULL);
+	e->lvalue = lvalue;
+	e->decayed = false;
 	e->kind = k;
 	e->next = NULL;
 
@@ -56,11 +57,11 @@ decay(struct expr *e)
 	case TYPEARRAY:
 		e = mkunaryexpr(TBAND, e);
 		e->type = mkqualifiedtype(mkpointertype(t->base), tq);
-		e->flags |= EXPRFLAG_DECAYED;
+		e->decayed = true;
 		break;
 	case TYPEFUNC:
 		e = mkunaryexpr(TBAND, e);
-		e->flags |= EXPRFLAG_DECAYED;
+		e->decayed = true;
 		break;
 	}
 
@@ -71,7 +72,7 @@ static void
 lvalueconvert(struct expr *e)
 {
 	e->type = typeunqual(e->type, NULL);
-	e->flags &= ~EXPRFLAG_LVAL;
+	e->lvalue = false;
 }
 
 static struct expr *
@@ -81,8 +82,8 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 
 	switch (op) {
 	case TBAND:
-		if (base->flags & EXPRFLAG_DECAYED) {
-			base->flags &= ~EXPRFLAG_DECAYED;
+		if (base->decayed) {
+			base->decayed = false;
 			return base;
 		}
 		expr = mkexpr(EXPRUNARY, mkpointertype(base->type), 0);
@@ -93,7 +94,7 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 		lvalueconvert(base);
 		if (base->type->kind != TYPEPOINTER)
 			error(&tok.loc, "cannot dereference non-pointer");
-		expr = mkexpr(EXPRUNARY, base->type->base, EXPRFLAG_LVAL);
+		expr = mkexpr(EXPRUNARY, base->type->base, true);
 		expr->unary.op = op;
 		expr->unary.base = base;
 		return decay(expr);
@@ -316,14 +317,14 @@ primaryexpr(struct scope *s)
 		d = scopegetdecl(s, tok.lit, 1);
 		if (!d)
 			error(&tok.loc, "undeclared identifier: %s", tok.lit);
-		e = mkexpr(EXPRIDENT, d->type, d->kind == DECLOBJECT ? EXPRFLAG_LVAL : 0);
+		e = mkexpr(EXPRIDENT, d->type, d->kind == DECLOBJECT);
 		e->ident.decl = d;
 		if (d->kind != DECLBUILTIN)
 			e = decay(e);
 		next();
 		break;
 	case TSTRINGLIT:
-		e = mkexpr(EXPRSTRING, mkarraytype(&typechar, 0), EXPRFLAG_LVAL);
+		e = mkexpr(EXPRSTRING, mkarraytype(&typechar, 0), true);
 		e->string.size = 0;
 		e->string.data = NULL;
 		do {
@@ -418,7 +419,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		break;
 	case BUILTINNANF:
 		e = assignexpr(s);
-		if (!(e->flags & EXPRFLAG_DECAYED) || e->unary.base->kind != EXPRSTRING || e->unary.base->string.size > 0)
+		if (!e->decayed || e->unary.base->kind != EXPRSTRING || e->unary.base->string.size > 0)
 			error(&tok.loc, "__builtin_nanf currently only supports empty string literals");
 		e = mkexpr(EXPRCONST, &typefloat, 0);
 		/* TODO: use NAN here when we can handle musl's math.h */
@@ -560,7 +561,7 @@ postfixexpr(struct scope *s, struct expr *r)
 			next();
 			if (tok.kind != TIDENT)
 				error(&tok.loc, "expected identifier after '->' operator");
-			lvalue = op == TARROW || r->unary.base->flags & EXPRFLAG_LVAL;
+			lvalue = op == TARROW || r->unary.base->lvalue;
 			r = exprconvert(r, mkpointertype(&typechar));
 			offset = 0;
 			m = typemember(t, tok.lit, &offset);
@@ -571,8 +572,7 @@ postfixexpr(struct scope *s, struct expr *r)
 			r = mkbinaryexpr(&tok.loc, TADD, r, mkconstexpr(&typeulong, offset));
 			r = exprconvert(r, mkpointertype(mkqualifiedtype(m->type, tq)));
 			e = mkunaryexpr(TMUL, r);
-			if (!lvalue)
-				e->flags &= ~EXPRFLAG_LVAL;
+			e->lvalue = lvalue;
 			next();
 			break;
 		case TINC:
@@ -605,7 +605,7 @@ unaryexpr(struct scope *s)
 	case TDEC:
 		next();
 		l = unaryexpr(s);
-		if (!(l->flags & EXPRFLAG_LVAL))
+		if (!l->lvalue)
 			error(&tok.loc, "operand of %srement operator must be an lvalue", op == TINC ? "inc" : "dec");
 		/*
 		if (l->qualifiers & QUALCONST)
@@ -663,13 +663,13 @@ unaryexpr(struct scope *s)
 				expect(TRPAREN, "after expression");
 				if (op == TSIZEOF)
 					e = postfixexpr(s, e);
-				if (e->flags & EXPRFLAG_DECAYED)
+				if (e->decayed)
 					e = e->unary.base;
 				t = e->type;
 			}
 		} else if (op == TSIZEOF) {
 			e = unaryexpr(s);
-			if (e->flags & EXPRFLAG_DECAYED)
+			if (e->decayed)
 				e = e->unary.base;
 			t = e->type;
 		} else {
@@ -701,7 +701,7 @@ castexpr(struct scope *s)
 		}
 		expect(TRPAREN, "after type name");
 		if (tok.kind == TLBRACE) {
-			e = mkexpr(EXPRCOMPOUND, t, EXPRFLAG_LVAL);
+			e = mkexpr(EXPRCOMPOUND, t, true);
 			e->compound.init = parseinit(s, t);
 			e = decay(e);
 			*end = postfixexpr(s, e);
@@ -864,14 +864,14 @@ assignexpr(struct scope *s)
 	default:
 		return l;
 	}
-	if (!(l->flags & EXPRFLAG_LVAL))
+	if (!l->lvalue)
 		error(&tok.loc, "left side of assignment expression is not an lvalue");
 	next();
 	r = assignexpr(s);
 	lvalueconvert(r);
 	if (op) {
 		/* rewrite `E1 OP= E2` as `T = &E1, *T = *T OP E2`, where T is a temporary slot */
-		tmp = mkexpr(EXPRTEMP, mkpointertype(l->type), EXPRFLAG_LVAL);
+		tmp = mkexpr(EXPRTEMP, mkpointertype(l->type), true);
 		tmp->temp = NULL;
 		e = mkexpr(EXPRCOMMA, l->type, 0);
 		e->comma.exprs = mkexpr(EXPRASSIGN, tmp->type, 0);
