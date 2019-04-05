@@ -228,7 +228,7 @@ tagspec(struct scope *s)
 static struct type *
 declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 {
-	struct type *t;
+	struct type *t, *other;
 	struct decl *d;
 	enum typespec ts = SPECNONE;
 	enum typequal tq = QUALNONE;
@@ -341,9 +341,9 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 				error(&tok.loc, "alignment specifier not allowed in this declaration");
 			next();
 			expect(TLPAREN, "after '_Alignas'");
-			t = typename(s);
-			if (t) {
-				*align = t->align;
+			other = typename(s);
+			if (other) {
+				*align = other->align;
 			} else {
 				i = intconstexpr(s, false);
 				if (!i || i & (i - 1) || i > 16)
