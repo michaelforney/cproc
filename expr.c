@@ -11,13 +11,13 @@
 #include "cc.h"
 
 static struct expr *
-mkexpr(enum exprkind k, struct type *t, bool lvalue)
+mkexpr(enum exprkind k, struct type *t)
 {
 	struct expr *e;
 
 	e = xmalloc(sizeof(*e));
-	e->type = lvalue || !t ? t : typeunqual(t, NULL);
-	e->lvalue = lvalue;
+	e->type = t;
+	e->lvalue = false;
 	e->decayed = false;
 	e->kind = k;
 	e->next = NULL;
@@ -30,7 +30,7 @@ mkconstexpr(struct type *t, uint64_t n)
 {
 	struct expr *e;
 
-	e = mkexpr(EXPRCONST, t, 0);
+	e = mkexpr(EXPRCONST, t);
 	e->constant.i = n;
 
 	return e;
@@ -86,7 +86,7 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 			base->decayed = false;
 			return base;
 		}
-		expr = mkexpr(EXPRUNARY, mkpointertype(base->type), 0);
+		expr = mkexpr(EXPRUNARY, mkpointertype(base->type));
 		expr->unary.op = op;
 		expr->unary.base = base;
 		return expr;
@@ -94,7 +94,8 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 		lvalueconvert(base);
 		if (base->type->kind != TYPEPOINTER)
 			error(&tok.loc, "cannot dereference non-pointer");
-		expr = mkexpr(EXPRUNARY, base->type->base, true);
+		expr = mkexpr(EXPRUNARY, base->type->base);
+		expr->lvalue = true;
 		expr->unary.op = op;
 		expr->unary.base = base;
 		return decay(expr);
@@ -213,7 +214,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 	default:
 		fatal("internal error: unknown binary operator %d", op);
 	}
-	e = mkexpr(EXPRBINARY, t, 0);
+	e = mkexpr(EXPRBINARY, t);
 	e->binary.op = op;
 	e->binary.l = l;
 	e->binary.r = r;
@@ -317,14 +318,16 @@ primaryexpr(struct scope *s)
 		d = scopegetdecl(s, tok.lit, 1);
 		if (!d)
 			error(&tok.loc, "undeclared identifier: %s", tok.lit);
-		e = mkexpr(EXPRIDENT, d->type, d->kind == DECLOBJECT);
+		e = mkexpr(EXPRIDENT, d->type);
+		e->lvalue = d->kind == DECLOBJECT;
 		e->ident.decl = d;
 		if (d->kind != DECLBUILTIN)
 			e = decay(e);
 		next();
 		break;
 	case TSTRINGLIT:
-		e = mkexpr(EXPRSTRING, mkarraytype(&typechar, 0), true);
+		e = mkexpr(EXPRSTRING, mkarraytype(&typechar, 0));
+		e->lvalue = true;
 		e->string.size = 0;
 		e->string.data = NULL;
 		do {
@@ -353,7 +356,7 @@ primaryexpr(struct scope *s)
 		next();
 		break;
 	case TNUMBER:
-		e = mkexpr(EXPRCONST, NULL, 0);
+		e = mkexpr(EXPRCONST, NULL);
 		base = tok.lit[0] != '0' ? 10 : tolower(tok.lit[1]) == 'x' ? 16 : 8;
 		if (strpbrk(tok.lit, base == 16 ? ".pP" : ".eE")) {
 			/* floating constant */
@@ -405,7 +408,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 
 	switch (kind) {
 	case BUILTINALLOCA:
-		e = mkexpr(EXPRBUILTIN, mkpointertype(&typevoid), 0);
+		e = mkexpr(EXPRBUILTIN, mkpointertype(&typevoid));
 		e->builtin.kind = BUILTINALLOCA;
 		e->builtin.arg = exprconvert(assignexpr(s), &typeulong);
 		break;
@@ -413,7 +416,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e = mkconstexpr(&typeint, eval(condexpr(s))->kind == EXPRCONST);
 		break;
 	case BUILTININFF:
-		e = mkexpr(EXPRCONST, &typefloat, 0);
+		e = mkexpr(EXPRCONST, &typefloat);
 		/* TODO: use INFINITY here when we can handle musl's math.h */
 		e->constant.f = strtod("inf", NULL);
 		break;
@@ -421,7 +424,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e = assignexpr(s);
 		if (!e->decayed || e->unary.base->kind != EXPRSTRING || e->unary.base->string.size > 0)
 			error(&tok.loc, "__builtin_nanf currently only supports empty string literals");
-		e = mkexpr(EXPRCONST, &typefloat, 0);
+		e = mkexpr(EXPRCONST, &typefloat);
 		/* TODO: use NAN here when we can handle musl's math.h */
 		e->constant.f = strtod("nan", NULL);
 		break;
@@ -438,26 +441,26 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		free(name);
 		break;
 	case BUILTINVAARG:
-		e = mkexpr(EXPRBUILTIN, NULL, 0);
+		e = mkexpr(EXPRBUILTIN, NULL);
 		e->builtin.kind = BUILTINVAARG;
 		e->builtin.arg = exprconvert(assignexpr(s), &typevalistptr);
 		expect(TCOMMA, "after va_list");
 		e->type = typename(s);
 		break;
 	case BUILTINVACOPY:
-		e = mkexpr(EXPRASSIGN, typevalist.base, 0);
+		e = mkexpr(EXPRASSIGN, typevalist.base);
 		e->assign.l = mkunaryexpr(TMUL, exprconvert(assignexpr(s), &typevalistptr));
 		expect(TCOMMA, "after target va_list");
 		e->assign.r = mkunaryexpr(TMUL, exprconvert(assignexpr(s), &typevalistptr));
 		e = exprconvert(e, &typevoid);
 		break;
 	case BUILTINVAEND:
-		e = mkexpr(EXPRBUILTIN, &typevoid, 0);
+		e = mkexpr(EXPRBUILTIN, &typevoid);
 		e->builtin.kind = BUILTINVAEND;
 		exprconvert(assignexpr(s), &typevalistptr);
 		break;
 	case BUILTINVASTART:
-		e = mkexpr(EXPRBUILTIN, &typevoid, 0);
+		e = mkexpr(EXPRBUILTIN, &typevoid);
 		e->builtin.kind = BUILTINVASTART;
 		e->builtin.arg = exprconvert(assignexpr(s), &typevalistptr);
 		expect(TCOMMA, "after va_list");
@@ -517,7 +520,7 @@ postfixexpr(struct scope *s, struct expr *r)
 			if (r->type->kind != TYPEPOINTER || r->type->base->kind != TYPEFUNC)
 				error(&tok.loc, "called object is not a function");
 			t = r->type->base;
-			e = mkexpr(EXPRCALL, t->base, 0);
+			e = mkexpr(EXPRCALL, t->base);
 			e->call.func = r;
 			e->call.args = NULL;
 			e->call.nargs = 0;
@@ -577,7 +580,7 @@ postfixexpr(struct scope *s, struct expr *r)
 			break;
 		case TINC:
 		case TDEC:
-			e = mkexpr(EXPRINCDEC, r->type, 0);
+			e = mkexpr(EXPRINCDEC, r->type);
 			e->incdec.op = tok.kind;
 			e->incdec.base = r;
 			e->incdec.post = 1;
@@ -611,7 +614,7 @@ unaryexpr(struct scope *s)
 		if (l->qualifiers & QUALCONST)
 			error(&tok.loc, "operand of %srement operator is const qualified", op == TINC ? "inc" : "dec");
 		*/
-		e = mkexpr(EXPRINCDEC, l->type, 0);
+		e = mkexpr(EXPRINCDEC, l->type);
 		e->incdec.op = op;
 		e->incdec.base = l;
 		e->incdec.post = 0;
@@ -701,13 +704,14 @@ castexpr(struct scope *s)
 		}
 		expect(TRPAREN, "after type name");
 		if (tok.kind == TLBRACE) {
-			e = mkexpr(EXPRCOMPOUND, t, true);
+			e = mkexpr(EXPRCOMPOUND, t);
+			e->lvalue = true;
 			e->compound.init = parseinit(s, t);
 			e = decay(e);
 			*end = postfixexpr(s, e);
 			return r;
 		}
-		e = mkexpr(EXPRCAST, t, 0);
+		e = mkexpr(EXPRCAST, t);
 		// XXX check types 6.5.4
 		*end = e;
 		end = &e->cast.e;
@@ -785,7 +789,7 @@ condexpr(struct scope *s)
 	r = binaryexpr(s, NULL, 0);
 	if (!consume(TQUESTION))
 		return r;
-	e = mkexpr(EXPRCOND, NULL, 0);
+	e = mkexpr(EXPRCOND, NULL);
 	e->cond.e = exprconvert(r, &typebool);
 	e->cond.t = expr(s);
 	expect(TCOLON, "in conditional expression");
@@ -871,10 +875,11 @@ assignexpr(struct scope *s)
 	lvalueconvert(r);
 	if (op) {
 		/* rewrite `E1 OP= E2` as `T = &E1, *T = *T OP E2`, where T is a temporary slot */
-		tmp = mkexpr(EXPRTEMP, mkpointertype(l->type), true);
+		tmp = mkexpr(EXPRTEMP, mkpointertype(l->type));
+		tmp->lvalue = true;
 		tmp->temp = NULL;
-		e = mkexpr(EXPRCOMMA, l->type, 0);
-		e->comma.exprs = mkexpr(EXPRASSIGN, tmp->type, 0);
+		e = mkexpr(EXPRCOMMA, l->type);
+		e->comma.exprs = mkexpr(EXPRASSIGN, tmp->type);
 		e->comma.exprs->assign.l = tmp;
 		e->comma.exprs->assign.r = mkunaryexpr(TBAND, l);
 		res = &e->comma.exprs->next;
@@ -882,7 +887,7 @@ assignexpr(struct scope *s)
 		r = mkbinaryexpr(&tok.loc, op, l, r);
 	}
 	r = exprconvert(r, l->type);
-	*res = mkexpr(EXPRASSIGN, l->type, 0);
+	*res = mkexpr(EXPRASSIGN, l->type);
 	(*res)->assign.l = l;
 	(*res)->assign.r = r;
 
@@ -905,7 +910,7 @@ expr(struct scope *s)
 	}
 	if (!r->next)
 		return r;
-	e = mkexpr(EXPRCOMMA, e->type, 0);
+	e = mkexpr(EXPRCOMMA, e->type);
 	e->comma.exprs = r;
 
 	return e;
@@ -918,7 +923,7 @@ exprconvert(struct expr *e, struct type *t)
 
 	if (typecompatible(e->type, t))
 		return e;
-	cast = mkexpr(EXPRCAST, t, 0);
+	cast = mkexpr(EXPRCAST, t);
 	cast->cast.e = e;
 
 	return cast;
