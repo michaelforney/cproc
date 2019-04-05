@@ -252,6 +252,7 @@ struct decl {
 	enum declkind kind;
 	enum linkage linkage;
 	struct type *type;
+	enum typequal qual;
 	struct value *value;
 
 	/* objects and functions */
@@ -416,7 +417,7 @@ extern struct type typevalist, typevalistptr;
 
 /* decl */
 
-struct decl *mkdecl(enum declkind, struct type *, enum linkage);
+struct decl *mkdecl(enum declkind, struct type *, enum typequal, enum linkage);
 _Bool decl(struct scope *, struct func *);
 struct type *typename(struct scope *);
 

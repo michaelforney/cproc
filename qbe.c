@@ -364,7 +364,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 		if (!t->func.isprototype && !typecompatible(p->type, typeargpromote(p->type)))
 			error(&tok.loc, "old-style function definition with parameter type incompatible with promoted type is not yet supported");
 		emittype(p->type);
-		d = mkdecl(DECLOBJECT, mkqualifiedtype(p->type, p->qual), LINKNONE);
+		d = mkdecl(DECLOBJECT, p->type, p->qual, LINKNONE);
 		p->value = xmalloc(sizeof(*p->value));
 		functemp(f, p->value, p->type->repr);
 		if (p->type->repr->abi.id) {
@@ -379,7 +379,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 	}
 
 	t = mkarraytype(mkqualifiedtype(&typechar, QUALCONST), strlen(name) + 1);
-	d = mkdecl(DECLOBJECT, t, LINKNONE);
+	d = mkdecl(DECLOBJECT, t, QUALNONE, LINKNONE);
 	d->value = mkglobal("__func__", true);
 	scopeputdecl(s, "__func__", d);
 	/*
@@ -469,7 +469,7 @@ objectaddr(struct func *f, struct expr *e)
 		d = stringdecl(e);
 		return d->value;
 	case EXPRCOMPOUND:
-		d = mkdecl(DECLOBJECT, mkqualifiedtype(e->type, e->qual), LINKNONE);
+		d = mkdecl(DECLOBJECT, e->type, e->qual, LINKNONE);
 		funcinit(f, d, e->compound.init);
 		return d->value;
 	case EXPRUNARY:
@@ -578,7 +578,7 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRIDENT:
 		d = e->ident.decl;
 		switch (d->kind) {
-		case DECLOBJECT: return funcload(f, typeunqual(d->type, NULL), d->value);
+		case DECLOBJECT: return funcload(f, d->type, d->value);
 		case DECLCONST:  return d->value;
 		default:
 			fatal("unimplemented declaration kind %d", d->kind);

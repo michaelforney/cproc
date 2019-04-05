@@ -78,7 +78,7 @@ eval(struct expr *expr)
 		expr->constant.i = intconstvalue(expr->ident.decl->value);
 		break;
 	case EXPRCOMPOUND:
-		d = mkdecl(DECLOBJECT, mkqualifiedtype(expr->type, expr->qual), LINKNONE);
+		d = mkdecl(DECLOBJECT, expr->type, expr->qual, LINKNONE);
 		d->value = mkglobal(NULL, true);
 		emitdata(d, expr->compound.init);
 		expr->kind = EXPRIDENT;

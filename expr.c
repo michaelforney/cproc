@@ -312,6 +312,7 @@ primaryexpr(struct scope *s)
 		if (!d)
 			error(&tok.loc, "undeclared identifier: %s", tok.lit);
 		e = mkexpr(EXPRIDENT, d->type);
+		e->qual = d->qual;
 		e->lvalue = d->kind == DECLOBJECT;
 		e->ident.decl = d;
 		if (d->kind != DECLBUILTIN)

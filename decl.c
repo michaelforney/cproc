@@ -56,14 +56,16 @@ struct structbuilder {
 };
 
 struct decl *
-mkdecl(enum declkind k, struct type *t, enum linkage linkage)
+mkdecl(enum declkind k, struct type *t, enum typequal tq, enum linkage linkage)
 {
 	struct decl *d;
 
+	assert(t->kind != TYPEQUALIFIED);
 	d = xmalloc(sizeof(*d));
 	d->kind = k;
 	d->linkage = linkage;
 	d->type = t;
+	d->qual = tq;
 	d->tentative = false;
 	d->defined = false;
 	d->align = 0;
@@ -208,7 +210,7 @@ tagspec(struct scope *s)
 		break;
 	case TYPEBASIC:  /* enum */
 		for (i = 0; tok.kind == TIDENT; ++i) {
-			d = mkdecl(DECLCONST, &typeint, LINKNONE);
+			d = mkdecl(DECLCONST, &typeint, QUALNONE, LINKNONE);
 			scopeputdecl(s, tok.lit, d);
 			next();
 			if (consume(TASSIGN))
@@ -741,6 +743,7 @@ bool
 decl(struct scope *s, struct func *f)
 {
 	struct type *t, *base;
+	enum typequal tq;
 	enum storageclass sc;
 	enum funcspec fs;
 	struct init *init;
@@ -779,7 +782,8 @@ decl(struct scope *s, struct func *f)
 		return true;
 	}
 	for (;;) {
-		t = declarator(s, base, &name, false);
+		tq = QUALNONE;
+		t = typeunqual(declarator(s, base, &name, false), &tq);
 		kind = sc & SCTYPEDEF ? DECLTYPE : t->kind == TYPEFUNC ? DECLFUNC : DECLOBJECT;
 		d = scopegetdecl(s, name, false);
 		if (d && d->kind != kind)
@@ -789,8 +793,8 @@ decl(struct scope *s, struct func *f)
 			if (align)
 				error(&tok.loc, "typedef '%s' declared with alignment specifier", name);
 			if (!d)
-				scopeputdecl(s, name, mkdecl(DECLTYPE, t, LINKNONE));
-			else if (!typesame(d->type, t))
+				scopeputdecl(s, name, mkdecl(DECLTYPE, t, tq, LINKNONE));
+			else if (!typesame(d->type, t) || d->qual != tq)
 				error(&tok.loc, "typedef '%s' redefined with different type", name);
 			break;
 		case DECLOBJECT:
@@ -802,7 +806,7 @@ decl(struct scope *s, struct func *f)
 					if (d->linkage != linkage)
 						error(&tok.loc, "object '%s' redeclared with different linkage", name);
 				}
-				if (!typecompatible(d->type, t))
+				if (!typecompatible(d->type, t) || d->qual != tq)
 					error(&tok.loc, "object '%s' redeclared with incompatible type", name);
 				d->type = typecomposite(t, d->type);
 			} else {
@@ -814,7 +818,7 @@ decl(struct scope *s, struct func *f)
 					if (d) {
 						if (d->linkage != linkage)
 							error(&tok.loc, "object '%s' redeclared with different linkage", name);
-						if (!typecompatible(d->type, t))
+						if (!typecompatible(d->type, t) || d->qual != tq)
 							error(&tok.loc, "object '%s' redeclared with incompatible type", name);
 						t = typecomposite(t, d->type);
 					}
@@ -822,7 +826,7 @@ decl(struct scope *s, struct func *f)
 					linkage = f ? LINKNONE : sc & SCSTATIC ? LINKINTERN : LINKEXTERN;
 				}
 
-				d = mkdecl(kind, t, linkage);
+				d = mkdecl(kind, t, tq, linkage);
 				scopeputdecl(s, name, d);
 				if (linkage != LINKNONE || sc & SCSTATIC)
 					d->value = mkglobal(name, linkage == LINKNONE);
@@ -875,7 +879,7 @@ decl(struct scope *s, struct func *f)
 				}
 			}
 			if (d) {
-				if (!typecompatible(t, d->type))
+				if (!typecompatible(t, d->type) || tq != d->qual)
 					error(&tok.loc, "function '%s' redeclared with incompatible type", name);
 				d->type = typecomposite(t, d->type);
 			} else {
@@ -883,13 +887,13 @@ decl(struct scope *s, struct func *f)
 					d = scopegetdecl(s->parent, name, 1);
 				if (d && d->linkage != LINKNONE) {
 					linkage = d->linkage;
-					if (!typecompatible(t, d->type))
+					if (!typecompatible(t, d->type) || tq != d->qual)
 						error(&tok.loc, "function '%s' redeclared with incompatible type", name);
 					t = typecomposite(t, d->type);
 				} else {
 					linkage = sc & SCSTATIC ? LINKINTERN : LINKEXTERN;
 				}
-				d = mkdecl(kind, t, linkage);
+				d = mkdecl(kind, t, tq, linkage);
 				d->value = mkglobal(name, false);
 				scopeputdecl(s, name, d);
 			}
@@ -936,7 +940,7 @@ struct decl *stringdecl(struct expr *expr)
 	entry = htabput(strings, &key);
 	d = *entry;
 	if (!d) {
-		d = mkdecl(DECLOBJECT, expr->type, LINKNONE);
+		d = mkdecl(DECLOBJECT, expr->type, QUALNONE, LINKNONE);
 		d->value = mkglobal("string", true);
 		emitdata(d, mkinit(0, expr->type->size, expr));
 		*entry = d;
