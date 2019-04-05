@@ -562,7 +562,7 @@ postfixexpr(struct scope *s, struct expr *r)
 			if (m->bits.before || m->bits.after)
 				error(&tok.loc, "bit-field access is not yet supported");
 			r = mkbinaryexpr(&tok.loc, TADD, r, mkconstexpr(&typeulong, offset));
-			r = exprconvert(r, mkpointertype(mkqualifiedtype(m->type, tq)));
+			r = exprconvert(r, mkpointertype(mkqualifiedtype(m->type, tq | m->qual)));
 			e = mkunaryexpr(TMUL, r);
 			e->lvalue = lvalue;
 			next();

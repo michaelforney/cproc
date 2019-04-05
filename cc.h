@@ -172,6 +172,7 @@ struct bitfield {
 struct member {
 	char *name;
 	struct type *type;
+	enum typequal qual;
 	uint64_t offset;
 	struct bitfield bits;
 	struct member *next;

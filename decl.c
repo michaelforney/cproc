@@ -643,7 +643,8 @@ addmember(struct structbuilder *b, struct type *mt, char *name, int align, uint6
 	assert(mt->align > 0);
 	if (name || width == -1) {
 		m = xmalloc(sizeof(*m));
-		m->type = mt;
+		m->qual = QUALNONE;
+		m->type = typeunqual(mt, &m->qual);
 		m->name = name;
 		m->next = NULL;
 		*b->last = m;
