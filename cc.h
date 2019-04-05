@@ -296,8 +296,14 @@ enum exprkind {
 
 struct expr {
 	enum exprkind kind;
-	_Bool lvalue, decayed;
+	/* whether this expression is an lvalue */
+	_Bool lvalue;
+	/* whether this expression is a pointer decayed from an array or function designator */
+	_Bool decayed;
+	/* the unqualified type of the expression */
 	struct type *type;
+	/* the type qualifiers of the object this expression refers to (ignored for non-lvalues) */
+	enum typequal qual;
 	struct expr *next;
 	union {
 		struct {

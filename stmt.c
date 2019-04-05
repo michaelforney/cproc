@@ -125,10 +125,9 @@ stmt(struct func *f, struct scope *s)
 		e = expr(s);
 		expect(TRPAREN, "after expression");
 
-		t = typeunqual(e->type, NULL);
-		if (!(typeprop(t) & PROPINT))
+		if (!(typeprop(e->type) & PROPINT))
 			error(&tok.loc, "controlling expression of switch statement must have integer type");
-		e = exprconvert(e, typeintpromote(t));
+		e = exprconvert(e, typeintpromote(e->type));
 
 		label[0] = mkblock("switch_cond");
 		label[1] = mkblock("switch_join");

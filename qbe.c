@@ -234,12 +234,10 @@ funcalloc(struct func *f, struct decl *d)
 }
 
 static void
-funcstore(struct func *f, struct type *t, struct value *addr, struct value *v)
+funcstore(struct func *f, struct type *t, enum typequal tq, struct value *addr, struct value *v)
 {
 	enum instkind op;
-	enum typequal tq = QUALNONE;
 
-	t = typeunqual(t, &tq);
 	if (tq & QUALVOLATILE)
 		error(&tok.loc, "volatile store is not yet supported");
 	if (tq & QUALCONST)
@@ -295,9 +293,7 @@ funcload(struct func *f, struct type *t, struct value *addr)
 {
 	struct value *v;
 	enum instkind op;
-	enum typequal tq;
 
-	t = typeunqual(t, &tq);
 	switch (t->kind) {
 	case TYPEBASIC:
 		switch (t->size) {
@@ -377,7 +373,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 			d->value->repr = &iptr;
 		} else {
 			funcinit(f, d, NULL);
-			funcstore(f, typeunqual(p->type, NULL), d->value, p->value);
+			funcstore(f, typeunqual(p->type, NULL), QUALNONE, d->value, p->value);
 		}
 		scopeputdecl(s, p->name, d);
 	}
@@ -473,7 +469,7 @@ objectaddr(struct func *f, struct expr *e)
 		d = stringdecl(e);
 		return d->value;
 	case EXPRCOMPOUND:
-		d = mkdecl(DECLOBJECT, e->type, LINKNONE);
+		d = mkdecl(DECLOBJECT, mkqualifiedtype(e->type, e->qual), LINKNONE);
 		funcinit(f, d, e->compound.init);
 		return d->value;
 	case EXPRUNARY:
@@ -582,7 +578,7 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRIDENT:
 		d = e->ident.decl;
 		switch (d->kind) {
-		case DECLOBJECT: return funcload(f, d->type, d->value);
+		case DECLOBJECT: return funcload(f, typeunqual(d->type, NULL), d->value);
 		case DECLCONST:  return d->value;
 		default:
 			fatal("unimplemented declaration kind %d", d->kind);
@@ -607,7 +603,7 @@ funcexpr(struct func *f, struct expr *e)
 		else
 			fatal("not a scalar");
 		v = funcinst(f, e->incdec.op == TINC ? IADD : ISUB, e->type->repr, l, r);
-		funcstore(f, e->type, addr, v);
+		funcstore(f, e->type, e->qual, addr, v);
 		return e->incdec.post ? l : v;
 	case EXPRCALL:
 		argvals = xreallocarray(NULL, e->call.nargs + 3, sizeof(argvals[0]));
@@ -639,10 +635,10 @@ funcexpr(struct func *f, struct expr *e)
 		l = funcexpr(f, e->cast.e);
 		r = NULL;
 
-		src = typeunqual(e->cast.e->type, NULL);
+		src = e->cast.e->type;
 		if (src->kind == TYPEPOINTER)
 			src = &typeulong;
-		dst = typeunqual(e->type, NULL);
+		dst = e->type;
 		if (dst->kind == TYPEPOINTER)
 			dst = &typeulong;
 		if (dst->kind == TYPEVOID)
@@ -823,7 +819,7 @@ funcexpr(struct func *f, struct expr *e)
 			e->assign.l->temp = r;
 		} else {
 			l = objectaddr(f, e->assign.l);
-			funcstore(f, e->assign.l->type, l, r);
+			funcstore(f, e->assign.l->type, e->assign.l->qual, l, r);
 		}
 		return r;
 	case EXPRCOMMA:
@@ -902,7 +898,7 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 		} else {
 			dst = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start));
 			src = funcexpr(func, init->expr);
-			funcstore(func, init->expr->type, dst, src);
+			funcstore(func, init->expr->type, QUALNONE, dst, src);
 			offset = init->end;
 		}
 		if (max < offset)
