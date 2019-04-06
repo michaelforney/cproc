@@ -132,7 +132,6 @@ enum typequal {
 enum typekind {
 	TYPENONE,
 
-	TYPEQUALIFIED,
 	TYPEVOID,
 	TYPEBASIC,
 	TYPEPOINTER,
@@ -187,11 +186,10 @@ struct type {
 		struct type *base;
 		struct list link;  /* used only during construction of type */
 	};
+	/* qualifiers of the base type */
+	enum typequal qual;
 	_Bool incomplete;
 	union {
-		struct {
-			enum typequal kind;
-		} qualified;
 		struct {
 			enum {
 				BASICBOOL,
@@ -389,9 +387,8 @@ _Bool consume(int);
 /* type */
 
 struct type *mktype(enum typekind);
-struct type *mkqualifiedtype(struct type *, enum typequal);
-struct type *mkpointertype(struct type *);
-struct type *mkarraytype(struct type *, uint64_t);
+struct type *mkpointertype(struct type *, enum typequal);
+struct type *mkarraytype(struct type *, enum typequal, uint64_t);
 
 _Bool typecompatible(struct type *, struct type *);
 _Bool typesame(struct type *, struct type *);
@@ -403,7 +400,7 @@ struct type *typeintpromote(struct type *);
 enum typeprop typeprop(struct type *);
 struct member *typemember(struct type *, const char *, uint64_t *);
 
-struct param *mkparam(char *, struct type *);
+struct param *mkparam(char *, struct type *, enum typequal);
 
 extern struct type typevoid;
 extern struct type typebool;
@@ -419,7 +416,7 @@ extern struct type typevalist, typevalistptr;
 
 struct decl *mkdecl(enum declkind, struct type *, enum typequal, enum linkage);
 _Bool decl(struct scope *, struct func *);
-struct type *typename(struct scope *);
+struct type *typename(struct scope *, enum typequal *);
 
 struct decl *stringdecl(struct expr *);
 

@@ -17,7 +17,7 @@ mkexpr(enum exprkind k, struct type *t)
 
 	e = xmalloc(sizeof(*e));
 	e->qual = QUALNONE;
-	e->type = t ? typeunqual(t, &e->qual) : NULL;
+	e->type = t;
 	e->lvalue = false;
 	e->decayed = false;
 	e->kind = k;
@@ -58,8 +58,7 @@ decay(struct expr *e)
 	switch (t->kind) {
 	case TYPEARRAY:
 		e = mkunaryexpr(TBAND, e);
-		e->type = mkpointertype(t->base);
-		e->qual = tq;
+		e->type = mkpointertype(t->base, tq);
 		e->decayed = true;
 		break;
 	case TYPEFUNC:
@@ -82,7 +81,7 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 			base->decayed = false;
 			return base;
 		}
-		expr = mkexpr(EXPRUNARY, mkpointertype(mkqualifiedtype(base->type, base->qual)));
+		expr = mkexpr(EXPRUNARY, mkpointertype(base->type, base->qual));
 		expr->unary.op = op;
 		expr->unary.base = base;
 		return expr;
@@ -90,6 +89,7 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 		if (base->type->kind != TYPEPOINTER)
 			error(&tok.loc, "cannot dereference non-pointer");
 		expr = mkexpr(EXPRUNARY, base->type->base);
+		expr->qual = base->type->qual;
 		expr->lvalue = true;
 		expr->unary.op = op;
 		expr->unary.base = base;
@@ -176,7 +176,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 			t = l->type;
 			r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
 		} else {
-			if (!typecompatible(typeunqual(l->type->base, NULL), typeunqual(r->type->base, NULL)))
+			if (!typecompatible(l->type->base, r->type->base))
 				error(&tok.loc, "pointer operands to '-' are to incompatible types");
 			op = TDIV;
 			t = &typelong;
@@ -320,7 +320,7 @@ primaryexpr(struct scope *s)
 		next();
 		break;
 	case TSTRINGLIT:
-		e = mkexpr(EXPRSTRING, mkarraytype(&typechar, 0));
+		e = mkexpr(EXPRSTRING, mkarraytype(&typechar, QUALNONE, 0));
 		e->lvalue = true;
 		e->string.size = 0;
 		e->string.data = NULL;
@@ -402,7 +402,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 
 	switch (kind) {
 	case BUILTINALLOCA:
-		e = mkexpr(EXPRBUILTIN, mkpointertype(&typevoid));
+		e = mkexpr(EXPRBUILTIN, mkpointertype(&typevoid, QUALNONE));
 		e->builtin.kind = BUILTINALLOCA;
 		e->builtin.arg = exprconvert(assignexpr(s), &typeulong);
 		break;
@@ -423,7 +423,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->constant.f = strtod("nan", NULL);
 		break;
 	case BUILTINOFFSETOF:
-		t = typename(s);
+		t = typename(s, NULL);
 		expect(TCOMMA, "after type name");
 		name = expect(TIDENT, "after ','");
 		if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
@@ -439,8 +439,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->builtin.kind = BUILTINVAARG;
 		e->builtin.arg = exprconvert(assignexpr(s), &typevalistptr);
 		expect(TCOMMA, "after va_list");
-		e->type = typename(s);
-		typeunqual(e->type, &e->qual);
+		e->type = typename(s, &e->qual);
 		break;
 	case BUILTINVACOPY:
 		e = mkexpr(EXPRASSIGN, typevalist.base);
@@ -547,15 +546,15 @@ postfixexpr(struct scope *s, struct expr *r)
 			op = tok.kind;
 			if (r->type->kind != TYPEPOINTER)
 				error(&tok.loc, "arrow operator must be applied to pointer to struct/union");
-			tq = QUALNONE;
-			t = typeunqual(r->type->base, &tq);
+			t = r->type->base;
+			tq = r->type->qual;
 			if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
 				error(&tok.loc, "arrow operator must be applied to pointer to struct/union");
 			next();
 			if (tok.kind != TIDENT)
 				error(&tok.loc, "expected identifier after '->' operator");
 			lvalue = op == TARROW || r->unary.base->lvalue;
-			r = exprconvert(r, mkpointertype(&typechar));
+			r = exprconvert(r, mkpointertype(&typechar, QUALNONE));
 			offset = 0;
 			m = typemember(t, tok.lit, &offset);
 			if (!m)
@@ -563,7 +562,7 @@ postfixexpr(struct scope *s, struct expr *r)
 			if (m->bits.before || m->bits.after)
 				error(&tok.loc, "bit-field access is not yet supported");
 			r = mkbinaryexpr(&tok.loc, TADD, r, mkconstexpr(&typeulong, offset));
-			r = exprconvert(r, mkpointertype(mkqualifiedtype(m->type, tq | m->qual)));
+			r = exprconvert(r, mkpointertype(m->type, tq | m->qual));
 			e = mkunaryexpr(TMUL, r);
 			e->lvalue = lvalue;
 			next();
@@ -641,7 +640,7 @@ unaryexpr(struct scope *s)
 	case T_ALIGNOF:
 		next();
 		if (consume(TLPAREN)) {
-			t = typename(s);
+			t = typename(s, NULL);
 			if (t) {
 				expect(TRPAREN, "after type name");
 				/* might be part of a compound literal */
@@ -677,11 +676,13 @@ static struct expr *
 castexpr(struct scope *s)
 {
 	struct type *t;
+	enum typequal tq;
 	struct expr *r, *e, **end;
 
 	end = &r;
 	while (consume(TLPAREN)) {
-		t = typename(s);
+		tq = QUALNONE;
+		t = typename(s, &tq);
 		if (!t) {
 			e = expr(s);
 			expect(TRPAREN, "after expression to match '('");
@@ -691,6 +692,7 @@ castexpr(struct scope *s)
 		expect(TRPAREN, "after type name");
 		if (tok.kind == TLBRACE) {
 			e = mkexpr(EXPRCOMPOUND, t);
+			e->qual = tq;
 			e->lvalue = true;
 			e->compound.init = parseinit(s, t);
 			e = decay(e);
@@ -796,9 +798,9 @@ condexpr(struct scope *s)
 		} else if (nullpointer(e->cond.f) && t->kind == TYPEPOINTER) {
 			e->type = t;
 		} else if (t->kind == TYPEPOINTER && f->kind == TYPEPOINTER) {
-			tq = QUALNONE;
-			t = typeunqual(t->base, &tq);
-			f = typeunqual(f->base, &tq);
+			tq = t->qual | f->qual;
+			t = t->base;
+			f = f->base;
 			if (t == &typevoid || f == &typevoid) {
 				e->type = &typevoid;
 			} else {
@@ -806,7 +808,7 @@ condexpr(struct scope *s)
 					error(&tok.loc, "operands of conditional operator must have compatible types");
 				e->type = typecomposite(t, f);
 			}
-			e->type = mkpointertype(mkqualifiedtype(e->type, tq));
+			e->type = mkpointertype(e->type, tq);
 		} else {
 			error(&tok.loc, "invalid operands to conditional operator");
 		}
@@ -858,7 +860,7 @@ assignexpr(struct scope *s)
 	r = assignexpr(s);
 	if (op) {
 		/* rewrite `E1 OP= E2` as `T = &E1, *T = *T OP E2`, where T is a temporary slot */
-		tmp = mkexpr(EXPRTEMP, mkpointertype(l->type));
+		tmp = mkexpr(EXPRTEMP, mkpointertype(l->type, l->qual));
 		tmp->lvalue = true;
 		tmp->temp = NULL;
 		e = mkexpr(EXPRCOMMA, l->type);

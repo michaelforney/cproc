@@ -46,31 +46,13 @@ mktype(enum typekind kind)
 }
 
 struct type *
-mkqualifiedtype(struct type *base, enum typequal tq)
-{
-	struct type *t;
-
-	if (!tq)
-		return base;
-	t = mktype(TYPEQUALIFIED);
-	t->base = base;
-	t->qualified.kind = tq;
-	if (base) {
-		t->size = base->size;
-		t->align = base->align;
-		t->repr = base->repr;
-	}
-	// XXX: incomplete?
-	return t;
-}
-
-struct type *
-mkpointertype(struct type *base)
+mkpointertype(struct type *base, enum typequal qual)
 {
 	struct type *t;
 
 	t = mktype(TYPEPOINTER);
 	t->base = base;
+	t->qual = qual;
 	t->size = 8;
 	t->align = 8;
 	t->repr = &i64;
@@ -79,12 +61,13 @@ mkpointertype(struct type *base)
 }
 
 struct type *
-mkarraytype(struct type *base, uint64_t len)
+mkarraytype(struct type *base, enum typequal qual, uint64_t len)
 {
 	struct type *t;
 
 	t = mktype(TYPEARRAY);
 	t->base = base;
+	t->qual = qual;
 	t->array.length = len;
 	t->incomplete = !len;
 	if (t->base) {
@@ -176,20 +159,16 @@ typecompatible(struct type *t1, struct type *t2)
 		   each other (unless they are the same type) */
 		return t1->basic.kind == BASICENUM && t2->basic.kind == BASICINT ||
 		       t1->basic.kind == BASICINT && t2->basic.kind == BASICENUM;
-	case TYPEQUALIFIED:
-		if (t1->qualified.kind != t2->qualified.kind)
-			return false;
-		return typecompatible(t1->base, t2->base);
 	case TYPEVOID:
 		return true;
 	case TYPEPOINTER:
-		return typecompatible(t1->base, t2->base);
+		return t1->qual == t2->qual && typecompatible(t1->base, t2->base);
 	case TYPEARRAY:
 		if (t1->array.length && t2->array.length && t1->array.length != t2->array.length)
 			return false;
-		return typecompatible(t1->base, t2->base);
+		return t1->qual == t2->qual && typecompatible(t1->base, t2->base);
 	case TYPEFUNC:
-		if (!typecompatible(t1->base, t2->base))
+		if (t1->qual != t2->qual || !typecompatible(t1->base, t2->base))
 			return false;
 		if (!t1->func.isprototype) {
 			if (!t2->func.isprototype)
@@ -233,20 +212,8 @@ typecomposite(struct type *t1, struct type *t2)
 }
 
 struct type *
-typeunqual(struct type *t, enum typequal *tq)
-{
-	while (t->kind == TYPEQUALIFIED) {
-		if (tq)
-			*tq |= t->qualified.kind;
-		t = t->base;
-	}
-	return t;
-}
-
-struct type *
 typeintpromote(struct type *t)
 {
-	assert(t->kind != TYPEQUALIFIED);
 	if (typeprop(t) & PROPINT && typerank(t) <= typerank(&typeint))
 		return t->size < typeint.size || t->basic.issigned ? &typeint : &typeuint;
 	return t;
@@ -255,7 +222,6 @@ typeintpromote(struct type *t)
 struct type *
 typeargpromote(struct type *t)
 {
-	assert(t->kind != TYPEQUALIFIED);
 	if (t == &typefloat)
 		return &typedouble;
 	return typeintpromote(t);
@@ -321,14 +287,14 @@ typemember(struct type *t, const char *name, uint64_t *offset)
 }
 
 struct param *
-mkparam(char *name, struct type *t)
+mkparam(char *name, struct type *t, enum typequal tq)
 {
 	struct param *p;
 
 	p = xmalloc(sizeof(*p));
 	p->name = name;
 	p->type = t;
-	p->qual = QUALNONE;
+	p->qual = tq;
 	p->next = NULL;
 
 	return p;

@@ -378,7 +378,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 		scopeputdecl(s, p->name, d);
 	}
 
-	t = mkarraytype(mkqualifiedtype(&typechar, QUALCONST), strlen(name) + 1);
+	t = mkarraytype(&typechar, QUALCONST, strlen(name) + 1);
 	d = mkdecl(DECLOBJECT, t, QUALNONE, LINKNONE);
 	d->value = mkglobal("__func__", true);
 	scopeputdecl(s, "__func__", d);
