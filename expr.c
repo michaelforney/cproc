@@ -216,7 +216,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 }
 
 static struct type *
-inttype(uint64_t val, bool decimal, char *end)
+inttype(unsigned long long val, bool decimal, char *end)
 {
 	static struct {
 		struct type *type;
@@ -245,7 +245,7 @@ inttype(uint64_t val, bool decimal, char *end)
 	step = i % 2 || decimal ? 2 : 1;
 	for (; i < LEN(limits); i += step) {
 		t = limits[i].type;
-		if (val <= (uint64_t)-1 >> (8 - t->size << 3) + t->basic.issigned)
+		if (val <= 0xffffffffffffffffu >> (8 - t->size << 3) + t->basic.issigned)
 			return t;
 	}
 	error(&tok.loc, "no suitable type for constant '%s'", tok.lit);
