@@ -10,6 +10,7 @@
 
 #include <fcntl.h>
 #include <limits.h>
+#include <signal.h>
 #include <spawn.h>
 #include <sys/wait.h>
 #include <unistd.h>
