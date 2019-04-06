@@ -162,14 +162,12 @@ typecompatible(struct type *t1, struct type *t2)
 	case TYPEVOID:
 		return true;
 	case TYPEPOINTER:
-		return t1->qual == t2->qual && typecompatible(t1->base, t2->base);
+		goto derived;
 	case TYPEARRAY:
 		if (t1->array.length && t2->array.length && t1->array.length != t2->array.length)
 			return false;
-		return t1->qual == t2->qual && typecompatible(t1->base, t2->base);
+		goto derived;
 	case TYPEFUNC:
-		if (t1->qual != t2->qual || !typecompatible(t1->base, t2->base))
-			return false;
 		if (!t1->func.isprototype) {
 			if (!t2->func.isprototype)
 				return true;
@@ -191,7 +189,11 @@ typecompatible(struct type *t1, struct type *t2)
 			if (!typecompatible(p1->type, tmp))
 				return false;
 		}
-		return !p1 && !p2;
+		if (p1 || p2)
+			return false;
+		goto derived;
+	derived:
+		return t1->qual == t2->qual && typecompatible(t1->base, t2->base);
 	}
 	return false;
 }
