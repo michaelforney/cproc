@@ -486,9 +486,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 						*p = mkparam(tok.lit, NULL, QUALNONE);
 						p = &(*p)->next;
 						next();
-						if (!consume(TCOMMA))
-							break;
-					} while (tok.kind == TIDENT);
+					} while (consume(TCOMMA) && tok.kind == TIDENT);
 					break;
 				}
 				/* fallthrough */
@@ -517,12 +515,8 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 		case TLBRACK:  /* array declarator */
 			next();
 			tq = QUALNONE;
-			for (;;) {
-				if (tok.kind == TSTATIC)
-					next();  /* ignore */
-				else if (!typequal(&tq))
-					break;
-			}
+			while (consume(TSTATIC) || typequal(&tq))
+				;
 			if (tok.kind == TMUL)
 				error(&tok.loc, "VLAs are not yet supported");
 			if (tok.kind == TRBRACK) {
