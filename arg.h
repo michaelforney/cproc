@@ -15,4 +15,4 @@
 	}
 
 #define EARGF(x) \
-	(done_ = 1, *++opt_ ? opt_ : argv[1] ? --argc, *++argv : ((x), abort(), NULL))
+	(done_ = 1, *++opt_ ? opt_ : argv[1] ? --argc, *++argv : ((x), abort(), (void *)0))
