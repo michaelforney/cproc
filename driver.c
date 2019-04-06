@@ -310,10 +310,10 @@ compilecommand(void)
 	char self[PATH_MAX], *cmd;
 	ssize_t n;
 
-	n = readlink("/proc/self/exe", self, sizeof(self) - 4);
+	n = readlink("/proc/self/exe", self, sizeof(self) - 5);
 	if (n < 0)
 		fatal("readlink /proc/self/exe:");
-	if (n == sizeof(self) - 4)
+	if (n == sizeof(self) - 5)
 		fatal("target of /proc/self/exe is too large");
 	strcpy(self + n, "-qbe");
 	if (access(self, X_OK) < 0)
