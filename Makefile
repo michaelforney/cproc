@@ -2,21 +2,21 @@
 
 BACKEND=qbe
 
-srcdir=.
--include $(srcdir)/config.mk
+objdir=.
+-include config.mk
 
 .PHONY: all
-all: cc cc-qbe
+all: $(objdir)/cc $(objdir)/cc-qbe
 
 DRIVER_SRC=\
 	driver.c\
 	util.c
-DRIVER_OBJ=$(DRIVER_SRC:.c=.o)
+DRIVER_OBJ=$(DRIVER_SRC:%.c=$(objdir)/%.o)
 
 config.h:
 	@cp config.def.h $@
 
-cc: $(DRIVER_OBJ)
+$(objdir)/cc: $(DRIVER_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(DRIVER_OBJ)
 
 SRC=\
@@ -36,38 +36,40 @@ SRC=\
 	type.c\
 	util.c\
 	$(BACKEND).c
-OBJ=$(SRC:.c=.o)
+OBJ=$(SRC:%.c=$(objdir)/%.o)
 
-cc-qbe: $(OBJ)
+$(objdir)/cc-qbe: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OBJ)
 
-decl.o    : $(srcdir)/decl.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-driver.o  : $(srcdir)/driver.c  $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-eval.o    : $(srcdir)/eval.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-expr.o    : $(srcdir)/expr.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-htab.o    : $(srcdir)/htab.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-init.o    : $(srcdir)/init.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-main.o    : $(srcdir)/main.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-pp.o      : $(srcdir)/pp.c      $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-scan.o    : $(srcdir)/scan.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-scope.o   : $(srcdir)/scope.c   $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-siphash.o : $(srcdir)/siphash.c $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-stmt.o    : $(srcdir)/stmt.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-tree.o    : $(srcdir)/tree.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-token.o   : $(srcdir)/token.c   $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-type.o    : $(srcdir)/type.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-util.o    : $(srcdir)/util.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
-qbe.o     : $(srcdir)/qbe.c     $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/decl.o    : decl.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/driver.o  : driver.c  $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/eval.o    : eval.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/expr.o    : expr.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/htab.o    : htab.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/init.o    : init.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/main.o    : main.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/pp.o      : pp.c      $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/scan.o    : scan.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/scope.o   : scope.c   $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/siphash.o : siphash.c $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/stmt.o    : stmt.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/tree.o    : tree.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/token.o   : token.c   $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/type.o    : type.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/util.o    : util.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
+$(objdir)/qbe.o     : qbe.c     $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ $<
 
 .PHONY: stage2
-stage2: cc cc-qbe
+stage2: all
 	@mkdir -p $@
-	$(MAKE) -C $@ -f ../$(srcdir)/Makefile srcdir=../$(srcdir) stagedeps='../cc ../cc-qbe' CC=../cc
+	$(MAKE) objdir=$@ stagedeps='cc cc-qbe' CC=$(objdir)/cc
+	strip $@/cc $@/cc-qbe
 
 .PHONY: stage3
 stage3: stage2
 	@mkdir -p $@
-	$(MAKE) -C $@ -f ../$(srcdir)/Makefile srcdir=../$(srcdir) stagedeps='../stage2/cc ../stage2/cc-qbe' CC=../stage2/cc
+	$(MAKE) objdir=$@ stagedeps='stage2/cc stage2/cc-qbe' CC=$(objdir)/stage2/cc
+	strip $@/cc $@/cc-qbe
 
 .PHONY: bootstrap
 bootstrap: stage2 stage3
