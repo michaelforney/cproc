@@ -395,7 +395,7 @@ static struct expr *condexpr(struct scope *);
 static struct expr *
 builtinfunc(struct scope *s, enum builtinkind kind)
 {
-	struct expr *e;
+	struct expr *e, *param;
 	struct type *t;
 	char *name;
 	uint64_t offset;
@@ -458,7 +458,10 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->builtin.kind = BUILTINVASTART;
 		e->builtin.arg = exprconvert(assignexpr(s), &typevalistptr);
 		expect(TCOMMA, "after va_list");
-		free(expect(TIDENT, "after ','"));
+		param = assignexpr(s);
+		if (param->kind != EXPRIDENT)
+			error(&tok.loc, "expected parameter identifier");
+		delexpr(param);
 		// XXX: check that this was actually a parameter name?
 		break;
 	default:
