@@ -85,5 +85,5 @@ clean:
 	rm -rf cc $(DRIVER_OBJ) cc-qbe $(OBJ) stage2 stage3
 
 deps.mk: $(DRIVER_SRC) $(SRC) config.h
-	$(CC) $(CFLAGS) -MM $(DRIVER_SRC) $(SRC) >$@
+	for src in $(DRIVER_SRC) $(SRC); do $(CC) $(CFLAGS) -MM -MT "\$$(objdir)/$${src%.c}.o" "$$src"; done >$@
 -include deps.mk
