@@ -1,0 +1,33 @@
+image: freebsd/latest
+sources:
+  - https://git.sr.ht/~mcf/cc
+  - https://github.com/michaelforney/qbe
+packages:
+  - gmake
+tasks:
+  - build: |
+      gmake -C qbe
+      cd cc
+      cat >config.h <<EOF
+      static char *startfiles[] = {"-l", ":crt1.o", "-l", ":crti.o"};
+      static char *endfiles[] = {"-l", ":crtn.o", "-l", "c"};
+      static char *preprocesscmd[] = {
+      	"cpp", "-P",
+      	"-U", "__GNUC__", "-D", "__GNUC__=3",
+      	"-U", "__GNUC_MINOR__", "-D", "__GNUC_MINOR__=3",
+      	"-D", "__asm(x)=",
+      	"-D", "__attribute__(x)=",
+      	"-D", "__inline=",
+      	"-D", "_Pragma(x)=",
+      	"-D", "_Nullable=",
+      	"-D", "_Nonnull=",
+      	"-D", "_XLOCALE_INLINE=static inline",
+      	"-D", "__NO_TLS",
+      };
+      static char *compilecmd[] = {"cc-qbe"};
+      static char *codegencmd[] = {"qbe"};
+      static char *assemblecmd[] = {"as"};
+      static char *linkcmd[] = {"ld", "-L", "/usr/lib", "--dynamic-linker", "/libexec/ld-elf.so.1"};
+      EOF
+      echo 'CFLAGS=-Wno-parentheses -Wno-switch' >config.mk
+      PATH=$HOME/qbe/obj:$PATH make all check bootstrap
