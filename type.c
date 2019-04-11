@@ -117,6 +117,9 @@ typeprop(struct type *t)
 	case TYPESTRUCT:
 		p |= PROPOBJECT|PROPAGGR;
 		break;
+	case TYPEUNION:
+		p |= PROPOBJECT;
+		break;
 	default:
 		break;
 	}
