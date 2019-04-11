@@ -159,7 +159,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT))
 			error(loc, "invalid operands to '+' operator");
 		t = l->type;
-		if (t->base->incomplete)
+		if (t->base->incomplete || !(typeprop(t->base) & PROPOBJECT))
 			error(loc, "pointer operand to '+' must be to complete object type");
 		r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
 		break;
@@ -170,7 +170,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 		}
 		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT) && r->type->kind != TYPEPOINTER)
 			error(loc, "invalid operands to '-' operator");
-		if (l->type->base->incomplete)
+		if (l->type->base->incomplete || !(typeprop(l->type->base) & PROPOBJECT))
 			error(loc, "pointer operand to '-' must be to complete object type");
 		if (rp & PROPINT) {
 			t = l->type;
