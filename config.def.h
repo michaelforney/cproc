@@ -14,6 +14,11 @@ static char *endfiles[] = {
 static char *preprocesscmd[] = {
 	"cpp", "-P",
 
+	/* we don't yet support these optional features */
+	"-D", "__STDC_NO_ATOMICS__",
+	"-D", "__STDC_NO_COMPLEX__",
+	"-D", "__STDC_NO_VLA__",
+
 	/* specify the GNU C extensions we support */
 	"-U", "__GNUC__", "-D", "__GNUC__=3",
 	"-U", "__GNUC_MINOR__", "-D", "__GNUC_MINOR__=3",
