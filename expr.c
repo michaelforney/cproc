@@ -562,12 +562,18 @@ postfixexpr(struct scope *s, struct expr *r)
 			m = typemember(t, tok.lit, &offset);
 			if (!m)
 				error(&tok.loc, "struct/union has no member named '%s'", tok.lit);
-			if (m->bits.before || m->bits.after)
-				error(&tok.loc, "bit-field access is not yet supported");
 			r = mkbinaryexpr(&tok.loc, TADD, r, mkconstexpr(&typeulong, offset));
 			r = exprconvert(r, mkpointertype(m->type, tq | m->qual));
-			e = mkunaryexpr(TMUL, r);
-			e->lvalue = lvalue;
+			r = mkunaryexpr(TMUL, r);
+			r->lvalue = lvalue;
+			if (m->bits.before || m->bits.after) {
+				e = mkexpr(EXPRBITFIELD, r->type);
+				e->lvalue = lvalue;
+				e->bitfield.base = r;
+				e->bitfield.bits = m->bits;
+			} else {
+				e = r;
+			}
 			next();
 			break;
 		case TINC:

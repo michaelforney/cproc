@@ -280,6 +280,7 @@ enum exprkind {
 	/* postfix expression */
 	EXPRCALL,
 	/* member E.M gets transformed to *(typeof(E.M) *)((char *)E + offsetof(typeof(E), M)) */
+	EXPRBITFIELD,
 	EXPRINCDEC,
 	EXPRCOMPOUND,
 	/* subscript E1[E2] gets transformed to *((E1)+(E2)) */
@@ -322,6 +323,10 @@ struct expr {
 			struct expr *func, *args;
 			size_t nargs;
 		} call;
+		struct {
+			struct expr *base;
+			struct bitfield bits;
+		} bitfield;
 		struct {
 			struct init *init;
 		} compound;

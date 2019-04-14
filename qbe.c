@@ -37,6 +37,11 @@ struct value {
 	};
 };
 
+struct lvalue {
+	struct value *addr;
+	struct bitfield bits;
+};
+
 enum instkind {
 	INONE,
 
@@ -234,62 +239,78 @@ funcalloc(struct func *f, struct decl *d)
 }
 
 static void
-funcstore(struct func *f, struct type *t, enum typequal tq, struct value *addr, struct value *v)
+funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, struct value *v)
 {
-	enum instkind op;
+	enum instkind loadop, storeop;
+	enum typeprop tp;
+	unsigned long long mask;
 
 	if (tq & QUALVOLATILE)
 		error(&tok.loc, "volatile store is not yet supported");
 	if (tq & QUALCONST)
 		error(&tok.loc, "cannot store to 'const' object");
+	tp = typeprop(t);
+	assert(!lval.bits.before && !lval.bits.after || tp & PROPINT);
 	switch (t->kind) {
+	case TYPEPOINTER:
+		t = &typeulong;
+		/* fallthrough */
 	case TYPEBASIC:
 		switch (t->size) {
-		case 1: op = ISTOREB; break;
-		case 2: op = ISTOREH; break;
-		case 4: op = typeprop(t) & PROPFLOAT ? ISTORES : ISTOREW; break;
-		case 8: op = typeprop(t) & PROPFLOAT ? ISTORED : ISTOREL; break;
+		case 1: loadop = ILOADUB; storeop = ISTOREB; break;
+		case 2: loadop = ILOADUH; storeop = ISTOREH; break;
+		case 4: loadop = ILOADUW; storeop = tp & PROPFLOAT ? ISTORES : ISTOREW; break;
+		case 8: loadop = ILOADL; storeop = tp & PROPFLOAT ? ISTORED : ISTOREL; break;
 		default:
 			fatal("internal error; unimplemented store");
 		}
-		break;
-	case TYPEPOINTER:
-		op = ISTOREL;
+		if (lval.bits.before || lval.bits.after) {
+			mask = 0xffffffffffffffffu >> lval.bits.after + 64 - t->size * 8 ^ (1 << lval.bits.before) - 1;
+			v = funcinst(f, IOR, t->repr,
+				funcinst(f, IAND, t->repr,
+					funcinst(f, loadop, t->repr, lval.addr),
+					mkintconst(t->repr, ~mask),
+				),
+				funcinst(f, IAND, t->repr,
+					funcinst(f, ISHL, t->repr, v, mkintconst(&i32, lval.bits.before)),
+					mkintconst(t->repr, mask),
+				),
+			);
+		}
+		funcinst(f, storeop, NULL, v, lval.addr);
 		break;
 	case TYPESTRUCT:
 	case TYPEUNION:
 	case TYPEARRAY: {
-		enum instkind loadop, op;
 		struct value *src, *dst, *tmp, *align;
 		uint64_t offset;
 
 		switch (t->align) {
-		case 1: loadop = ILOADUB, op = ISTOREB; break;
-		case 2: loadop = ILOADUH, op = ISTOREH; break;
-		case 4: loadop = ILOADUW, op = ISTOREW; break;
-		case 8: loadop = ILOADL, op = ISTOREL; break;
+		case 1: loadop = ILOADUB, storeop = ISTOREB; break;
+		case 2: loadop = ILOADUH, storeop = ISTOREH; break;
+		case 4: loadop = ILOADUW, storeop = ISTOREW; break;
+		case 8: loadop = ILOADL, storeop = ISTOREL; break;
 		default:
 			fatal("internal error; invalid alignment %d", t->align);
 		}
 		src = v;
-		dst = addr;
+		dst = lval.addr;
 		align = mkintconst(&iptr, t->align);
 		for (offset = 0; offset < t->size; offset += t->align) {
 			tmp = funcinst(f, loadop, &iptr, src);
-			funcinst(f, op, NULL, tmp, dst);
+			funcinst(f, storeop, NULL, tmp, dst);
 			src = funcinst(f, IADD, &iptr, src, align);
 			dst = funcinst(f, IADD, &iptr, dst, align);
 		}
-		return;
+		break;
 	}
 	default:
 		fatal("unimplemented store");
 	}
-	funcinst(f, op, NULL, v, addr);
 }
 
 static struct value *
-funcload(struct func *f, struct type *t, struct value *addr)
+funcload(struct func *f, struct type *t, struct lvalue lval)
 {
 	struct value *v;
 	enum instkind op;
@@ -312,13 +333,18 @@ funcload(struct func *f, struct type *t, struct value *addr)
 	case TYPEUNION:
 	case TYPEARRAY:
 		v = xmalloc(sizeof(*v));
-		*v = *addr;
+		*v = *lval.addr;
 		v->repr = t->repr;
 		return v;
 	default:
 		fatal("unimplemented load %d", t->kind);
 	}
-	return funcinst(f, op, t->repr, addr);
+	v = funcinst(f, op, t->repr, lval.addr);
+	if (lval.bits.after)
+		v = funcinst(f, ISHL, t->repr, v, mkintconst(&i32, lval.bits.after));
+	if (lval.bits.before + lval.bits.after)
+		v = funcinst(f, t->basic.issigned ? ISAR : ISHR, t->repr, v, mkintconst(&i32, lval.bits.before + lval.bits.after));
+	return v;
 }
 
 struct value *
@@ -373,7 +399,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 			d->value->repr = &iptr;
 		} else {
 			funcinit(f, d, NULL);
-			funcstore(f, p->type, QUALNONE, d->value, p->value);
+			funcstore(f, p->type, QUALNONE, (struct lvalue){d->value}, p->value);
 		}
 		scopeputdecl(s, p->name, d);
 	}
@@ -448,11 +474,16 @@ funcgoto(struct func *f, char *name)
 	return g;
 }
 
-static struct value *
-objectaddr(struct func *f, struct expr *e)
+static struct lvalue
+funclval(struct func *f, struct expr *e)
 {
+	struct lvalue lval = {0};
 	struct decl *d;
 
+	if (e->kind == EXPRBITFIELD) {
+		lval.bits = e->bitfield.bits;
+		e = e->bitfield.base;
+	}
 	switch (e->kind) {
 	case EXPRIDENT:
 		d = e->ident.decl;
@@ -464,24 +495,30 @@ objectaddr(struct func *f, struct expr *e)
 			printf(" = { b \"%s\", b 0 }\n", f->name);
 			f->namedecl = NULL;
 		}
-		return d->value;
+		lval.addr = d->value;
+		break;
 	case EXPRSTRING:
 		d = stringdecl(e);
-		return d->value;
+		lval.addr = d->value;
+		break;
 	case EXPRCOMPOUND:
 		d = mkdecl(DECLOBJECT, e->type, e->qual, LINKNONE);
 		funcinit(f, d, e->compound.init);
-		return d->value;
+		lval.addr = d->value;
+		break;
 	case EXPRUNARY:
 		if (e->unary.op != TMUL)
 			break;
-		return funcexpr(f, e->unary.base);
+		lval.addr = funcexpr(f, e->unary.base);
+		break;
 	default:
 		if (e->type->kind != TYPESTRUCT && e->type->kind != TYPEUNION)
 			break;
-		return funcinst(f, ICOPY, &iptr, funcexpr(f, e));
+		lval.addr = funcinst(f, ICOPY, &iptr, funcexpr(f, e));
 	}
-	error(&tok.loc, "expression is not an object");
+	if (!lval.addr)
+		error(&tok.loc, "expression is not an object");
+	return lval;
 }
 
 /* TODO: move these conversions to QBE */
@@ -569,7 +606,8 @@ funcexpr(struct func *f, struct expr *e)
 {
 	enum instkind op = INONE;
 	struct decl *d;
-	struct value *l, *r, *v, *addr, **argvals, **argval;
+	struct value *l, *r, *v, **argvals, **argval;
+	struct lvalue lval;
 	struct expr *arg;
 	struct value *label[5];
 	struct type *t;
@@ -578,7 +616,7 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRIDENT:
 		d = e->ident.decl;
 		switch (d->kind) {
-		case DECLOBJECT: return funcload(f, d->type, d->value);
+		case DECLOBJECT: return funcload(f, d->type, (struct lvalue){d->value});
 		case DECLCONST:  return d->value;
 		default:
 			fatal("unimplemented declaration kind %d", d->kind);
@@ -588,12 +626,13 @@ funcexpr(struct func *f, struct expr *e)
 		if (typeprop(e->type) & PROPINT || e->type->kind == TYPEPOINTER)
 			return mkintconst(e->type->repr, e->constant.i);
 		return mkfltconst(e->type->repr, e->constant.f);
+	case EXPRBITFIELD:
 	case EXPRCOMPOUND:
-		l = objectaddr(f, e);
-		return funcload(f, e->type, l);
+		lval = funclval(f, e);
+		return funcload(f, e->type, lval);
 	case EXPRINCDEC:
-		addr = objectaddr(f, e->incdec.base);
-		l = funcload(f, e->incdec.base->type, addr);
+		lval = funclval(f, e->incdec.base);
+		l = funcload(f, e->incdec.base->type, lval);
 		if (e->type->kind == TYPEPOINTER)
 			r = mkintconst(e->type->repr, e->type->base->size);
 		else if (typeprop(e->type) & PROPINT)
@@ -603,7 +642,7 @@ funcexpr(struct func *f, struct expr *e)
 		else
 			fatal("not a scalar");
 		v = funcinst(f, e->incdec.op == TINC ? IADD : ISUB, e->type->repr, l, r);
-		funcstore(f, e->type, e->qual, addr, v);
+		funcstore(f, e->type, e->qual, lval, v);
 		return e->incdec.post ? l : v;
 	case EXPRCALL:
 		argvals = xreallocarray(NULL, e->call.nargs + 3, sizeof(argvals[0]));
@@ -621,10 +660,11 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRUNARY:
 		switch (e->unary.op) {
 		case TBAND:
-			return objectaddr(f, e->unary.base);
+			lval = funclval(f, e->unary.base);
+			return lval.addr;
 		case TMUL:
 			r = funcexpr(f, e->unary.base);
-			return funcload(f, e->type, r);
+			return funcload(f, e->type, (struct lvalue){r});
 		}
 		fatal("internal error; unknown unary expression");
 		break;
@@ -818,8 +858,8 @@ funcexpr(struct func *f, struct expr *e)
 		if (e->assign.l->kind == EXPRTEMP) {
 			e->assign.l->temp = r;
 		} else {
-			l = objectaddr(f, e->assign.l);
-			funcstore(f, e->assign.l->type, e->assign.l->qual, l, r);
+			lval = funclval(f, e->assign.l);
+			funcstore(f, e->assign.l->type, e->assign.l->qual, lval, r);
 		}
 		return r;
 	case EXPRCOMMA:
@@ -898,7 +938,7 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 		} else {
 			dst = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start));
 			src = funcexpr(func, init->expr);
-			funcstore(func, init->expr->type, QUALNONE, dst, src);
+			funcstore(func, init->expr->type, QUALNONE, (struct lvalue){dst}, src);
 			offset = init->end;
 		}
 		if (max < offset)
