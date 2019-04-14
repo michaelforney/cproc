@@ -197,6 +197,12 @@ advance(struct initparser *p)
 	}
 }
 
+static bool
+isbitfield(struct member *m)
+{
+	return m->bits.before || m->bits.after;
+}
+
 /* 6.7.9 Initialization */
 struct init *
 parseinit(struct scope *s, struct type *t)
@@ -259,6 +265,11 @@ parseinit(struct scope *s, struct type *t)
 			focus(&p);
 		}
 	add:
+		if (p.sub > p.obj) {
+			t = p.sub[-1].type;
+			if ((t->kind == TYPESTRUCT || t->kind == TYPEUNION) && isbitfield(p.sub[-1].mem))
+				error(&tok.loc, "bit-field initializers are not yet supported");
+		}
 		initadd(&init, mkinit(p.sub->offset, p.sub->offset + p.sub->type->size, expr));
 		for (;;) {
 			if (p.sub->type->kind == TYPEARRAY && p.sub->type->incomplete)
