@@ -820,12 +820,18 @@ condexpr(struct scope *s)
 	return e;
 }
 
+struct expr *
+constexpr(struct scope *s)
+{
+	return eval(condexpr(s));
+}
+
 uint64_t
 intconstexpr(struct scope *s, bool allowneg)
 {
 	struct expr *e;
 
-	e = eval(condexpr(s));
+	e = constexpr(s);
 	if (e->kind != EXPRCONST || !(typeprop(e->type) & PROPINT))
 		error(&tok.loc, "not an integer constant expression");
 	if (!allowneg && e->type->basic.issigned && e->constant.i > INT64_MAX)

@@ -440,6 +440,7 @@ extern struct scope filescope;
 
 struct expr *expr(struct scope *);
 struct expr *assignexpr(struct scope *);
+struct expr *constexpr(struct scope *);
 uint64_t intconstexpr(struct scope *, _Bool);
 void delexpr(struct expr *);
 
