@@ -609,11 +609,14 @@ paramdecl(struct scope *s, struct param *params)
 {
 	struct param *p;
 	struct qualtype t, base;
+	enum storageclass sc;
 	char *name;
 
-	base = declspecs(s, NULL, NULL, NULL);
+	base = declspecs(s, &sc, NULL, NULL);
 	if (!base.type)
 		return false;
+	if (sc && sc != SCREGISTER)
+		error(&tok.loc, "parameter declaration has invalid storage-class specifier");
 	for (;;) {
 		t = declarator(s, base, &name, false);
 		for (p = params; p && strcmp(name, p->name) != 0; p = p->next)
