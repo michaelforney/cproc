@@ -1,3 +1,4 @@
-enum E {A = -1, B};
-enum E x;
-int x;
+enum {A = 1} x;
+unsigned x;
+enum {B = -1} y;
+int y;

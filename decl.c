@@ -154,6 +154,7 @@ tagspec(struct scope *s)
 	char *tag;
 	enum typekind kind;
 	struct decl *d;
+	struct expr *e;
 	struct structbuilder b;
 	uint64_t i;
 
@@ -182,7 +183,7 @@ tagspec(struct scope *s)
 	} else {
 		t = mktype(kind);
 		if (kind == TYPEBASIC) {
-			*t = typeint;
+			*t = typeuint;
 			t->basic.kind = BASICENUM;
 		} else {
 			t->repr = &i64; // XXX
@@ -217,8 +218,14 @@ tagspec(struct scope *s)
 			d = mkdecl(DECLCONST, &typeint, QUALNONE, LINKNONE);
 			scopeputdecl(s, tok.lit, d);
 			next();
-			if (consume(TASSIGN))
-				i = intconstexpr(s, true);
+			if (consume(TASSIGN)) {
+				e = constexpr(s);
+				if (e->kind != EXPRCONST || !(typeprop(e->type) & PROPINT))
+					error(&tok.loc, "expected integer constant expression");
+				if (e->type->basic.issigned && e->constant.i >= 1ull << 63)
+					t->basic.issigned = true;
+				i = e->constant.i;
+			}
 			d->value = mkintconst(t->repr, i);
 			if (!consume(TCOMMA))
 				break;
