@@ -57,7 +57,7 @@ enum funcspec {
 struct structbuilder {
 	struct type *type;
 	struct member **last;
-	int bits;  /* number of bits remaining in the last byte */
+	unsigned bits;  /* number of bits remaining in the last byte */
 };
 
 struct decl *
@@ -687,13 +687,13 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 			t->size = end;
 			b->bits = 0;
 		}
-		if (width) {
+		if (name) {
 			m->offset = ALIGNDOWN(t->size - !!b->bits, mt.type->size);
 			m->bits.before = (t->size - m->offset) * 8 - b->bits;
 			m->bits.after = mt.type->size * 8 - width - m->bits.before;
-			t->size += (width - b->bits + 7) / 8;
-			b->bits = m->bits.after % 8;
 		}
+		t->size += (width - b->bits + 7) / 8;
+		b->bits = (b->bits - width) % 8;
 		align = mt.type->align;
 	}
 	if (t->align < align)
