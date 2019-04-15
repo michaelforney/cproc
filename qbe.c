@@ -1234,15 +1234,24 @@ emitdata(struct decl *d, struct init *init)
 	emitvalue(d->value);
 	printf(" = align %d { ", d->align);
 
-	for (; init; init = init->next) {
-		if (init->start < offset)  /* XXX: sub-initializer may overlap */
-			continue;
-		if (offset < init->start)
-			printf("z %" PRIu64 ", ", init->start - offset);
-		printf("%c ", init->expr->type->kind == TYPEARRAY ? init->expr->type->base->repr->ext : init->expr->type->repr->ext);
-		dataitem(init->expr, init->end - init->start);
+	while (init) {
+		cur = init;
+		while (init = init->next, init && init->start < cur->end) {
+			/*
+			XXX: Currently, if multiple union members are
+			initialized, these assertions may not hold.
+			(https://todo.sr.ht/~mcf/cc-issues/38)
+			*/
+			assert(cur->expr->kind == EXPRSTRING);
+			assert(init->expr->kind == EXPRCONST);
+			cur->expr->string.data[init->start - cur->start] = init->expr->constant.i;
+		}
+		if (offset < cur->start)
+			printf("z %" PRIu64 ", ", cur->start - offset);
+		printf("%c ", cur->expr->type->kind == TYPEARRAY ? cur->expr->type->base->repr->ext : cur->expr->type->repr->ext);
+		dataitem(cur->expr, cur->end - cur->start);
 		fputs(", ", stdout);
-		offset = init->end;
+		offset = cur->end;
 	}
 	assert(offset <= d->type->size);
 	if (offset < d->type->size)
