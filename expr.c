@@ -853,10 +853,21 @@ intconstexpr(struct scope *s, bool allowneg)
 	return e->constant.i;
 }
 
+static struct expr *
+mkassignexpr(struct expr *l, struct expr *r)
+{
+	struct expr *e;
+
+	e = mkexpr(EXPRASSIGN, l->type);
+	e->assign.l = l;
+	e->assign.r = exprconvert(r, l->type);
+	return e;
+}
+
 struct expr *
 assignexpr(struct scope *s)
 {
-	struct expr *e, *l, *r, *tmp = NULL, **res = &e;
+	struct expr *e, *l, *r, *tmp;
 	enum tokenkind op;
 
 	l = condexpr(s);
@@ -881,25 +892,19 @@ assignexpr(struct scope *s)
 		error(&tok.loc, "left side of assignment expression is not an lvalue");
 	next();
 	r = assignexpr(s);
-	if (op) {
-		/* rewrite `E1 OP= E2` as `T = &E1, *T = *T OP E2`, where T is a temporary slot */
-		tmp = mkexpr(EXPRTEMP, mkpointertype(l->type, l->qual));
-		tmp->lvalue = true;
-		tmp->temp = NULL;
-		e = mkexpr(EXPRCOMMA, l->type);
-		e->comma.exprs = mkexpr(EXPRASSIGN, tmp->type);
-		e->comma.exprs->assign.l = tmp;
-		e->comma.exprs->assign.r = mkunaryexpr(TBAND, l);
-		res = &e->comma.exprs->next;
-		l = mkunaryexpr(TMUL, tmp);
-		r = mkbinaryexpr(&tok.loc, op, l, r);
-	}
-	r = exprconvert(r, l->type);
-	*res = mkexpr(EXPRASSIGN, l->type);
-	(*res)->assign.l = l;
-	(*res)->assign.r = r;
-
-	return e;
+	if (!op)
+		return mkassignexpr(l, r);
+	/* rewrite `E1 OP= E2` as `T = &E1, *T = *T OP E2`, where T is a temporary slot */
+	tmp = mkexpr(EXPRTEMP, mkpointertype(l->type, l->qual));
+	tmp->lvalue = true;
+	tmp->temp = NULL;
+	e = mkassignexpr(tmp, mkunaryexpr(TBAND, l));
+	l = mkunaryexpr(TMUL, tmp);
+	r = mkbinaryexpr(&tok.loc, op, l, r);
+	e->next = mkassignexpr(l, r);
+	l = mkexpr(EXPRCOMMA, l->type);
+	l->comma.exprs = e;
+	return l;
 }
 
 struct expr *
