@@ -31,6 +31,7 @@ static char *preprocesscmd[] = {
 
 	/* alternate keywords */
 	"-D", "__alignof__=_Alignof",
+	"-D", "__inline=inline",
 	"-D", "__signed__=signed",
 };
 static char *compilecmd[] = {"cc-qbe"};
