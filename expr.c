@@ -863,17 +863,17 @@ assignexpr(struct scope *s)
 	if (l->kind == EXPRBINARY || l->kind == EXPRCOMMA || l->kind == EXPRCAST)
 		return l;
 	switch (tok.kind) {
-	case TASSIGN: op = TNONE; break;
-	case TMULASSIGN: op = TMUL; break;
-	case TDIVASSIGN: op = TDIV; break;
-	case TMODASSIGN: op = TMOD; break;
-	case TADDASSIGN: op = TADD; break;
-	case TSUBASSIGN: op = TSUB; break;
-	case TSHLASSIGN: op = TSHL; break;
-	case TSHRASSIGN: op = TSHR; break;
+	case TASSIGN:     op = TNONE; break;
+	case TMULASSIGN:  op = TMUL;  break;
+	case TDIVASSIGN:  op = TDIV;  break;
+	case TMODASSIGN:  op = TMOD;  break;
+	case TADDASSIGN:  op = TADD;  break;
+	case TSUBASSIGN:  op = TSUB;  break;
+	case TSHLASSIGN:  op = TSHL;  break;
+	case TSHRASSIGN:  op = TSHR;  break;
 	case TBANDASSIGN: op = TBAND; break;
-	case TXORASSIGN: op = TXOR; break;
-	case TBORASSIGN: op = TBOR; break;
+	case TXORASSIGN:  op = TXOR;  break;
+	case TBORASSIGN:  op = TBOR;  break;
 	default:
 		return l;
 	}
