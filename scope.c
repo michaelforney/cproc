@@ -20,6 +20,8 @@ scopeinit(void)
 		{"__builtin_inff",       {.kind = DECLBUILTIN, .builtin = BUILTININFF}},
 		{"__builtin_nanf",       {.kind = DECLBUILTIN, .builtin = BUILTINNANF}},
 		{"__builtin_offsetof",   {.kind = DECLBUILTIN, .builtin = BUILTINOFFSETOF}},
+		{"__builtin_types_compatible_p",
+			{.kind = DECLBUILTIN, .builtin = BUILTINTYPESCOMPATIBLEP}},
 		{"__builtin_va_arg",     {.kind = DECLBUILTIN, .builtin = BUILTINVAARG}},
 		{"__builtin_va_copy",    {.kind = DECLBUILTIN, .builtin = BUILTINVACOPY}},
 		{"__builtin_va_end",     {.kind = DECLBUILTIN, .builtin = BUILTINVAEND}},

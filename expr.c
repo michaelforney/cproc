@@ -442,6 +442,11 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e = mkconstexpr(&typeulong, offset);
 		free(name);
 		break;
+	case BUILTINTYPESCOMPATIBLEP:
+		t = typename(s, NULL);
+		expect(TCOMMA, "after type name");
+		e = mkconstexpr(&typeint, typecompatible(t, typename(s, NULL)));
+		break;
 	case BUILTINVAARG:
 		e = mkexpr(EXPRBUILTIN, NULL);
 		e->builtin.kind = BUILTINVAARG;
