@@ -867,7 +867,7 @@ mkassignexpr(struct expr *l, struct expr *r)
 struct expr *
 assignexpr(struct scope *s)
 {
-	struct expr *e, *l, *r, *tmp;
+	struct expr *e, *l, *r, *tmp, *bit;
 	enum tokenkind op;
 
 	l = condexpr(s);
@@ -895,11 +895,21 @@ assignexpr(struct scope *s)
 	if (!op)
 		return mkassignexpr(l, r);
 	/* rewrite `E1 OP= E2` as `T = &E1, *T = *T OP E2`, where T is a temporary slot */
+	if (l->kind == EXPRBITFIELD) {
+		bit = l;
+		l = l->bitfield.base;
+	} else {
+		bit = NULL;
+	}
 	tmp = mkexpr(EXPRTEMP, mkpointertype(l->type, l->qual));
 	tmp->lvalue = true;
 	tmp->temp = NULL;
 	e = mkassignexpr(tmp, mkunaryexpr(TBAND, l));
 	l = mkunaryexpr(TMUL, tmp);
+	if (bit) {
+		bit->bitfield.base = l;
+		l = bit;
+	}
 	r = mkbinaryexpr(&tok.loc, op, l, r);
 	e->next = mkassignexpr(l, r);
 	l = mkexpr(EXPRCOMMA, l->type);
