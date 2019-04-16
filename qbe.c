@@ -929,6 +929,7 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 		return;
 	for (; init; init = init->next) {
 		zero(func, d->value, d->type->align, offset, init->start);
+		offset = init->start;
 		if (init->expr->kind == EXPRSTRING) {
 			for (i = 0; i < init->expr->string.size && i < init->end - init->start; ++i) {
 				dst = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start + i));
