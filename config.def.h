@@ -26,8 +26,9 @@ static char *preprocesscmd[] = {
 	/* prevent glibc from using statement expressions for assert */
 	"-D", "__STRICT_ANSI__",
 
-	/* ignore attributes */
+	/* ignore attributes and extension markers */
 	"-D", "__attribute__(x)=",
+	"-D", "__extension__=",
 
 	/* alternate keywords */
 	"-D", "__alignof__=_Alignof",
