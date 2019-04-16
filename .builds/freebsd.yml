@@ -1,7 +1,7 @@
 image: freebsd/latest
 sources:
   - https://git.sr.ht/~mcf/cc
-  - https://github.com/michaelforney/qbe
+  - git://c9x.me/qbe.git
 packages:
   - gmake
 tasks:
