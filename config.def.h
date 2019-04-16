@@ -26,14 +26,12 @@ static char *preprocesscmd[] = {
 	/* prevent glibc from using statement expressions for assert */
 	"-D", "__STRICT_ANSI__",
 
-	/* required for glibc headers */
+	/* ignore attributes */
 	"-D", "__attribute__(x)=",
 
-	/* required for kernel headers */
-	"-D", "__signed__=signed",
-
-	/* required for binutils */
+	/* alternate keywords */
 	"-D", "__alignof__=_Alignof",
+	"-D", "__signed__=signed",
 };
 static char *compilecmd[] = {"cc-qbe"};
 static char *codegencmd[] = {"qbe"};
