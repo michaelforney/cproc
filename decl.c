@@ -656,6 +656,8 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 		m->next = NULL;
 		*b->last = m;
 		b->last = &m->next;
+	} else {
+		m = NULL;
 	}
 	if (width == -1) {
 		m->bits.before = 0;
@@ -687,7 +689,7 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 			t->size = end;
 			b->bits = 0;
 		}
-		if (name) {
+		if (m) {
 			m->offset = ALIGNDOWN(t->size - !!b->bits, mt.type->size);
 			m->bits.before = (t->size - m->offset) * 8 - b->bits;
 			m->bits.after = mt.type->size * 8 - width - m->bits.before;
