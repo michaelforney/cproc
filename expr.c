@@ -81,6 +81,14 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 			base->decayed = false;
 			return base;
 		}
+		/*
+		Allow struct and union types even if they are not lvalues,
+		since we take their address when compiling member access.
+		*/
+		if (!base->lvalue && base->type->kind != TYPEFUNC && base->type->kind != TYPESTRUCT && base->type->kind != TYPEUNION)
+			error(&tok.loc, "'&' operand is not an lvalue or function designator");
+		if (base->kind == EXPRBITFIELD)
+			error(&tok.loc, "cannot take address of bit-field");
 		expr = mkexpr(EXPRUNARY, mkpointertype(base->type, base->qual));
 		expr->unary.op = op;
 		expr->unary.base = base;
