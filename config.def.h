@@ -20,17 +20,14 @@ static char *preprocesscmd[] = {
 	"-D", "__STDC_NO_VLA__",
 
 	/* specify the GNU C extensions we support */
-	"-U", "__GNUC__", "-D", "__GNUC__=3",
-	"-U", "__GNUC_MINOR__", "-D", "__GNUC_MINOR__=3",
+	"-U", "__GNUC__", "-D", "__GNUC__=1",
+	"-U", "__GNUC_MINOR__", "-D", "__GNUC_MINOR__=0",
 
 	/* prevent glibc from using statement expressions for assert */
 	"-D", "__STRICT_ANSI__",
 
 	/* required for glibc headers */
-	"-D", "__restrict=restrict",
-	"-D", "__extension__=",
 	"-D", "__attribute__(x)=",
-	"-D", "__asm__(x)=",
 
 	/* required for kernel headers */
 	"-D", "__signed__=signed",
