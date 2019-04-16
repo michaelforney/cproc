@@ -22,6 +22,7 @@ struct initparser {
 	/* TODO: keep track of type depth, and allocate maximum possible
 	   number of nested objects in initializer */
 	struct object obj[32], *cur, *sub;
+	struct init *init, **last;
 };
 
 struct init *
@@ -39,10 +40,11 @@ mkinit(uint64_t start, uint64_t end, struct expr *expr)
 }
 
 static void
-initadd(struct init **init, struct init *new)
+initadd(struct initparser *p, struct init *new)
 {
-	struct init *old;
+	struct init **init, *old;
 
+	init = p->last;
 	for (; old = *init; init = &old->next) {
 		if (new->start >= old->end)
 			continue;
@@ -59,6 +61,7 @@ initadd(struct init **init, struct init *new)
 	}
 	new->next = old;
 	*init = new;
+	p->last = &new->next;
 }
 
 static void
@@ -111,6 +114,7 @@ designator(struct scope *s, struct initparser *p)
 	struct type *t;
 	char *name;
 
+	p->last = &p->init;
 	p->sub = p->cur;
 	for (;;) {
 		t = p->sub->type;
@@ -208,7 +212,6 @@ struct init *
 parseinit(struct scope *s, struct type *t)
 {
 	struct initparser p;
-	struct init *init = NULL;
 	struct expr *expr;
 	struct type *base;
 
@@ -217,6 +220,8 @@ parseinit(struct scope *s, struct type *t)
 	p.sub->offset = 0;
 	p.sub->type = t;
 	p.sub->iscur = false;
+	p.init = NULL;
+	p.last = &p.init;
 	if (t->incomplete && !(t->kind == TYPEARRAY && t->array.length == 0))
 		error(&tok.loc, "initializer specified for incomplete type");
 	for (;;) {
@@ -270,12 +275,12 @@ parseinit(struct scope *s, struct type *t)
 			if ((t->kind == TYPESTRUCT || t->kind == TYPEUNION) && isbitfield(p.sub[-1].mem))
 				error(&tok.loc, "bit-field initializers are not yet supported");
 		}
-		initadd(&init, mkinit(p.sub->offset, p.sub->offset + p.sub->type->size, expr));
+		initadd(&p, mkinit(p.sub->offset, p.sub->offset + p.sub->type->size, expr));
 		for (;;) {
 			if (p.sub->type->kind == TYPEARRAY && p.sub->type->incomplete)
 				p.sub->type->incomplete = false;
 			if (!p.cur)
-				return init;
+				return p.init;
 			if (tok.kind == TCOMMA) {
 				next();
 				if (tok.kind != TRBRACE)
