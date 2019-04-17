@@ -400,11 +400,48 @@ primaryexpr(struct scope *s)
 
 static struct expr *condexpr(struct scope *);
 
+/* TODO: merge with init.c:designator() */
+static void
+designator(struct scope *s, struct type *t, uint64_t *offset)
+{
+	char *name;
+	struct member *m;
+	uint64_t i;
+
+	for (;;) {
+		switch (tok.kind) {
+		case TLBRACK:
+			if (t->kind != TYPEARRAY)
+				error(&tok.loc, "index designator is only valid for array types");
+			next();
+			i = intconstexpr(s, false);
+			expect(TRBRACK, "for index designator");
+			t = t->base;
+			*offset += i * t->size;
+			break;
+		case TPERIOD:
+			if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
+				error(&tok.loc, "member designator only valid for struct/union types");
+			next();
+			name = expect(TIDENT, "for member designator");
+			m = typemember(t, name, offset);
+			if (!m)
+				error(&tok.loc, "%s has no member named '%s'", t->kind == TYPEUNION ? "union" : "struct", name);
+			free(name);
+			t = m->type;
+			break;
+		default:
+			return;
+		}
+	}
+}
+
 static struct expr *
 builtinfunc(struct scope *s, enum builtinkind kind)
 {
 	struct expr *e, *param;
 	struct type *t;
+	struct member *m;
 	char *name;
 	uint64_t offset;
 
@@ -437,8 +474,10 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
 			error(&tok.loc, "type is not a struct/union type");
 		offset = 0;
-		if (!typemember(t, name, &offset))
+		m = typemember(t, name, &offset);
+		if (!m)
 			error(&tok.loc, "struct/union has no member named '%s'", name);
+		designator(s, m->type, &offset);
 		e = mkconstexpr(&typeulong, offset);
 		free(name);
 		break;
