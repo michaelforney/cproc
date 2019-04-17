@@ -6,7 +6,7 @@ There is still much to do and the code is a little rough, but it currently
 implements most of the language, is self-hosting, and capable of building
 some useful software.
 
-# Requirements
+## Requirements
 
 The compiler itself is written in standard [C11] and can be built with
 any conforming C11 compiler.
@@ -17,14 +17,14 @@ requires a POSIX-compatible make(1).
 The preprocessor is not yet implemented, so an existing one is currently
 required.
 
-# Target configuration
+## Target configuration
 
 You will need to create a `config.h` appropriate for the target system. If
 missing, a default version will be created from `config.def.h`,
 which should work for most glibc systems, or musl systems with
 `-D 'DYNAMIC_LINKER="/lib/ld-musl-x86_64.so.1"'`.
 
-# What's missing
+## What's missing
 
 - Digraph and trigraph sequences ([6.4.6p3] and [5.2.1.1], will not
   be implemented).
@@ -38,7 +38,7 @@ which should work for most glibc systems, or musl systems with
 - Generation of position independent code (i.e. shared libraries,
   modules, PIEs).
 
-# Issue tracker
+## Issue tracker
 
 Please report any issues to https://todo.sr.ht/~mcf/cc-issues.
 
