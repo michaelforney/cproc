@@ -376,8 +376,8 @@ struct init {
 extern struct token tok;
 
 void tokprint(const struct token *);
+void tokdesc(char *, size_t, enum tokenkind, const char *);
 _Noreturn void error(const struct location *, const char *, ...);
-struct token;
 
 /* scan */
 

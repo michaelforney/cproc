@@ -1,4 +1,6 @@
+#include <assert.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +9,7 @@
 
 struct token tok;
 
-static char *tokstr[] = {
+static const char *tokstr[] = {
 	/* keyword */
 	[TAUTO] = "auto",
 	[TBREAK] = "break",
@@ -128,6 +130,32 @@ tokprint(const struct token *t)
 	if (!str)
 		fatal("cannot print token %d", t->kind);
 	fputs(str, stdout);
+}
+
+void
+tokdesc(char *buf, size_t len, enum tokenkind kind, const char *lit)
+{
+	const char *class;
+	bool quote;
+
+	switch (kind) {
+	case TIDENT:     class = "identifier"; quote = true;  break;
+	case TNUMBER:    class = "number";     quote = true;  break;
+	case TCHARCONST: class = "character";  quote = false; break;
+	case TSTRINGLIT: class = "string";     quote = false; break;
+	case TNEWLINE:   class = "newline";    quote = true;  break;
+	default:
+		class = NULL;
+		lit = kind < LEN(tokstr) ? tokstr[kind] : NULL;
+	}
+	if (class && lit)
+		snprintf(buf, len, quote ? "%s '%s'" : "%s %s", class, lit);
+	else if (class)
+		snprintf(buf, len, "%s", class);
+	else if (lit)
+		snprintf(buf, len, "'%s'", lit);
+	else
+		snprintf(buf, len, "<unknown>");
 }
 
 _Noreturn void error(const struct location *loc, const char *fmt, ...)

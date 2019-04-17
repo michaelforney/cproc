@@ -124,10 +124,13 @@ peek(int kind)
 char *
 expect(int kind, const char *msg)
 {
-	char *lit;
+	char *lit, want[64], got[64];
 
-	if (tok.kind != kind)
-		error(&tok.loc, "expected %d %s, saw %d", kind, msg, tok.kind);
+	if (tok.kind != kind) {
+		tokdesc(want, sizeof(want), kind, NULL);
+		tokdesc(got, sizeof(got), tok.kind, tok.lit);
+		error(&tok.loc, "expected %s %s, saw %s", want, msg, got);
+	}
 	lit = tok.lit;
 	next();
 
