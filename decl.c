@@ -958,7 +958,7 @@ struct decl *stringdecl(struct expr *expr)
 	if (!d) {
 		d = mkdecl(DECLOBJECT, expr->type, QUALNONE, LINKNONE);
 		d->value = mkglobal("string", true);
-		emitdata(d, mkinit(0, expr->type->size, expr));
+		emitdata(d, mkinit(0, expr->type->size, (struct bitfield){0}, expr));
 		*entry = d;
 	}
 	return d;

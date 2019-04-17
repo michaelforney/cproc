@@ -24,7 +24,7 @@ struct initparser {
 };
 
 struct init *
-mkinit(uint64_t start, uint64_t end, struct expr *expr)
+mkinit(uint64_t start, uint64_t end, struct bitfield bits, struct expr *expr)
 {
 	struct init *init;
 
@@ -32,6 +32,7 @@ mkinit(uint64_t start, uint64_t end, struct expr *expr)
 	init->start = start;
 	init->end = end;
 	init->expr = expr;
+	init->bits = bits;
 	init->next = NULL;
 
 	return init;
@@ -44,15 +45,15 @@ initadd(struct initparser *p, struct init *new)
 
 	init = p->last;
 	for (; old = *init; init = &old->next) {
-		if (new->start >= old->end)
+		if (old->end * 8 - old->bits.after <= new->start * 8 + new->bits.before)
 			continue;
 		/* no overlap, insert before `old` */
-		if (new->end <= old->start)
+		if (new->end * 8 - new->bits.after <= old->start * 8 + old->bits.before)
 			break;
 		/* replace any initializers that `new` covers */
-		if (new->end >= old->end) {
+		if (old->end * 8 - old->bits.after <= new->end * 8 - new->bits.after) {
 			do old = old->next;
-			while (old && new->end >= old->end);
+			while (old && old->end * 8 - old->bits.after <= new->end * 8 - new->bits.after);
 			break;
 		}
 		/* `old` covers `new`, keep looking */
@@ -199,12 +200,6 @@ advance(struct initparser *p)
 	}
 }
 
-static bool
-isbitfield(struct member *m)
-{
-	return m->bits.before || m->bits.after;
-}
-
 /* 6.7.9 Initialization */
 struct init *
 parseinit(struct scope *s, struct type *t)
@@ -212,6 +207,7 @@ parseinit(struct scope *s, struct type *t)
 	struct initparser p;
 	struct expr *expr;
 	struct type *base;
+	struct bitfield bits;
 
 	p.cur = NULL;
 	p.sub = p.obj;
@@ -268,12 +264,11 @@ parseinit(struct scope *s, struct type *t)
 			focus(&p);
 		}
 	add:
-		if (p.sub > p.obj) {
-			t = p.sub[-1].type;
-			if ((t->kind == TYPESTRUCT || t->kind == TYPEUNION) && isbitfield(p.sub[-1].mem))
-				error(&tok.loc, "bit-field initializers are not yet supported");
-		}
-		initadd(&p, mkinit(p.sub->offset, p.sub->offset + p.sub->type->size, expr));
+		if (p.sub > p.obj && (p.sub[-1].type->kind == TYPESTRUCT || p.sub[-1].type->kind == TYPEUNION))
+			bits = p.sub[-1].mem->bits;
+		else
+			bits = (struct bitfield){0};
+		initadd(&p, mkinit(p.sub->offset, p.sub->offset + p.sub->type->size, bits, expr));
 		for (;;) {
 			if (p.sub->type->kind == TYPEARRAY && p.sub->type->incomplete)
 				p.sub->type->incomplete = false;

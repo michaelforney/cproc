@@ -367,6 +367,7 @@ struct expr {
 struct init {
 	uint64_t start, end;
 	struct expr *expr;
+	struct bitfield bits;
 	struct init *next;
 };
 
@@ -458,7 +459,7 @@ struct expr *eval(struct expr *);
 
 /* init */
 
-struct init *mkinit(uint64_t, uint64_t, struct expr *);
+struct init *mkinit(uint64_t, uint64_t, struct bitfield, struct expr *);
 struct init *parseinit(struct scope *, struct type *);
 
 void stmt(struct func *, struct scope *);

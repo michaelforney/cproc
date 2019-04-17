@@ -920,7 +920,8 @@ zero(struct func *func, struct value *addr, int align, uint64_t offset, uint64_t
 void
 funcinit(struct func *func, struct decl *d, struct init *init)
 {
-	struct value *src, *dst;
+	struct lvalue dst;
+	struct value *src;
 	uint64_t offset = 0, max = 0;
 	size_t i;
 
@@ -929,17 +930,19 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 		return;
 	for (; init; init = init->next) {
 		zero(func, d->value, d->type->align, offset, init->start);
-		offset = init->start;
+		dst.bits = init->bits;
 		if (init->expr->kind == EXPRSTRING) {
 			for (i = 0; i < init->expr->string.size && i < init->end - init->start; ++i) {
-				dst = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start + i));
-				funcinst(func, ISTOREB, NULL, mkintconst(&i8, init->expr->string.data[i]), dst);
+				dst.addr = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start + i));
+				funcstore(func, &typechar, QUALNONE, dst, mkintconst(&i8, init->expr->string.data[i]));
 			}
-			offset += i;
+			offset = init->start + i;
 		} else {
-			dst = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start));
+			if (offset < init->end && (dst.bits.before || dst.bits.after))
+				zero(func, d->value, d->type->align, offset, init->end);
+			dst.addr = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start));
 			src = funcexpr(func, init->expr);
-			funcstore(func, init->expr->type, QUALNONE, (struct lvalue){dst}, src);
+			funcstore(func, init->expr->type, QUALNONE, dst, src);
 			offset = init->end;
 		}
 		if (max < offset)
@@ -1222,8 +1225,8 @@ dataitem(struct expr *expr, uint64_t size)
 void
 emitdata(struct decl *d, struct init *init)
 {
-	uint64_t offset = 0;
 	struct init *cur;
+	uint64_t offset = 0, start, end, bits = 0;
 
 	if (!d->align)
 		d->align = d->type->align;
@@ -1239,7 +1242,7 @@ emitdata(struct decl *d, struct init *init)
 
 	while (init) {
 		cur = init;
-		while (init = init->next, init && init->start < cur->end) {
+		while (init = init->next, init && init->start * 8 + init->bits.before < cur->end * 8 - cur->bits.after) {
 			/*
 			XXX: Currently, if multiple union members are
 			initialized, these assertions may not hold.
@@ -1249,12 +1252,33 @@ emitdata(struct decl *d, struct init *init)
 			assert(init->expr->kind == EXPRCONST);
 			cur->expr->string.data[init->start - cur->start] = init->expr->constant.i;
 		}
-		if (offset < cur->start)
-			printf("z %" PRIu64 ", ", cur->start - offset);
-		printf("%c ", cur->expr->type->kind == TYPEARRAY ? cur->expr->type->base->repr->ext : cur->expr->type->repr->ext);
-		dataitem(cur->expr, cur->end - cur->start);
-		fputs(", ", stdout);
-		offset = cur->end;
+		start = cur->start + cur->bits.before / 8;
+		end = cur->end - (cur->bits.after + 7) / 8;
+		if (offset < start && bits) {
+			printf("b %u, ", (unsigned)bits);  /* unfinished byte from previous bit-field */
+			++offset;
+			bits = 0;
+		}
+		if (offset < start)
+			printf("z %" PRIu64 ", ", start - offset);
+		if (cur->bits.before || cur->bits.after) {
+			/* XXX: little-endian specific */
+			assert(typeprop(cur->expr->type) & PROPINT);
+			assert(cur->expr->kind == EXPRCONST);
+			bits |= cur->expr->constant.i << cur->bits.before % 8;
+			for (offset = start; offset < end; ++offset, bits >>= 8)
+				printf("b %u, ", (unsigned)bits & 0xff);
+			bits &= 0xff >> cur->bits.after % 8;
+		} else {
+			printf("%c ", cur->expr->type->kind == TYPEARRAY ? cur->expr->type->base->repr->ext : cur->expr->type->repr->ext);
+			dataitem(cur->expr, cur->end - cur->start);
+			fputs(", ", stdout);
+		}
+		offset = end;
+	}
+	if (bits) {
+		printf("b %u, ", (unsigned)bits);
+		++offset;
 	}
 	assert(offset <= d->type->size);
 	if (offset < d->type->size)
