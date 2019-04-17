@@ -1020,6 +1020,8 @@ emitvalue(struct value *v)
 static void
 emitrepr(struct repr *r, bool abi, bool ext)
 {
+	if (!r)
+		fatal("type has no QBE representation");
 	if (abi && r->abi.id) {
 		putchar(':');
 		emitname(&r->abi);
