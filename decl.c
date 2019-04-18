@@ -8,7 +8,6 @@
 #include <string.h>
 #include "util.h"
 #include "cc.h"
-#include "map.h"
 
 static struct list tentativedefns = {&tentativedefns, &tentativedefns};
 

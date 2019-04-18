@@ -7,6 +7,19 @@ struct array {
 	size_t len, cap;
 };
 
+struct mapkey {
+	uint64_t hash;
+	const char *str;
+	size_t len;
+};
+
+struct treenode {
+	uint64_t key;
+	void *child[2];
+	int height;
+	_Bool new;  /* set by treeinsert if this node was newly allocated */
+};
+
 extern char *argv0;
 
 #define LEN(a) (sizeof(a) / sizeof((a)[0]))
@@ -31,3 +44,15 @@ void *arrayadd(struct array *, size_t);
 void arrayaddptr(struct array *, void *);
 void arrayaddbuf(struct array *, const void *, size_t);
 #define arrayforeach(a, m) for (m = (a)->val; m != (void *)((char *)(a)->val + (a)->len); ++m)
+
+/* map */
+
+void mapkey(struct mapkey *, const char *, size_t);
+struct map *mkmap(size_t);
+void delmap(struct map *, void(void *));
+void **mapput(struct map *, struct mapkey *);
+void *mapget(struct map *, struct mapkey *);
+
+/* tree */
+
+void *treeinsert(void **, uint64_t, size_t);

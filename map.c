@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
-#include "map.h"
 
 struct map {
 	size_t len, cap;

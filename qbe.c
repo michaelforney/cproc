@@ -7,8 +7,6 @@
 #include <inttypes.h>
 #include "util.h"
 #include "cc.h"
-#include "map.h"
-#include "tree.h"
 
 struct name {
 	char *str;

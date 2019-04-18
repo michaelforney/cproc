@@ -4,7 +4,6 @@
 #include <string.h>
 #include "util.h"
 #include "cc.h"
-#include "map.h"
 
 struct scope filescope;
 

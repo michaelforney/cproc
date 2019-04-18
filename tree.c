@@ -3,7 +3,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "util.h"
-#include "tree.h"
 
 #define MAXH (sizeof(void *) * 8 * 3 / 2)
 
