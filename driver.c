@@ -488,7 +488,7 @@ main(int argc, char *argv[])
 			usage("cannot specify -o with multiple input files without linking");
 		}
 	}
-	for (input = inputs.val; input < (struct input *)((char *)inputs.val + inputs.len); ++input)
+	arrayforeach (&inputs, input)
 		buildobj(input, output, last);
 	if (last == LINK) {
 		if (!output)
