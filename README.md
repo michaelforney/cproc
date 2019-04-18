@@ -1,7 +1,9 @@
 [![builds.sr.ht status](https://builds.sr.ht/~mcf/cc.svg)](https://builds.sr.ht/~mcf/cc)
 
-This is a C11 compiler using [QBE] as a backend. It is released under the
-[ISC] license.
+This is a [C11] compiler using [QBE] as a backend. It is released under
+the [ISC] license.
+
+Several GNU C [extensions] are also implemented.
 
 There is still much to do and some parts of the code are a little rough,
 but it currently implements most of the language, is self-hosting,
@@ -12,7 +14,7 @@ It was inspired by several other small C compilers including [8cc],
 
 ## Requirements
 
-The compiler itself is written in standard [C11] and can be built with
+The compiler itself is written in standard C11 and can be built with
 any conforming C11 compiler.
 
 The POSIX driver depends on POSIX.1-2008 interfaces, and the `Makefile`
@@ -71,6 +73,7 @@ Please report any issues to https://todo.sr.ht/~mcf/cc-issues.
 [QBE]: https://c9x.me/compile/
 [C11]: http://port70.net/~nsz/c/c11/n1570.html
 [ISC]: https://git.sr.ht/~mcf/cc/blob/master/LICENSE
+[extensions]: https://git.sr.ht/~mcf/cc/tree/master/doc/extensions.md
 [8cc]: https://github.com/rui314/8cc
 [c]: https://github.com/andrewchambers/c
 [scc]: http://www.simple-cc.org/
