@@ -1266,7 +1266,12 @@ emitdata(struct decl *d, struct init *init)
 			bits |= cur->expr->constant.i << cur->bits.before % 8;
 			for (offset = start; offset < end; ++offset, bits >>= 8)
 				printf("b %u, ", (unsigned)bits & 0xff);
-			bits &= 0xff >> cur->bits.after % 8;
+			/*
+			clear the upper `after` bits in the last byte,
+			or all bits when `after` is 0 (we ended on a
+			byte boundary).
+			*/
+			bits &= 0x7f >> (cur->bits.after + 7) % 8;
 		} else {
 			printf("%c ", cur->expr->type->kind == TYPEARRAY ? cur->expr->type->base->repr->ext : cur->expr->type->repr->ext);
 			dataitem(cur->expr, cur->end - cur->start);
