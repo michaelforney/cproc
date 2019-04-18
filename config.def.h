@@ -2,6 +2,13 @@
 #define DYNAMICLINKER "/lib64/ld-linux-x86-64.so.2"
 #endif
 
+/*
+glibc systems might need crtbegin.o at the end of `startfiles` and
+crtend.o at the beginning of `endfiles`. These are provided by gcc and
+not usually in the linker's default search path, so we just leave it to
+the user to configure as needed.
+*/
+
 static char *startfiles[] = {
 	"-l", ":crt1.o",
 	"-l", ":crti.o",
