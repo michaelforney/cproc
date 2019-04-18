@@ -684,21 +684,31 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 			error(&tok.loc, "bit-field with zero width must not have declarator");
 		if (width > mt.type->size * 8)
 			error(&tok.loc, "bit-field exceeds width of underlying type");
-		/* calculate end of the storage-unit for this bit-field */
-		end = ALIGNUP(t->size, mt.type->size);
-		if (!width || width > (end - t->size) * 8 + b->bits) {
-			/* no room, allocate a new storage-unit */
-			t->size = end;
-			b->bits = 0;
-		}
-		if (m) {
-			m->offset = ALIGNDOWN(t->size - !!b->bits, mt.type->size);
-			m->bits.before = (t->size - m->offset) * 8 - b->bits;
-			m->bits.after = mt.type->size * 8 - width - m->bits.before;
-		}
-		t->size += (width - b->bits + 7) / 8;
-		b->bits = (b->bits - width) % 8;
 		align = mt.type->align;
+		if (t->kind == TYPESTRUCT) {
+			/* calculate end of the storage-unit for this bit-field */
+			end = ALIGNUP(t->size, mt.type->size);
+			if (!width || width > (end - t->size) * 8 + b->bits) {
+				/* no room, allocate a new storage-unit */
+				t->size = end;
+				b->bits = 0;
+			}
+			if (m) {
+				m->offset = ALIGNDOWN(t->size - !!b->bits, mt.type->size);
+				m->bits.before = (t->size - m->offset) * 8 - b->bits;
+				m->bits.after = mt.type->size * 8 - width - m->bits.before;
+			}
+			t->size += (width - b->bits + 7) / 8;
+			b->bits = (b->bits - width) % 8;
+		} else {
+			if (m) {
+				m->offset = 0;
+				m->bits.before = 0;
+				m->bits.after = mt.type->size * 8 - width;
+			}
+			if (t->size < mt.type->size)
+				t->size = mt.type->size;
+		}
 	}
 	if (t->align < align)
 		t->align = align;
