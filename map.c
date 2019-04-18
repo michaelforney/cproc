@@ -25,17 +25,11 @@ hash(const void *ptr, size_t len)
 }
 
 void
-mapbufkey(struct mapkey *k, const char *s, size_t n)
+mapkey(struct mapkey *k, const char *s, size_t n)
 {
 	k->str = s;
 	k->len = n;
 	k->hash = hash(s, n);
-}
-
-void
-mapstrkey(struct mapkey *k, const char *s)
-{
-	mapbufkey(k, s, strlen(s));
 }
 
 struct map *

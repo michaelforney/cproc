@@ -962,7 +962,7 @@ struct decl *stringdecl(struct expr *expr)
 	if (!strings)
 		strings = mkmap(64);
 	assert(expr->kind == EXPRSTRING);
-	mapbufkey(&key, expr->string.data, expr->string.size);
+	mapkey(&key, expr->string.data, expr->string.size);
 	entry = mapput(strings, &key);
 	d = *entry;
 	if (!d) {

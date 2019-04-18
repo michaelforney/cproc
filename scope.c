@@ -70,7 +70,7 @@ scopegetdecl(struct scope *s, const char *name, bool recurse)
 	struct decl *d;
 	struct mapkey k;
 
-	mapstrkey(&k, name);
+	mapkey(&k, name, strlen(name));
 	do {
 		d = s->decls ? mapget(s->decls, &k) : NULL;
 		s = s->parent;
@@ -85,7 +85,7 @@ scopegettag(struct scope *s, const char *name, bool recurse)
 	struct type *t;
 	struct mapkey k;
 
-	mapstrkey(&k, name);
+	mapkey(&k, name, strlen(name));
 	do {
 		t = s->tags ? mapget(s->tags, &k) : NULL;
 		s = s->parent;
@@ -101,7 +101,7 @@ scopeputdecl(struct scope *s, const char *name, struct decl *d)
 
 	if (!s->decls)
 		s->decls = mkmap(32);
-	mapstrkey(&k, name);
+	mapkey(&k, name, strlen(name));
 	*mapput(s->decls, &k) = d;
 }
 
@@ -112,6 +112,6 @@ scopeputtag(struct scope *s, const char *name, struct type *t)
 
 	if (!s->tags)
 		s->tags = mkmap(32);
-	mapstrkey(&k, name);
+	mapkey(&k, name, strlen(name));
 	*mapput(s->tags, &k) = t;
 }

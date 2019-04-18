@@ -462,7 +462,7 @@ funcgoto(struct func *f, char *name)
 	struct gotolabel *g;
 	struct mapkey key;
 
-	mapstrkey(&key, name);
+	mapkey(&key, name, strlen(name));
 	entry = mapput(f->gotos, &key);
 	g = *entry;
 	if (!g) {
