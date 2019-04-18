@@ -23,16 +23,16 @@ SRC=\
 	decl.c\
 	eval.c\
 	expr.c\
-	htab.c\
 	init.c\
 	main.c\
+	map.c\
 	pp.c\
 	scan.c\
 	scope.c\
 	siphash.c\
 	stmt.c\
-	tree.c\
 	token.c\
+	tree.c\
 	type.c\
 	util.c\
 	$(BACKEND).c
@@ -45,19 +45,19 @@ $(objdir)/decl.o    : decl.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ decl.c
 $(objdir)/driver.o  : driver.c  $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ driver.c
 $(objdir)/eval.o    : eval.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ eval.c
 $(objdir)/expr.o    : expr.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ expr.c
-$(objdir)/htab.o    : htab.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ htab.c
 $(objdir)/init.o    : init.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ init.c
 $(objdir)/main.o    : main.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ main.c
+$(objdir)/map.o     : map.c     $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ map.c
 $(objdir)/pp.o      : pp.c      $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ pp.c
+$(objdir)/qbe.o     : qbe.c     $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ qbe.c
 $(objdir)/scan.o    : scan.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ scan.c
 $(objdir)/scope.o   : scope.c   $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ scope.c
 $(objdir)/siphash.o : siphash.c $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ siphash.c
 $(objdir)/stmt.o    : stmt.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ stmt.c
-$(objdir)/tree.o    : tree.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ tree.c
 $(objdir)/token.o   : token.c   $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ token.c
+$(objdir)/tree.o    : tree.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ tree.c
 $(objdir)/type.o    : type.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ type.c
 $(objdir)/util.o    : util.c    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ util.c
-$(objdir)/qbe.o     : qbe.c     $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ qbe.c
 
 .PHONY: stage2
 stage2: all

@@ -264,8 +264,8 @@ struct decl {
 };
 
 struct scope {
-	struct hashtable *tags;
-	struct hashtable *decls;
+	struct map *tags;
+	struct map *decls;
 	struct value *breaklabel;
 	struct value *continuelabel;
 	struct switchcases *switchcases;

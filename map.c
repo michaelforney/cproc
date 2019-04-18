@@ -4,11 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
-#include "htab.h"
+#include "map.h"
 
-struct hashtable {
+struct map {
 	size_t len, cap;
-	struct hashtablekey *keys;
+	struct mapkey *keys;
 	void **vals;
 };
 
@@ -25,7 +25,7 @@ hash(const void *ptr, size_t len)
 }
 
 void
-htabbufkey(struct hashtablekey *k, const char *s, size_t n)
+mapbufkey(struct mapkey *k, const char *s, size_t n)
 {
 	k->str = s;
 	k->len = n;
@@ -33,15 +33,15 @@ htabbufkey(struct hashtablekey *k, const char *s, size_t n)
 }
 
 void
-htabstrkey(struct hashtablekey *k, const char *s)
+mapstrkey(struct mapkey *k, const char *s)
 {
-	htabbufkey(k, s, strlen(s));
+	mapbufkey(k, s, strlen(s));
 }
 
-struct hashtable *
-mkhtab(size_t cap)
+struct map *
+mkmap(size_t cap)
 {
-	struct hashtable *h;
+	struct map *h;
 	size_t i;
 
 	assert(!(cap & cap - 1));
@@ -57,7 +57,7 @@ mkhtab(size_t cap)
 }
 
 void
-delhtab(struct hashtable *h, void del(void *))
+delmap(struct map *h, void del(void *))
 {
 	size_t i;
 
@@ -75,7 +75,7 @@ delhtab(struct hashtable *h, void del(void *))
 }
 
 static bool
-keyequal(struct hashtablekey *k1, struct hashtablekey *k2)
+keyequal(struct mapkey *k1, struct mapkey *k2)
 {
 	if (k1->hash != k2->hash || k1->len != k2->len)
 		return false;
@@ -83,7 +83,7 @@ keyequal(struct hashtablekey *k1, struct hashtablekey *k2)
 }
 
 static size_t
-keyindex(struct hashtable *h, struct hashtablekey *k)
+keyindex(struct map *h, struct mapkey *k)
 {
 	size_t i;
 
@@ -94,9 +94,9 @@ keyindex(struct hashtable *h, struct hashtablekey *k)
 }
 
 void **
-htabput(struct hashtable *h, struct hashtablekey *k)
+mapput(struct map *h, struct mapkey *k)
 {
-	struct hashtablekey *oldkeys;
+	struct mapkey *oldkeys;
 	void **oldvals;
 	size_t i, j, oldcap;
 
@@ -128,7 +128,7 @@ htabput(struct hashtable *h, struct hashtablekey *k)
 }
 
 void *
-htabget(struct hashtable *h, struct hashtablekey *k)
+mapget(struct map *h, struct mapkey *k)
 {
 	size_t i;
 

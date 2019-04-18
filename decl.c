@@ -8,7 +8,7 @@
 #include <string.h>
 #include "util.h"
 #include "cc.h"
-#include "htab.h"
+#include "map.h"
 
 static struct list tentativedefns = {&tentativedefns, &tentativedefns};
 
@@ -954,16 +954,16 @@ decl(struct scope *s, struct func *f)
 
 struct decl *stringdecl(struct expr *expr)
 {
-	static struct hashtable *strings;
-	struct hashtablekey key;
+	static struct map *strings;
+	struct mapkey key;
 	void **entry;
 	struct decl *d;
 
 	if (!strings)
-		strings = mkhtab(64);
+		strings = mkmap(64);
 	assert(expr->kind == EXPRSTRING);
-	htabbufkey(&key, expr->string.data, expr->string.size);
-	entry = htabput(strings, &key);
+	mapbufkey(&key, expr->string.data, expr->string.size);
+	entry = mapput(strings, &key);
 	d = *entry;
 	if (!d) {
 		d = mkdecl(DECLOBJECT, expr->type, QUALNONE, LINKNONE);

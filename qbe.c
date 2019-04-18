@@ -7,7 +7,7 @@
 #include <inttypes.h>
 #include "util.h"
 #include "cc.h"
-#include "htab.h"
+#include "map.h"
 #include "tree.h"
 
 struct name {
@@ -73,7 +73,7 @@ struct func {
 	struct decl *namedecl;
 	struct type *type;
 	struct block *start, *end;
-	struct hashtable *gotos;
+	struct map *gotos;
 	uint64_t lastid;
 };
 
@@ -379,7 +379,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 	f->name = name;
 	f->type = t;
 	f->start = f->end = (struct block *)mkblock("start");
-	f->gotos = mkhtab(8);
+	f->gotos = mkmap(8);
 	f->lastid = 0;
 	emittype(t->base);
 
@@ -460,10 +460,10 @@ funcgoto(struct func *f, char *name)
 {
 	void **entry;
 	struct gotolabel *g;
-	struct hashtablekey key;
+	struct mapkey key;
 
-	htabstrkey(&key, name);
-	entry = htabput(f->gotos, &key);
+	mapstrkey(&key, name);
+	entry = mapput(f->gotos, &key);
 	g = *entry;
 	if (!g) {
 		g = xmalloc(sizeof(*g));

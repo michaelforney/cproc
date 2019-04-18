@@ -4,7 +4,7 @@
 #include <string.h>
 #include "util.h"
 #include "cc.h"
-#include "htab.h"
+#include "map.h"
 
 struct scope filescope;
 
@@ -56,9 +56,9 @@ delscope(struct scope *s)
 	struct scope *parent = s->parent;
 
 	if (s->decls)
-		delhtab(s->decls, NULL);
+		delmap(s->decls, NULL);
 	if (s->tags)
-		delhtab(s->tags, NULL);
+		delmap(s->tags, NULL);
 	free(s);
 
 	return parent;
@@ -68,11 +68,11 @@ struct decl *
 scopegetdecl(struct scope *s, const char *name, bool recurse)
 {
 	struct decl *d;
-	struct hashtablekey k;
+	struct mapkey k;
 
-	htabstrkey(&k, name);
+	mapstrkey(&k, name);
 	do {
-		d = s->decls ? htabget(s->decls, &k) : NULL;
+		d = s->decls ? mapget(s->decls, &k) : NULL;
 		s = s->parent;
 	} while (!d && s && recurse);
 
@@ -83,11 +83,11 @@ struct type *
 scopegettag(struct scope *s, const char *name, bool recurse)
 {
 	struct type *t;
-	struct hashtablekey k;
+	struct mapkey k;
 
-	htabstrkey(&k, name);
+	mapstrkey(&k, name);
 	do {
-		t = s->tags ? htabget(s->tags, &k) : NULL;
+		t = s->tags ? mapget(s->tags, &k) : NULL;
 		s = s->parent;
 	} while (!t && s && recurse);
 
@@ -97,21 +97,21 @@ scopegettag(struct scope *s, const char *name, bool recurse)
 void
 scopeputdecl(struct scope *s, const char *name, struct decl *d)
 {
-	struct hashtablekey k;
+	struct mapkey k;
 
 	if (!s->decls)
-		s->decls = mkhtab(32);
-	htabstrkey(&k, name);
-	*htabput(s->decls, &k) = d;
+		s->decls = mkmap(32);
+	mapstrkey(&k, name);
+	*mapput(s->decls, &k) = d;
 }
 
 void
 scopeputtag(struct scope *s, const char *name, struct type *t)
 {
-	struct hashtablekey k;
+	struct mapkey k;
 
 	if (!s->tags)
-		s->tags = mkhtab(32);
-	htabstrkey(&k, name);
-	*htabput(s->tags, &k) = t;
+		s->tags = mkmap(32);
+	mapstrkey(&k, name);
+	*mapput(s->tags, &k) = t;
 }
