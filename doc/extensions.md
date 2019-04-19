@@ -59,4 +59,5 @@ as `E1 ? E1 : E2`, except that `E1` is evaluated only once.
 
 [GNU extensions]: https://gcc.gnu.org/onlinedocs/gcc/C-Extensions.html
 [`__typeof__`]: https://gcc.gnu.org/onlinedocs/gcc/Typeof.html
+[`__builtin_offsetof`]: https://gcc.gnu.org/onlinedocs/gcc/Offsetof.html
 [Statement expressions]: https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html
