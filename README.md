@@ -73,8 +73,8 @@ Please report any issues to https://todo.sr.ht/~mcf/cc-issues.
 [QBE]: https://c9x.me/compile/
 [C11]: http://port70.net/~nsz/c/c11/n1570.html
 [ISC]: https://git.sr.ht/~mcf/cc/blob/master/LICENSE
-[extensions]: https://git.sr.ht/~mcf/cc/tree/master/doc/extensions.md
-[software]: https://git.sr.ht/~mcf/cc/tree/master/doc/software.md
+[extensions]: https://man.sr.ht/~mcf/cc/doc/extensions.md
+[software]: https://man.sr.ht/~mcf/cc/doc/software.md
 [8cc]: https://github.com/rui314/8cc
 [c]: https://github.com/andrewchambers/c
 [scc]: http://www.simple-cc.org/

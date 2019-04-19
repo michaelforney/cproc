@@ -44,3 +44,5 @@ Configure with
 
 	./configure CC=/path/to/cc CFLAGS_FOR_BUILD=-D_GNU_SOURCE \
 		--disable-intl --disable-gdb --disable-plugins --disable-readline
+
+[binutils]: https://www.gnu.org/software/binutils/
