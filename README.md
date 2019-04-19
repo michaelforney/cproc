@@ -6,8 +6,8 @@ the [ISC] license.
 Several GNU C [extensions] are also implemented.
 
 There is still much to do and some parts of the code are a little rough,
-but it currently implements most of the language, is self-hosting,
-and capable of building some useful software.
+but it currently implements most of the language and is capable of
+building some useful [software] including itself, `binutils`, and more.
 
 It was inspired by several other small C compilers including [8cc],
 [c], and [scc].
@@ -74,6 +74,7 @@ Please report any issues to https://todo.sr.ht/~mcf/cc-issues.
 [C11]: http://port70.net/~nsz/c/c11/n1570.html
 [ISC]: https://git.sr.ht/~mcf/cc/blob/master/LICENSE
 [extensions]: https://git.sr.ht/~mcf/cc/tree/master/doc/extensions.md
+[software]: https://git.sr.ht/~mcf/cc/tree/master/doc/software.md
 [8cc]: https://github.com/rui314/8cc
 [c]: https://github.com/andrewchambers/c
 [scc]: http://www.simple-cc.org/
