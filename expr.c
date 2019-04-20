@@ -674,17 +674,23 @@ unaryexpr(struct scope *s)
 	case TADD:
 		next();
 		e = castexpr(s);
+		if (!(e->type->prop & PROPARITH))
+			error(&tok.loc, "operand of unary '+' operator must have arithmetic type");
 		e = exprconvert(e, typeintpromote(e->type));
 		break;
 	case TSUB:
 		next();
 		e = castexpr(s);
+		if (!(e->type->prop & PROPARITH))
+			error(&tok.loc, "operand of unary '-' operator must have arithmetic type");
 		e = exprconvert(e, typeintpromote(e->type));
 		e = mkbinaryexpr(&tok.loc, TSUB, mkconstexpr(&typeint, 0), e);
 		break;
 	case TBNOT:
 		next();
 		e = castexpr(s);
+		if (!(e->type->prop & PROPINT))
+			error(&tok.loc, "operand of '~' operator must have integer type");
 		e = exprconvert(e, typeintpromote(e->type));
 		e = mkbinaryexpr(&tok.loc, TXOR, e, mkconstexpr(e->type, -1));
 		break;
