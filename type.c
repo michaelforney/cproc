@@ -21,13 +21,13 @@ struct type typeuint       = {.kind = TYPEBASIC, .size = 4, .align = 4, .repr = 
 struct type typelong       = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &i64, .basic = {.kind = BASICLONG, .issigned = 1}};
 struct type typeulong      = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &i64, .basic = {.kind = BASICLONG}};
 
-struct type typellong      = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &i64, .basic = {.kind = BASICLONGLONG, .issigned = 1}};
-struct type typeullong     = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &i64, .basic = {.kind = BASICLONGLONG}};
+struct type typellong      = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &i64, .basic = {.kind = BASICLLONG, .issigned = 1}};
+struct type typeullong     = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &i64, .basic = {.kind = BASICLLONG}};
 
 struct type typebool       = {.kind = TYPEBASIC, .size = 1, .align = 1, .repr = &i8, .basic = {.kind = BASICBOOL}};
 struct type typefloat      = {.kind = TYPEBASIC, .size = 4, .align = 4, .repr = &f32, .basic = {.kind = BASICFLOAT}};
 struct type typedouble     = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &f64, .basic = {.kind = BASICDOUBLE}};
-struct type typelongdouble = {.kind = TYPEBASIC, .size = 16, .align = 16, .basic = {.kind = BASICLONGDOUBLE}};  // XXX: not supported by qbe
+struct type typeldouble    = {.kind = TYPEBASIC, .size = 16, .align = 16, .basic = {.kind = BASICLDOUBLE}};  // XXX: not supported by qbe
 
 static struct type typevaliststruct = {.kind = TYPESTRUCT, .size = 24, .align = 8};
 struct type typevalist = {.kind = TYPEARRAY, .size = 24, .align = 8, .array = {1}, .base = &typevaliststruct};
@@ -94,7 +94,7 @@ typeprop(struct type *t)
 		switch (t->basic.kind) {
 		case BASICFLOAT:
 		case BASICDOUBLE:
-		case BASICLONGDOUBLE:
+		case BASICLDOUBLE:
 			p |= PROPFLOAT;
 			break;
 		case BASICCHAR:
@@ -132,13 +132,13 @@ typerank(struct type *t)
 {
 	assert(typeprop(t) & PROPINT);
 	switch (t->basic.kind) {
-	case BASICBOOL:     return 1;
-	case BASICCHAR:     return 2;
-	case BASICSHORT:    return 3;
+	case BASICBOOL:  return 1;
+	case BASICCHAR:  return 2;
+	case BASICSHORT: return 3;
 	case BASICENUM:
-	case BASICINT:      return 4;
-	case BASICLONG:     return 5;
-	case BASICLONGLONG: return 6;
+	case BASICINT:   return 4;
+	case BASICLONG:  return 5;
+	case BASICLLONG: return 6;
 	default:
 		fatal("internal error; unhandled integer type");
 	}
@@ -240,8 +240,8 @@ typecommonreal(struct type *t1, struct type *t2)
 	assert(t1->kind == TYPEBASIC && t2->kind == TYPEBASIC);
 	if (t1 == t2)
 		return t1;
-	if (t1 == &typelongdouble || t2 == &typelongdouble)
-		return &typelongdouble;
+	if (t1 == &typeldouble || t2 == &typeldouble)
+		return &typeldouble;
 	if (t1 == &typedouble || t2 == &typedouble)
 		return &typedouble;
 	if (t1 == &typefloat || t2 == &typefloat)

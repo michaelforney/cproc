@@ -380,36 +380,36 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 	}
 done:
 	switch ((int)ts) {
-	case SPECNONE:                                               break;
-	case SPECCHAR:                          t = &typechar;       break;
-	case SPECSIGNED|SPECCHAR:               t = &typeschar;      break;
-	case SPECUNSIGNED|SPECCHAR:             t = &typeuchar;      break;
+	case SPECNONE:                                            break;
+	case SPECCHAR:                          t = &typechar;    break;
+	case SPECSIGNED|SPECCHAR:               t = &typeschar;   break;
+	case SPECUNSIGNED|SPECCHAR:             t = &typeuchar;   break;
 	case SPECSHORT:
 	case SPECSHORT|SPECINT:
 	case SPECSIGNED|SPECSHORT:
-	case SPECSIGNED|SPECSHORT|SPECINT:      t = &typeshort;      break;
+	case SPECSIGNED|SPECSHORT|SPECINT:      t = &typeshort;   break;
 	case SPECUNSIGNED|SPECSHORT:
-	case SPECUNSIGNED|SPECSHORT|SPECINT:    t = &typeushort;     break;
+	case SPECUNSIGNED|SPECSHORT|SPECINT:    t = &typeushort;  break;
 	case SPECINT:
 	case SPECSIGNED:
-	case SPECSIGNED|SPECINT:                t = &typeint;        break;
+	case SPECSIGNED|SPECINT:                t = &typeint;     break;
 	case SPECUNSIGNED:
-	case SPECUNSIGNED|SPECINT:              t = &typeuint;       break;
+	case SPECUNSIGNED|SPECINT:              t = &typeuint;    break;
 	case SPECLONG:
 	case SPECLONG|SPECINT:
 	case SPECSIGNED|SPECLONG:
-	case SPECSIGNED|SPECLONG|SPECINT:       t = &typelong;       break;
+	case SPECSIGNED|SPECLONG|SPECINT:       t = &typelong;    break;
 	case SPECUNSIGNED|SPECLONG:
-	case SPECUNSIGNED|SPECLONG|SPECINT:     t = &typeulong;      break;
+	case SPECUNSIGNED|SPECLONG|SPECINT:     t = &typeulong;   break;
 	case SPECLONGLONG:
 	case SPECLONGLONG|SPECINT:
 	case SPECSIGNED|SPECLONGLONG:
-	case SPECSIGNED|SPECLONGLONG|SPECINT:   t = &typellong;      break;
+	case SPECSIGNED|SPECLONGLONG|SPECINT:   t = &typellong;   break;
 	case SPECUNSIGNED|SPECLONGLONG:
-	case SPECUNSIGNED|SPECLONGLONG|SPECINT: t = &typeullong;     break;
-	case SPECFLOAT:                         t = &typefloat;      break;
-	case SPECDOUBLE:                        t = &typedouble;     break;
-	case SPECLONG|SPECDOUBLE:               t = &typelongdouble; break;
+	case SPECUNSIGNED|SPECLONGLONG|SPECINT: t = &typeullong;  break;
+	case SPECFLOAT:                         t = &typefloat;   break;
+	case SPECDOUBLE:                        t = &typedouble;  break;
+	case SPECLONG|SPECDOUBLE:               t = &typeldouble; break;
 	default:
 		error(&tok.loc, "invalid combination of type specifiers");
 	}

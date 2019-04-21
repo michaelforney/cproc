@@ -371,7 +371,7 @@ primaryexpr(struct scope *s)
 			else if (tolower(end[0]) == 'f' && !end[1])
 				e->type = &typefloat;
 			else if (tolower(end[0]) == 'l' && !end[1])
-				e->type = &typelongdouble;
+				e->type = &typeldouble;
 			else
 				error(&tok.loc, "invalid floating constant suffix '%s'", *end);
 		} else {

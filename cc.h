@@ -198,10 +198,10 @@ struct type {
 				BASICINT,
 				BASICENUM,
 				BASICLONG,
-				BASICLONGLONG,
+				BASICLLONG,
 				BASICFLOAT,
 				BASICDOUBLE,
-				BASICLONGDOUBLE,
+				BASICLDOUBLE,
 			} kind;
 			_Bool issigned, iscomplex;
 		} basic;
@@ -416,7 +416,7 @@ extern struct type typeshort, typeushort;
 extern struct type typeint, typeuint;
 extern struct type typelong, typeulong;
 extern struct type typellong, typeullong;
-extern struct type typefloat, typedouble, typelongdouble;
+extern struct type typefloat, typedouble, typeldouble;
 extern struct type typevalist, typevalistptr;
 
 /* decl */
