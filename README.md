@@ -70,6 +70,12 @@ specified in `config.h`.
 
 Please report any issues to https://todo.sr.ht/~mcf/cc-issues.
 
+## Contributing
+
+Send patches to me (address in commit log), or pull-requests on the
+[GitHub mirror]. Once I decide on a project name, a mailing list will
+be created, which will then become the preferred form of contribution.
+
 [QBE]: https://c9x.me/compile/
 [C11]: http://port70.net/~nsz/c/c11/n1570.html
 [ISC]: https://git.sr.ht/~mcf/cc/blob/master/LICENSE
@@ -88,3 +94,4 @@ Please report any issues to https://todo.sr.ht/~mcf/cc-issues.
 [#35]: https://todo.sr.ht/~mcf/cc-issues/35
 [#36]: https://todo.sr.ht/~mcf/cc-issues/36
 [#44]: https://todo.sr.ht/~mcf/cc-issues/44
+[GitHub mirror]: https://github.com/michaelforney/cc
