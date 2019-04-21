@@ -6,40 +6,60 @@
 #include "util.h"
 #include "cc.h"
 
-struct type typevoid    = {.kind = TYPEVOID, .incomplete = true};
+#define INTTYPE(k, n, r, s, p) { \
+	.kind = k, .size = n, .align = n, .repr = r, .basic.issigned = s, \
+	.prop = PROPOBJECT|PROPSCALAR|PROPARITH|PROPREAL|PROPINT|p, \
+}
+#define FLTTYPE(k, n, r) { \
+	.kind = k, .size = n, .align = n, .repr = r, \
+	.prop = PROPOBJECT|PROPSCALAR|PROPARITH|PROPREAL|PROPFLOAT, \
+}
 
-struct type typechar    = {.kind = TYPECHAR, .size = 1, .align = 1, .repr = &i8, .basic.issigned = 1};
-struct type typeschar   = {.kind = TYPECHAR, .size = 1, .align = 1, .repr = &i8, .basic.issigned = 1};
-struct type typeuchar   = {.kind = TYPECHAR, .size = 1, .align = 1, .repr = &i8};
+struct type typevoid    = {.kind = TYPEVOID, .prop = PROPOBJECT, .incomplete = true};
 
-struct type typeshort   = {.kind = TYPESHORT, .size = 2, .align = 2, .repr = &i16, .basic.issigned = 1};
-struct type typeushort  = {.kind = TYPESHORT, .size = 2, .align = 2, .repr = &i16};
+struct type typebool    = INTTYPE(TYPEBOOL, 1, &i8, false, 0);
 
-struct type typeint     = {.kind = TYPEINT, .size = 4, .align = 4, .repr = &i32, .basic.issigned = 1};
-struct type typeuint    = {.kind = TYPEINT, .size = 4, .align = 4, .repr = &i32};
+struct type typechar    = INTTYPE(TYPECHAR, 1, &i8, true, PROPCHAR);
+struct type typeschar   = INTTYPE(TYPECHAR, 1, &i8, true, PROPCHAR);
+struct type typeuchar   = INTTYPE(TYPECHAR, 1, &i8, false, PROPCHAR);
 
-struct type typelong    = {.kind = TYPELONG, .size = 8, .align = 8, .repr = &i64, .basic.issigned = 1};
-struct type typeulong   = {.kind = TYPELONG, .size = 8, .align = 8, .repr = &i64};
+struct type typeshort   = INTTYPE(TYPESHORT, 2, &i16, true, 0);
+struct type typeushort  = INTTYPE(TYPESHORT, 2, &i16, false, 0);
 
-struct type typellong   = {.kind = TYPELLONG, .size = 8, .align = 8, .repr = &i64, .basic.issigned = 1};
-struct type typeullong  = {.kind = TYPELLONG, .size = 8, .align = 8, .repr = &i64};
+struct type typeint     = INTTYPE(TYPEINT, 4, &i32, true, 0);
+struct type typeuint    = INTTYPE(TYPEINT, 4, &i32, false, 0);
 
-struct type typebool    = {.kind = TYPEBOOL, .size = 1, .align = 1, .repr = &i8};
-struct type typefloat   = {.kind = TYPEFLOAT, .size = 4, .align = 4, .repr = &f32};
-struct type typedouble  = {.kind = TYPEDOUBLE, .size = 8, .align = 8, .repr = &f64};
-struct type typeldouble = {.kind = TYPELDOUBLE, .size = 16, .align = 16};  // XXX: not supported by qbe
+struct type typelong    = INTTYPE(TYPELONG, 8, &i64, true, 0);
+struct type typeulong   = INTTYPE(TYPELONG, 8, &i64, false, 0);
 
-static struct type typevaliststruct = {.kind = TYPESTRUCT, .size = 24, .align = 8};
-struct type typevalist = {.kind = TYPEARRAY, .size = 24, .align = 8, .array = {1}, .base = &typevaliststruct};
-struct type typevalistptr = {.kind = TYPEPOINTER, .size = 8, .align = 8, .repr = &i64, .base = &typevaliststruct};
+struct type typellong   = INTTYPE(TYPELLONG, 8, &i64, true, 0);
+struct type typeullong  = INTTYPE(TYPELLONG, 8, &i64, false, 0);
+
+struct type typefloat   = FLTTYPE(TYPEFLOAT, 4, &f32);
+struct type typedouble  = FLTTYPE(TYPEDOUBLE, 8, &f64);
+struct type typeldouble = FLTTYPE(TYPELDOUBLE, 16, NULL);  // XXX: not supported by qbe
+
+static struct type typevaliststruct = {
+	.kind = TYPESTRUCT, .size = 24, .align = 8,
+	.prop = PROPOBJECT|PROPAGGR,
+};
+struct type typevalist = {
+	.kind = TYPEARRAY, .size = 24, .align = 8, .array = {1}, .base = &typevaliststruct,
+	.prop = PROPOBJECT|PROPDERIVED|PROPAGGR,
+};
+struct type typevalistptr = {
+	.kind = TYPEPOINTER, .size = 8, .align = 8, .repr = &i64, .base = &typevaliststruct,
+	.prop = PROPOBJECT|PROPDERIVED|PROPSCALAR,
+};
 
 struct type *
-mktype(enum typekind kind)
+mktype(enum typekind kind, enum typeprop prop)
 {
 	struct type *t;
 
 	t = xmalloc(sizeof(*t));
 	t->kind = kind;
+	t->prop = prop;
 	t->incomplete = 0;
 
 	return t;
@@ -50,7 +70,7 @@ mkpointertype(struct type *base, enum typequal qual)
 {
 	struct type *t;
 
-	t = mktype(TYPEPOINTER);
+	t = mktype(TYPEPOINTER, PROPOBJECT|PROPDERIVED|PROPSCALAR);
 	t->base = base;
 	t->qual = qual;
 	t->size = 8;
@@ -65,7 +85,7 @@ mkarraytype(struct type *base, enum typequal qual, uint64_t len)
 {
 	struct type *t;
 
-	t = mktype(TYPEARRAY);
+	t = mktype(TYPEARRAY, PROPOBJECT|PROPDERIVED|PROPAGGR);
 	t->base = base;
 	t->qual = qual;
 	t->array.length = len;
@@ -78,59 +98,10 @@ mkarraytype(struct type *base, enum typequal qual, uint64_t len)
 	return t;
 }
 
-enum typeprop
-typeprop(struct type *t)
-{
-	enum typeprop p;
-
-	switch (t->kind) {
-	case TYPEVOID:
-		p = PROPOBJECT;
-		break;
-	case TYPECHAR:
-		p = PROPOBJECT|PROPARITH|PROPSCALAR|PROPREAL|PROPINT|PROPCHAR;
-		break;
-	case TYPEBOOL:
-	case TYPESHORT:
-	case TYPEINT:
-	case TYPEENUM:
-	case TYPELONG:
-	case TYPELLONG:
-		p = PROPOBJECT|PROPARITH|PROPSCALAR|PROPREAL|PROPINT;
-		break;
-	case TYPEFLOAT:
-	case TYPEDOUBLE:
-	case TYPELDOUBLE:
-		p = PROPOBJECT|PROPARITH|PROPSCALAR|PROPFLOAT;
-		if (!t->basic.iscomplex)
-			p |= PROPREAL;
-		break;
-	case TYPEPOINTER:
-		p = PROPOBJECT|PROPSCALAR|PROPDERIVED;
-		break;
-	case TYPEARRAY:
-		p = PROPOBJECT|PROPAGGR|PROPDERIVED;
-		break;
-	case TYPEFUNC:
-		p = PROPDERIVED;
-		break;
-	case TYPESTRUCT:
-		p = PROPOBJECT|PROPAGGR;
-		break;
-	case TYPEUNION:
-		p = PROPOBJECT;
-		break;
-	default:
-		fatal("unknown type");
-	}
-
-	return p;
-}
-
 static int
 typerank(struct type *t)
 {
-	assert(typeprop(t) & PROPINT);
+	assert(t->prop & PROPINT);
 	switch (t->kind) {
 	case TYPEBOOL:  return 1;
 	case TYPECHAR:  return 2;
@@ -217,7 +188,7 @@ typecomposite(struct type *t1, struct type *t2)
 struct type *
 typeintpromote(struct type *t)
 {
-	if (typeprop(t) & PROPINT && typerank(t) <= typerank(&typeint))
+	if (t->prop & PROPINT && typerank(t) <= typerank(&typeint))
 		return t->size < typeint.size || t->basic.issigned ? &typeint : &typeuint;
 	return t;
 }
@@ -235,7 +206,7 @@ typecommonreal(struct type *t1, struct type *t2)
 {
 	struct type *tmp;
 
-	assert(typeprop(t1) & PROPREAL && typeprop(t2) & PROPREAL);
+	assert(t1->prop & PROPREAL && t2->prop & PROPREAL);
 	if (t1 == t2)
 		return t1;
 	if (t1 == &typeldouble || t2 == &typeldouble)

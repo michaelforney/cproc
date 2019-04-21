@@ -188,6 +188,7 @@ struct member {
 
 struct type {
 	enum typekind kind;
+	enum typeprop prop;
 	int align;
 	uint64_t size;
 	struct repr *repr;
@@ -390,7 +391,7 @@ _Bool consume(int);
 
 /* type */
 
-struct type *mktype(enum typekind);
+struct type *mktype(enum typekind, enum typeprop);
 struct type *mkpointertype(struct type *, enum typequal);
 struct type *mkarraytype(struct type *, enum typequal, uint64_t);
 

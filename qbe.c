@@ -247,7 +247,7 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 		error(&tok.loc, "volatile store is not yet supported");
 	if (tq & QUALCONST)
 		error(&tok.loc, "cannot store to 'const' object");
-	tp = typeprop(t);
+	tp = t->prop;
 	assert(!lval.bits.before && !lval.bits.after || tp & PROPINT);
 	switch (t->kind) {
 	case TYPESTRUCT:
@@ -324,12 +324,12 @@ funcload(struct func *f, struct type *t, struct lvalue lval)
 		v->repr = t->repr;
 		return v;
 	default:
-		assert(typeprop(t) & PROPREAL);
+		assert(t->prop & PROPREAL);
 		switch (t->size) {
 		case 1: op = t->basic.issigned ? ILOADSB : ILOADUB; break;
 		case 2: op = t->basic.issigned ? ILOADSH : ILOADUH; break;
-		case 4: op = typeprop(t) & PROPFLOAT ? ILOADS : t->basic.issigned ? ILOADSW : ILOADUW; break;
-		case 8: op = typeprop(t) & PROPFLOAT ? ILOADD : ILOADL; break;
+		case 4: op = t->prop & PROPFLOAT ? ILOADS : t->basic.issigned ? ILOADSW : ILOADUW; break;
+		case 8: op = t->prop & PROPFLOAT ? ILOADD : ILOADL; break;
 		default:
 			fatal("internal error; unimplemented load");
 		}
@@ -618,7 +618,7 @@ funcexpr(struct func *f, struct expr *e)
 		}
 		break;
 	case EXPRCONST:
-		if (typeprop(e->type) & PROPINT || e->type->kind == TYPEPOINTER)
+		if (e->type->prop & PROPINT || e->type->kind == TYPEPOINTER)
 			return mkintconst(e->type->repr, e->constant.i);
 		return mkfltconst(e->type->repr, e->constant.f);
 	case EXPRBITFIELD:
@@ -630,9 +630,9 @@ funcexpr(struct func *f, struct expr *e)
 		l = funcload(f, e->incdec.base->type, lval);
 		if (e->type->kind == TYPEPOINTER)
 			r = mkintconst(e->type->repr, e->type->base->size);
-		else if (typeprop(e->type) & PROPINT)
+		else if (e->type->prop & PROPINT)
 			r = mkintconst(e->type->repr, 1);
-		else if (typeprop(e->type) & PROPFLOAT)
+		else if (e->type->prop & PROPFLOAT)
 			r = mkfltconst(e->type->repr, 1);
 		else
 			fatal("not a scalar");
@@ -665,7 +665,6 @@ funcexpr(struct func *f, struct expr *e)
 		break;
 	case EXPRCAST: {
 		struct type *src, *dst;
-		int srcprop, dstprop;
 
 		l = funcexpr(f, e->cast.e);
 		r = NULL;
@@ -678,19 +677,17 @@ funcexpr(struct func *f, struct expr *e)
 			dst = &typeulong;
 		if (dst->kind == TYPEVOID)
 			return NULL;
-		srcprop = typeprop(src);
-		dstprop = typeprop(dst);
-		if (!(srcprop & PROPREAL) || !(dstprop & PROPREAL))
+		if (!(src->prop & PROPREAL) || !(dst->prop & PROPREAL))
 			fatal("internal error; unsupported conversion");
 		if (dst->kind == TYPEBOOL) {
 			l = extend(f, src, l);
 			r = mkintconst(src->repr, 0);
-			if (srcprop & PROPINT)
+			if (src->prop & PROPINT)
 				op = src->size == 8 ? ICNEL : ICNEW;
 			else
 				op = src->size == 8 ? ICNED : ICNES;
-		} else if (dstprop & PROPINT) {
-			if (srcprop & PROPINT) {
+		} else if (dst->prop & PROPINT) {
+			if (src->prop & PROPINT) {
 				if (dst->size <= src->size) {
 					op = ICOPY;
 				} else {
@@ -707,7 +704,7 @@ funcexpr(struct func *f, struct expr *e)
 				op = src->size == 8 ? IDTOSI : ISTOSI;
 			}
 		} else {
-			if (srcprop & PROPINT) {
+			if (src->prop & PROPINT) {
 				if (!src->basic.issigned)
 					return utof(f, dst->repr, l);
 				op = src->size == 8 ? ISLTOF : ISWTOF;
@@ -749,7 +746,7 @@ funcexpr(struct func *f, struct expr *e)
 			op = IMUL;
 			break;
 		case TDIV:
-			op = !(typeprop(e->type) & PROPINT) || e->type->basic.issigned ? IDIV : IUDIV;
+			op = !(e->type->prop & PROPINT) || e->type->basic.issigned ? IDIV : IUDIV;
 			break;
 		case TMOD:
 			op = e->type->basic.issigned ? IREM : IUREM;
@@ -779,49 +776,49 @@ funcexpr(struct func *f, struct expr *e)
 			l = extend(f, t, l);
 			r = extend(f, t, r);
 			if (t->size <= 4)
-				op = typeprop(t) & PROPFLOAT ? ICLTS : t->basic.issigned ? ICSLTW : ICULTW;
+				op = t->prop & PROPFLOAT ? ICLTS : t->basic.issigned ? ICSLTW : ICULTW;
 			else
-				op = typeprop(t) & PROPFLOAT ? ICLTD : t->basic.issigned ? ICSLTL : ICULTL;
+				op = t->prop & PROPFLOAT ? ICLTD : t->basic.issigned ? ICSLTL : ICULTL;
 			break;
 		case TGREATER:
 			l = extend(f, t, l);
 			r = extend(f, t, r);
 			if (t->size <= 4)
-				op = typeprop(t) & PROPFLOAT ? ICGTS : t->basic.issigned ? ICSGTW : ICUGTW;
+				op = t->prop & PROPFLOAT ? ICGTS : t->basic.issigned ? ICSGTW : ICUGTW;
 			else
-				op = typeprop(t) & PROPFLOAT ? ICGTD : t->basic.issigned ? ICSGTL : ICUGTL;
+				op = t->prop & PROPFLOAT ? ICGTD : t->basic.issigned ? ICSGTL : ICUGTL;
 			break;
 		case TLEQ:
 			l = extend(f, t, l);
 			r = extend(f, t, r);
 			if (t->size <= 4)
-				op = typeprop(t) & PROPFLOAT ? ICLES : t->basic.issigned ? ICSLEW : ICULEW;
+				op = t->prop & PROPFLOAT ? ICLES : t->basic.issigned ? ICSLEW : ICULEW;
 			else
-				op = typeprop(t) & PROPFLOAT ? ICLED : t->basic.issigned ? ICSLEL : ICULEL;
+				op = t->prop & PROPFLOAT ? ICLED : t->basic.issigned ? ICSLEL : ICULEL;
 			break;
 		case TGEQ:
 			l = extend(f, t, l);
 			r = extend(f, t, r);
 			if (t->size <= 4)
-				op = typeprop(t) & PROPFLOAT ? ICGES : t->basic.issigned ? ICSGEW : ICUGEW;
+				op = t->prop & PROPFLOAT ? ICGES : t->basic.issigned ? ICSGEW : ICUGEW;
 			else
-				op = typeprop(t) & PROPFLOAT ? ICGED : t->basic.issigned ? ICSGEL : ICUGEL;
+				op = t->prop & PROPFLOAT ? ICGED : t->basic.issigned ? ICSGEL : ICUGEL;
 			break;
 		case TEQL:
 			l = extend(f, t, l);
 			r = extend(f, t, r);
 			if (t->size <= 4)
-				op = typeprop(t) & PROPFLOAT ? ICEQS : ICEQW;
+				op = t->prop & PROPFLOAT ? ICEQS : ICEQW;
 			else
-				op = typeprop(t) & PROPFLOAT ? ICEQD : ICEQL;
+				op = t->prop & PROPFLOAT ? ICEQD : ICEQL;
 			break;
 		case TNEQ:
 			l = extend(f, t, l);
 			r = extend(f, t, r);
 			if (t->size <= 4)
-				op = typeprop(t) & PROPFLOAT ? ICNES : ICNEW;
+				op = t->prop & PROPFLOAT ? ICNES : ICNEW;
 			else
-				op = typeprop(t) & PROPFLOAT ? ICNED : ICNEL;
+				op = t->prop & PROPFLOAT ? ICNED : ICNEL;
 			break;
 		}
 		if (op == INONE)
@@ -1194,7 +1191,7 @@ dataitem(struct expr *expr, uint64_t size)
 		dataitem(expr->binary.r, 0);
 		break;
 	case EXPRCONST:
-		if (typeprop(expr->type) & PROPFLOAT)
+		if (expr->type->prop & PROPFLOAT)
 			printf("%c_%a", expr->type->size == 4 ? 's' : 'd', expr->constant.f);
 		else
 			printf("%" PRIu64, expr->constant.i);
@@ -1258,7 +1255,7 @@ emitdata(struct decl *d, struct init *init)
 			printf("z %" PRIu64 ", ", start - offset);
 		if (cur->bits.before || cur->bits.after) {
 			/* XXX: little-endian specific */
-			assert(typeprop(cur->expr->type) & PROPINT);
+			assert(cur->expr->type->prop & PROPINT);
 			assert(cur->expr->kind == EXPRCONST);
 			bits |= cur->expr->constant.i << cur->bits.before % 8;
 			for (offset = start; offset < end; ++offset, bits >>= 8)

@@ -244,7 +244,7 @@ parseinit(struct scope *s, struct type *t)
 					expr = expr->unary.base;
 					base = t->base;
 					/* XXX: wide string literals */
-					if (!(typeprop(base) & PROPCHAR))
+					if (!(base->prop & PROPCHAR))
 						error(&tok.loc, "array initializer is string literal with incompatible type");
 					if (t->incomplete)
 						updatearray(t, expr->string.size);
@@ -257,7 +257,7 @@ parseinit(struct scope *s, struct type *t)
 					goto add;
 				break;
 			default:  /* scalar type */
-				assert(typeprop(t) & PROPSCALAR);
+				assert(t->prop & PROPSCALAR);
 				expr = exprconvert(expr, t);
 				goto add;
 			}

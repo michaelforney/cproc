@@ -125,7 +125,7 @@ stmt(struct func *f, struct scope *s)
 		e = expr(s);
 		expect(TRPAREN, "after expression");
 
-		if (!(typeprop(e->type) & PROPINT))
+		if (!(e->type->prop & PROPINT))
 			error(&tok.loc, "controlling expression of switch statement must have integer type");
 		e = exprconvert(e, typeintpromote(e->type));
 

@@ -23,8 +23,8 @@ below) to avoid errors in unused `static inline` functions in musl's
 things will break if any functions with `long double` get called.
 
 ```diff
--struct type typeldouble = {.kind = TYPELDOUBLE, .size = 16, .align = 16};  // XXX: not supported by qbe
-+struct type typeldouble = {.kind = TYPELDOUBLE, .size = 8, .align = 8, .repr = &f64};
+-struct type typeldouble = FLTTYPE(TYPELDOUBLE, 16, NULL);  // XXX: not supported by qbe
++struct type typeldouble = FLTTYPE(TYPELDOUBLE, 8, &f64);
 ```
 
 Requires several patches available here:

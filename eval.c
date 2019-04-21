@@ -12,7 +12,7 @@ cast(struct expr *expr)
 	unsigned size;
 
 	size = expr->type->size;
-	if (typeprop(expr->type) & PROPFLOAT)
+	if (expr->type->prop & PROPFLOAT)
 		size |= F;
 	else if (expr->type->basic.issigned)
 		size |= S;
@@ -31,7 +31,7 @@ static void
 binary(struct expr *expr, enum tokenkind op, struct expr *l, struct expr *r)
 {
 	expr->kind = EXPRCONST;
-	if (typeprop(l->type) & PROPFLOAT)
+	if (l->type->prop & PROPFLOAT)
 		op |= F;
 	else if (l->type->basic.issigned)
 		op |= S;
@@ -126,9 +126,9 @@ eval(struct expr *expr)
 		l = eval(expr->cast.e);
 		if (l->kind == EXPRCONST) {
 			expr->kind = EXPRCONST;
-			if (typeprop(l->type) & PROPINT && typeprop(expr->type) & PROPFLOAT)
+			if (l->type->prop & PROPINT && expr->type->prop & PROPFLOAT)
 				expr->constant.f = l->constant.i;
-			else if (typeprop(l->type) & PROPFLOAT && typeprop(expr->type) & PROPINT)
+			else if (l->type->prop & PROPFLOAT && expr->type->prop & PROPINT)
 				expr->constant.i = l->constant.f;
 			else
 				expr->constant = l->constant;

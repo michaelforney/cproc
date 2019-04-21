@@ -185,7 +185,9 @@ tagspec(struct scope *s)
 			*t = typeuint;
 			t->kind = kind;
 		} else {
-			t = mktype(kind);
+			t = mktype(kind, PROPOBJECT);
+			if (kind == TYPESTRUCT)
+				t->prop |= PROPAGGR;
 			t->repr = &i64; // XXX
 			t->size = 0;
 			t->align = 0;
@@ -220,7 +222,7 @@ tagspec(struct scope *s)
 			next();
 			if (consume(TASSIGN)) {
 				e = constexpr(s);
-				if (e->kind != EXPRCONST || !(typeprop(e->type) & PROPINT))
+				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "expected integer constant expression");
 				if (e->type->basic.issigned && e->constant.i >= 1ull << 63)
 					t->basic.issigned = true;
@@ -480,7 +482,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 		case TLPAREN:  /* function declarator */
 			next();
 		func:
-			t = mktype(TYPEFUNC);
+			t = mktype(TYPEFUNC, PROPDERIVED);
 			t->qual = QUALNONE;
 			t->func.isprototype = false;
 			t->func.isvararg = false;
@@ -676,7 +678,7 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 				t->size = mt.type->size;
 		}
 	} else {  /* bit-field */
-		if (!(typeprop(mt.type) & PROPINT))
+		if (!(mt.type->prop & PROPINT))
 			error(&tok.loc, "bit-field has invalid type");
 		if (align)
 			error(&tok.loc, "alignment specified for bit-field");

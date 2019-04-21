@@ -126,8 +126,8 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 	struct type *t = NULL;
 	enum typeprop lp, rp;
 
-	lp = typeprop(l->type);
-	rp = typeprop(r->type);
+	lp = l->type->prop;
+	rp = r->type->prop;
 	switch (op) {
 	case TLOR:
 	case TLAND:
@@ -167,7 +167,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT))
 			error(loc, "invalid operands to '+' operator");
 		t = l->type;
-		if (t->base->incomplete || !(typeprop(t->base) & PROPOBJECT))
+		if (t->base->incomplete || !(t->base->prop & PROPOBJECT))
 			error(loc, "pointer operand to '+' must be to complete object type");
 		r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
 		break;
@@ -178,7 +178,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 		}
 		if (l->type->kind != TYPEPOINTER || !(rp & PROPINT) && r->type->kind != TYPEPOINTER)
 			error(loc, "invalid operands to '-' operator");
-		if (l->type->base->incomplete || !(typeprop(l->type->base) & PROPOBJECT))
+		if (l->type->base->incomplete || !(l->type->base->prop & PROPOBJECT))
 			error(loc, "pointer operand to '-' must be to complete object type");
 		if (rp & PROPINT) {
 			t = l->type;
@@ -551,7 +551,7 @@ postfixexpr(struct scope *s, struct expr *r)
 			}
 			if (arr->type->base->incomplete)
 				error(&tok.loc, "array is pointer to incomplete type");
-			if (!(typeprop(idx->type) & PROPINT))
+			if (!(idx->type->prop & PROPINT))
 				error(&tok.loc, "index is not an integer type");
 			e = mkunaryexpr(TMUL, mkbinaryexpr(&tok.loc, TADD, arr, idx));
 			expect(TRBRACK, "after array index");
@@ -693,7 +693,7 @@ unaryexpr(struct scope *s)
 	case TLNOT:
 		next();
 		e = castexpr(s);
-		if (!(typeprop(e->type) & PROPSCALAR))
+		if (!(e->type->prop & PROPSCALAR))
 			error(&tok.loc, "operator '!' must have scalar operand");
 		e = mkbinaryexpr(&tok.loc, TEQL, e, mkconstexpr(&typeint, 0));
 		break;
@@ -823,7 +823,7 @@ nullpointer(struct expr *e)
 {
 	if (e->kind != EXPRCONST)
 		return false;
-	if (!(typeprop(e->type) & PROPINT) && (e->type->kind != TYPEPOINTER || e->type->base != &typevoid))
+	if (!(e->type->prop & PROPINT) && (e->type->kind != TYPEPOINTER || e->type->base != &typevoid))
 		return false;
 	return e->constant.i == 0;
 }
@@ -847,7 +847,7 @@ condexpr(struct scope *s)
 	f = e->cond.f->type;
 	if (t == f) {
 		e->type = t;
-	} else if (typeprop(t) & PROPARITH && typeprop(f) & PROPARITH) {
+	} else if (t->prop & PROPARITH && f->prop & PROPARITH) {
 		e->type = commonreal(&e->cond.t, &e->cond.f);
 	} else if (t == &typevoid && f == &typevoid) {
 		e->type = &typevoid;
@@ -890,7 +890,7 @@ intconstexpr(struct scope *s, bool allowneg)
 	struct expr *e;
 
 	e = constexpr(s);
-	if (e->kind != EXPRCONST || !(typeprop(e->type) & PROPINT))
+	if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 		error(&tok.loc, "not an integer constant expression");
 	if (!allowneg && e->type->basic.issigned && e->constant.i > INT64_MAX)
 		error(&tok.loc, "integer constant expression cannot be negative");
