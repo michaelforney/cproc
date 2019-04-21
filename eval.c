@@ -4,12 +4,33 @@
 #include "util.h"
 #include "cc.h"
 
+#define F (1<<8)
+#define S (2<<8)
+static void
+cast(struct expr *expr)
+{
+	unsigned size;
+
+	size = expr->type->size;
+	if (typeprop(expr->type) & PROPFLOAT)
+		size |= F;
+	else if (expr->type->basic.issigned)
+		size |= S;
+	switch (size) {
+	case 1:   expr->constant.i = (uint8_t)expr->constant.i;  break;
+	case 1|S: expr->constant.i = (int8_t)expr->constant.i;   break;
+	case 2:   expr->constant.i = (uint16_t)expr->constant.i; break;
+	case 2|S: expr->constant.i = (int16_t)expr->constant.i;  break;
+	case 4:   expr->constant.i = (uint32_t)expr->constant.i; break;
+	case 4|S: expr->constant.i = (int32_t)expr->constant.i;  break;
+	case 4|F: expr->constant.f = (float)expr->constant.f;    break;
+	}
+}
+
 static void
 binary(struct expr *expr, enum tokenkind op, struct expr *l, struct expr *r)
 {
 	expr->kind = EXPRCONST;
-#define F (1<<8)
-#define S (2<<8)
 	if (typeprop(l->type) & PROPFLOAT)
 		op |= F;
 	else if (l->type->basic.issigned)
@@ -60,9 +81,10 @@ binary(struct expr *expr, enum tokenkind op, struct expr *l, struct expr *r)
 	default:
 		fatal("internal error; unknown binary expression");
 	}
+	cast(expr);
+}
 #undef F
 #undef S
-}
 
 struct expr *
 eval(struct expr *expr)
@@ -110,6 +132,7 @@ eval(struct expr *expr)
 				expr->constant.i = l->constant.f;
 			else
 				expr->constant = l->constant;
+			cast(expr);
 		} else if (l->type->kind == TYPEPOINTER && expr->type->kind == TYPEPOINTER) {
 			expr = l;
 		}
