@@ -6,28 +6,28 @@
 #include "util.h"
 #include "cc.h"
 
-struct type typevoid       = {.kind = TYPEVOID, .incomplete = true};
+struct type typevoid    = {.kind = TYPEVOID, .incomplete = true};
 
-struct type typechar       = {.kind = TYPEBASIC, .size = 1, .align = 1, .repr = &i8, .basic = {.kind = BASICCHAR, .issigned = 1}};
-struct type typeschar      = {.kind = TYPEBASIC, .size = 1, .align = 1, .repr = &i8, .basic = {.kind = BASICCHAR, .issigned = 1}};
-struct type typeuchar      = {.kind = TYPEBASIC, .size = 1, .align = 1, .repr = &i8, .basic = {.kind = BASICCHAR}};
+struct type typechar    = {.kind = TYPECHAR, .size = 1, .align = 1, .repr = &i8, .basic.issigned = 1};
+struct type typeschar   = {.kind = TYPECHAR, .size = 1, .align = 1, .repr = &i8, .basic.issigned = 1};
+struct type typeuchar   = {.kind = TYPECHAR, .size = 1, .align = 1, .repr = &i8};
 
-struct type typeshort      = {.kind = TYPEBASIC, .size = 2, .align = 2, .repr = &i16, .basic = {.kind = BASICSHORT, .issigned = 1}};
-struct type typeushort     = {.kind = TYPEBASIC, .size = 2, .align = 2, .repr = &i16, .basic = {.kind = BASICSHORT}};
+struct type typeshort   = {.kind = TYPESHORT, .size = 2, .align = 2, .repr = &i16, .basic.issigned = 1};
+struct type typeushort  = {.kind = TYPESHORT, .size = 2, .align = 2, .repr = &i16};
 
-struct type typeint        = {.kind = TYPEBASIC, .size = 4, .align = 4, .repr = &i32, .basic = {.kind = BASICINT, .issigned = 1}};
-struct type typeuint       = {.kind = TYPEBASIC, .size = 4, .align = 4, .repr = &i32, .basic = {.kind = BASICINT}};
+struct type typeint     = {.kind = TYPEINT, .size = 4, .align = 4, .repr = &i32, .basic.issigned = 1};
+struct type typeuint    = {.kind = TYPEINT, .size = 4, .align = 4, .repr = &i32};
 
-struct type typelong       = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &i64, .basic = {.kind = BASICLONG, .issigned = 1}};
-struct type typeulong      = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &i64, .basic = {.kind = BASICLONG}};
+struct type typelong    = {.kind = TYPELONG, .size = 8, .align = 8, .repr = &i64, .basic.issigned = 1};
+struct type typeulong   = {.kind = TYPELONG, .size = 8, .align = 8, .repr = &i64};
 
-struct type typellong      = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &i64, .basic = {.kind = BASICLLONG, .issigned = 1}};
-struct type typeullong     = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &i64, .basic = {.kind = BASICLLONG}};
+struct type typellong   = {.kind = TYPELLONG, .size = 8, .align = 8, .repr = &i64, .basic.issigned = 1};
+struct type typeullong  = {.kind = TYPELLONG, .size = 8, .align = 8, .repr = &i64};
 
-struct type typebool       = {.kind = TYPEBASIC, .size = 1, .align = 1, .repr = &i8, .basic = {.kind = BASICBOOL}};
-struct type typefloat      = {.kind = TYPEBASIC, .size = 4, .align = 4, .repr = &f32, .basic = {.kind = BASICFLOAT}};
-struct type typedouble     = {.kind = TYPEBASIC, .size = 8, .align = 8, .repr = &f64, .basic = {.kind = BASICDOUBLE}};
-struct type typeldouble    = {.kind = TYPEBASIC, .size = 16, .align = 16, .basic = {.kind = BASICLDOUBLE}};  // XXX: not supported by qbe
+struct type typebool    = {.kind = TYPEBOOL, .size = 1, .align = 1, .repr = &i8};
+struct type typefloat   = {.kind = TYPEFLOAT, .size = 4, .align = 4, .repr = &f32};
+struct type typedouble  = {.kind = TYPEDOUBLE, .size = 8, .align = 8, .repr = &f64};
+struct type typeldouble = {.kind = TYPELDOUBLE, .size = 16, .align = 16};  // XXX: not supported by qbe
 
 static struct type typevaliststruct = {.kind = TYPESTRUCT, .size = 24, .align = 8};
 struct type typevalist = {.kind = TYPEARRAY, .size = 24, .align = 8, .array = {1}, .base = &typevaliststruct};
@@ -81,47 +81,47 @@ mkarraytype(struct type *base, enum typequal qual, uint64_t len)
 enum typeprop
 typeprop(struct type *t)
 {
-	enum typeprop p = PROPNONE;
+	enum typeprop p;
 
 	switch (t->kind) {
 	case TYPEVOID:
-		p |= PROPOBJECT;
+		p = PROPOBJECT;
 		break;
-	case TYPEBASIC:
-		p |= PROPOBJECT|PROPARITH|PROPSCALAR;
+	case TYPECHAR:
+		p = PROPOBJECT|PROPARITH|PROPSCALAR|PROPREAL|PROPINT|PROPCHAR;
+		break;
+	case TYPEBOOL:
+	case TYPESHORT:
+	case TYPEINT:
+	case TYPEENUM:
+	case TYPELONG:
+	case TYPELLONG:
+		p = PROPOBJECT|PROPARITH|PROPSCALAR|PROPREAL|PROPINT;
+		break;
+	case TYPEFLOAT:
+	case TYPEDOUBLE:
+	case TYPELDOUBLE:
+		p = PROPOBJECT|PROPARITH|PROPSCALAR|PROPFLOAT;
 		if (!t->basic.iscomplex)
 			p |= PROPREAL;
-		switch (t->basic.kind) {
-		case BASICFLOAT:
-		case BASICDOUBLE:
-		case BASICLDOUBLE:
-			p |= PROPFLOAT;
-			break;
-		case BASICCHAR:
-			p |= PROPCHAR;
-			/* fallthrough */
-		default:
-			p |= PROPINT;
-			break;
-		}
 		break;
 	case TYPEPOINTER:
-		p |= PROPOBJECT|PROPSCALAR|PROPDERIVED;
+		p = PROPOBJECT|PROPSCALAR|PROPDERIVED;
 		break;
 	case TYPEARRAY:
-		p |= PROPOBJECT|PROPAGGR|PROPDERIVED;
+		p = PROPOBJECT|PROPAGGR|PROPDERIVED;
 		break;
 	case TYPEFUNC:
-		p |= PROPDERIVED;
+		p = PROPDERIVED;
 		break;
 	case TYPESTRUCT:
-		p |= PROPOBJECT|PROPAGGR;
+		p = PROPOBJECT|PROPAGGR;
 		break;
 	case TYPEUNION:
-		p |= PROPOBJECT;
+		p = PROPOBJECT;
 		break;
 	default:
-		break;
+		fatal("unknown type");
 	}
 
 	return p;
@@ -131,14 +131,14 @@ static int
 typerank(struct type *t)
 {
 	assert(typeprop(t) & PROPINT);
-	switch (t->basic.kind) {
-	case BASICBOOL:  return 1;
-	case BASICCHAR:  return 2;
-	case BASICSHORT: return 3;
-	case BASICENUM:
-	case BASICINT:   return 4;
-	case BASICLONG:  return 5;
-	case BASICLLONG: return 6;
+	switch (t->kind) {
+	case TYPEBOOL:  return 1;
+	case TYPECHAR:  return 2;
+	case TYPESHORT: return 3;
+	case TYPEENUM:
+	case TYPEINT:   return 4;
+	case TYPELONG:  return 5;
+	case TYPELLONG: return 6;
 	default:
 		fatal("internal error; unhandled integer type");
 	}
@@ -152,16 +152,14 @@ typecompatible(struct type *t1, struct type *t2)
 
 	if (t1 == t2)
 		return true;
-	if (t1->kind != t2->kind)
-		return false;
-	switch (t1->kind) {
-	case TYPEBASIC:
-		if (t1->basic.issigned != t2->basic.issigned)
-			return false;
+	if (t1->kind != t2->kind) {
 		/* enum types are compatible with 'int', but not with
 		   each other (unless they are the same type) */
-		return t1->basic.kind == BASICENUM && t2->basic.kind == BASICINT ||
-		       t1->basic.kind == BASICINT && t2->basic.kind == BASICENUM;
+		return (t1->kind == TYPEENUM && t2->kind == TYPEINT ||
+		        t1->kind == TYPEINT && t2->kind == TYPEENUM) &&
+		       t1->basic.issigned == t2->basic.issigned;
+	}
+	switch (t1->kind) {
 	case TYPEVOID:
 		return true;
 	case TYPEPOINTER:
@@ -237,7 +235,7 @@ typecommonreal(struct type *t1, struct type *t2)
 {
 	struct type *tmp;
 
-	assert(t1->kind == TYPEBASIC && t2->kind == TYPEBASIC);
+	assert(typeprop(t1) & PROPREAL && typeprop(t2) & PROPREAL);
 	if (t1 == t2)
 		return t1;
 	if (t1 == &typeldouble || t2 == &typeldouble)

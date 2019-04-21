@@ -133,7 +133,16 @@ enum typekind {
 	TYPENONE,
 
 	TYPEVOID,
-	TYPEBASIC,
+	TYPEBOOL,
+	TYPECHAR,
+	TYPESHORT,
+	TYPEINT,
+	TYPEENUM,
+	TYPELONG,
+	TYPELLONG,
+	TYPEFLOAT,
+	TYPEDOUBLE,
+	TYPELDOUBLE,
 	TYPEPOINTER,
 	TYPEARRAY,
 	TYPEFUNC,
@@ -191,18 +200,6 @@ struct type {
 	_Bool incomplete;
 	union {
 		struct {
-			enum {
-				BASICBOOL,
-				BASICCHAR,
-				BASICSHORT,
-				BASICINT,
-				BASICENUM,
-				BASICLONG,
-				BASICLLONG,
-				BASICFLOAT,
-				BASICDOUBLE,
-				BASICLDOUBLE,
-			} kind;
 			_Bool issigned, iscomplex;
 		} basic;
 		struct {

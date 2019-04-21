@@ -160,7 +160,7 @@ tagspec(struct scope *s)
 	switch (tok.kind) {
 	case TSTRUCT: kind = TYPESTRUCT; break;
 	case TUNION:  kind = TYPEUNION;  break;
-	case TENUM:   kind = TYPEBASIC;  break;
+	case TENUM:   kind = TYPEENUM;   break;
 	default: fatal("internal error: unknown tag kind");
 	}
 	next();
@@ -168,7 +168,7 @@ tagspec(struct scope *s)
 		tag = tok.lit;
 		next();
 		t = scopegettag(s, tag, false);
-		if (s->parent && !t && tok.kind != TLBRACE && (kind == TYPEBASIC || tok.kind != TSEMICOLON))
+		if (s->parent && !t && tok.kind != TLBRACE && (kind == TYPEENUM || tok.kind != TSEMICOLON))
 			t = scopegettag(s->parent, tag, true);
 	} else if (tok.kind != TLBRACE) {
 		error(&tok.loc, "expected identifier or '{' after struct/union");
@@ -180,11 +180,12 @@ tagspec(struct scope *s)
 		if (t->kind != kind)
 			error(&tok.loc, "redeclaration of tag '%s' with different kind", tag);
 	} else {
-		t = mktype(kind);
-		if (kind == TYPEBASIC) {
+		if (kind == TYPEENUM) {
+			t = xmalloc(sizeof(*t));
 			*t = typeuint;
-			t->basic.kind = BASICENUM;
+			t->kind = kind;
 		} else {
+			t = mktype(kind);
 			t->repr = &i64; // XXX
 			t->size = 0;
 			t->align = 0;
@@ -212,7 +213,7 @@ tagspec(struct scope *s)
 		t->size = ALIGNUP(t->size, t->align);
 		t->incomplete = false;
 		break;
-	case TYPEBASIC:  /* enum */
+	case TYPEENUM:
 		for (i = 0; tok.kind == TIDENT; ++i) {
 			d = mkdecl(DECLCONST, &typeint, QUALNONE, LINKNONE);
 			scopeputdecl(s, tok.lit, d);

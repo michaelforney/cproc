@@ -250,33 +250,6 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 	tp = typeprop(t);
 	assert(!lval.bits.before && !lval.bits.after || tp & PROPINT);
 	switch (t->kind) {
-	case TYPEPOINTER:
-		t = &typeulong;
-		/* fallthrough */
-	case TYPEBASIC:
-		switch (t->size) {
-		case 1: loadop = ILOADUB; storeop = ISTOREB; break;
-		case 2: loadop = ILOADUH; storeop = ISTOREH; break;
-		case 4: loadop = ILOADUW; storeop = tp & PROPFLOAT ? ISTORES : ISTOREW; break;
-		case 8: loadop = ILOADL; storeop = tp & PROPFLOAT ? ISTORED : ISTOREL; break;
-		default:
-			fatal("internal error; unimplemented store");
-		}
-		if (lval.bits.before || lval.bits.after) {
-			mask = 0xffffffffffffffffu >> lval.bits.after + 64 - t->size * 8 ^ (1 << lval.bits.before) - 1;
-			v = funcinst(f, IOR, t->repr,
-				funcinst(f, IAND, t->repr,
-					funcinst(f, loadop, t->repr, lval.addr),
-					mkintconst(t->repr, ~mask),
-				),
-				funcinst(f, IAND, t->repr,
-					funcinst(f, ISHL, t->repr, v, mkintconst(&i32, lval.bits.before)),
-					mkintconst(t->repr, mask),
-				),
-			);
-		}
-		funcinst(f, storeop, NULL, v, lval.addr);
-		break;
 	case TYPESTRUCT:
 	case TYPEUNION:
 	case TYPEARRAY: {
@@ -302,8 +275,34 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 		}
 		break;
 	}
+	case TYPEPOINTER:
+		t = &typeulong;
+		/* fallthrough */
 	default:
-		fatal("unimplemented store");
+		assert(tp & PROPSCALAR);
+		switch (t->size) {
+		case 1: loadop = ILOADUB; storeop = ISTOREB; break;
+		case 2: loadop = ILOADUH; storeop = ISTOREH; break;
+		case 4: loadop = ILOADUW; storeop = tp & PROPFLOAT ? ISTORES : ISTOREW; break;
+		case 8: loadop = ILOADL; storeop = tp & PROPFLOAT ? ISTORED : ISTOREL; break;
+		default:
+			fatal("internal error; unimplemented store");
+		}
+		if (lval.bits.before || lval.bits.after) {
+			mask = 0xffffffffffffffffu >> lval.bits.after + 64 - t->size * 8 ^ (1 << lval.bits.before) - 1;
+			v = funcinst(f, IOR, t->repr,
+				funcinst(f, IAND, t->repr,
+					funcinst(f, loadop, t->repr, lval.addr),
+					mkintconst(t->repr, ~mask),
+				),
+				funcinst(f, IAND, t->repr,
+					funcinst(f, ISHL, t->repr, v, mkintconst(&i32, lval.bits.before)),
+					mkintconst(t->repr, mask),
+				),
+			);
+		}
+		funcinst(f, storeop, NULL, v, lval.addr);
+		break;
 	}
 }
 
@@ -314,16 +313,6 @@ funcload(struct func *f, struct type *t, struct lvalue lval)
 	enum instkind op;
 
 	switch (t->kind) {
-	case TYPEBASIC:
-		switch (t->size) {
-		case 1: op = t->basic.issigned ? ILOADSB : ILOADUB; break;
-		case 2: op = t->basic.issigned ? ILOADSH : ILOADUH; break;
-		case 4: op = typeprop(t) & PROPFLOAT ? ILOADS : t->basic.issigned ? ILOADSW : ILOADUW; break;
-		case 8: op = typeprop(t) & PROPFLOAT ? ILOADD : ILOADL; break;
-		default:
-			fatal("internal error; unimplemented load");
-		}
-		break;
 	case TYPEPOINTER:
 		op = ILOADL;
 		break;
@@ -335,7 +324,15 @@ funcload(struct func *f, struct type *t, struct lvalue lval)
 		v->repr = t->repr;
 		return v;
 	default:
-		fatal("unimplemented load %d", t->kind);
+		assert(typeprop(t) & PROPREAL);
+		switch (t->size) {
+		case 1: op = t->basic.issigned ? ILOADSB : ILOADUB; break;
+		case 2: op = t->basic.issigned ? ILOADSH : ILOADUH; break;
+		case 4: op = typeprop(t) & PROPFLOAT ? ILOADS : t->basic.issigned ? ILOADSW : ILOADUW; break;
+		case 8: op = typeprop(t) & PROPFLOAT ? ILOADD : ILOADL; break;
+		default:
+			fatal("internal error; unimplemented load");
+		}
 	}
 	v = funcinst(f, op, t->repr, lval.addr);
 	if (lval.bits.after)
@@ -681,11 +678,11 @@ funcexpr(struct func *f, struct expr *e)
 			dst = &typeulong;
 		if (dst->kind == TYPEVOID)
 			return NULL;
-		if (src->kind != TYPEBASIC || dst->kind != TYPEBASIC)
-			fatal("internal error; unsupported conversion");
 		srcprop = typeprop(src);
 		dstprop = typeprop(dst);
-		if (dst->basic.kind == BASICBOOL) {
+		if (!(srcprop & PROPREAL) || !(dstprop & PROPREAL))
+			fatal("internal error; unsupported conversion");
+		if (dst->kind == TYPEBOOL) {
 			l = extend(f, src, l);
 			r = mkintconst(src->repr, 0);
 			if (srcprop & PROPINT)
