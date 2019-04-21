@@ -29,7 +29,7 @@ one is currently required as well.
 You will need to create a `config.h` appropriate for the target system. If
 missing, a default version will be created from `config.def.h`,
 which should work for most glibc systems, or musl systems with
-`-D 'DYNAMIC_LINKER="/lib/ld-musl-x86_64.so.1"'`.
+`-D 'DYNAMICLINKER="/lib/ld-musl-x86_64.so.1"'`.
 
 You may also want to customize your environment or `config.mk` with the
 appropriate `CC`, `CFLAGS` and `LDFLAGS`.
