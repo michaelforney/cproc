@@ -17,8 +17,15 @@ On glibc systems, you must make sure to include `crtbegin.o` and
 `crtend.o` from gcc at the end of `startfiles` and beginning of `endfiles`
 respectively.
 
-On musl systems, you must define `long double` to match `double` to
-avoid errors in unused `static inline` functions in musl's `math.h`.
+On musl systems, you must define `long double` to match `double` (as
+below) to avoid errors in unused `static inline` functions in musl's
+`math.h`. Note: this is a hack and won't be ABI-incompatible with musl;
+things will break if any functions with `long double` get called.
+
+```diff
+-struct type typeldouble = {.kind = TYPELDOUBLE, .size = 16, .align = 16};  // XXX: not supported by qbe
++struct type typeldouble = {.kind = TYPELDOUBLE, .size = 8, .align = 8, .repr = &f64};
+```
 
 Requires several patches available here:
 https://github.com/michaelforney/binutils-gdb/
