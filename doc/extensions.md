@@ -5,7 +5,7 @@ may be implemented in the future.
 
 ## Implemented
 
-### [`__typeof__`]
+### `__typeof__`
 
 `__typeof__(E)` is a type specifier for the type of expression `E`. Arrays
 and function designator expressions do not decay into pointers, just
@@ -27,7 +27,7 @@ like when used with `sizeof`.
 
 ## Missing
 
-### [Statement expressions]
+### Statement expressions
 
 In GNU C, you may use a compound statement as expressions when they are
 enclosed in parentheses. The last statement in the compound statement
@@ -58,6 +58,4 @@ in which case the first operand is used. So `E1 ? : E2` behaves the same
 as `E1 ? E1 : E2`, except that `E1` is evaluated only once.
 
 [GNU extensions]: https://gcc.gnu.org/onlinedocs/gcc/C-Extensions.html
-[`__typeof__`]: https://gcc.gnu.org/onlinedocs/gcc/Typeof.html
 [`__builtin_offsetof`]: https://gcc.gnu.org/onlinedocs/gcc/Offsetof.html
-[Statement expressions]: https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html

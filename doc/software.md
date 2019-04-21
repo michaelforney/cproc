@@ -3,14 +3,13 @@
 This document lists some software known to build successfully, and any
 special procedures necessary.
 
-## [sbase]
+## sbase
 
 Builds without issue as of [ef9f6f35].
 
-[sbase]: https://core.suckless.org/sbase/
 [ef9f6f35]: https://git.suckless.org/sbase/commit/ef9f6f359a0762b738302ae05822514d72b70450.html
 
-## [binutils]
+## binutils
 
 QBE must be built with `NPred` (in `all.h` at least 297).
 
@@ -44,5 +43,3 @@ Configure with
 
 	./configure CC=/path/to/cc CFLAGS_FOR_BUILD=-D_GNU_SOURCE \
 		--disable-intl --disable-gdb --disable-plugins --disable-readline
-
-[binutils]: https://www.gnu.org/software/binutils/
