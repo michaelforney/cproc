@@ -47,7 +47,7 @@ stmt(struct func *f, struct scope *s)
 		funclabel(f, label[0]);
 		i = intconstexpr(s, true);
 		switchcase(s->switchcases, i, label[0]);
-		expect(TCOLON, "after case expr");
+		expect(TCOLON, "after case expression");
 		stmt(f, s);
 		break;
 	case TDEFAULT:
