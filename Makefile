@@ -77,8 +77,8 @@ bootstrap: stage2 stage3
 	cmp stage2/cc-qbe stage3/cc-qbe
 
 .PHONY: check
-check: cc cc-qbe
-	@./runtests
+check: all
+	@CCQBE=./cc-qbe ./runtests
 
 .PHONY: clean
 clean:
