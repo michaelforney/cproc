@@ -7,7 +7,7 @@ Several GNU C [extensions] are also implemented.
 
 There is still much to do and some parts of the code are a little rough,
 but it currently implements most of the language and is capable of
-building some useful [software] including itself, `binutils`, and more.
+building some useful [software] including itself, binutils, and more.
 
 It was inspired by several other small C compilers including [8cc],
 [c], and [scc].

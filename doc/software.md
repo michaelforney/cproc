@@ -11,7 +11,7 @@ Builds without issue as of [ef9f6f35].
 
 ## binutils
 
-QBE must be built with `NPred` (in `all.h` at least 297).
+QBE must be built with `NPred` (in `all.h`) at least 297.
 
 On glibc systems, you must make sure to include `crtbegin.o` and
 `crtend.o` from gcc at the end of `startfiles` and beginning of `endfiles`
