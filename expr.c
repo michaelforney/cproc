@@ -589,7 +589,7 @@ postfixexpr(struct scope *s, struct expr *r)
 				if (p)
 					p = p->next;
 			}
-			if (!t->func.isprototype && p)
+			if (p && !t->func.isvararg && t->func.paraminfo)
 				error(&tok.loc, "not enough arguments for function call");
 			e = decay(e);
 			next();
