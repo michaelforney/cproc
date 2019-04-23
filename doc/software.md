@@ -11,7 +11,8 @@ Builds without issue as of [ef9f6f35].
 
 ## binutils
 
-QBE must be built with `NPred` (in `all.h`) at least 297.
+QBE must be built with `NPred` (in `all.h`) at least 297, or patched to
+use dynamic arrays for phi predecessors ([f6a7d135]).
 
 On glibc systems, you must make sure to include `crtbegin.o` and
 `crtend.o` from gcc at the end of `startfiles` and beginning of `endfiles`
@@ -50,3 +51,5 @@ Configure with
 
 	./configure CC=/path/to/cc CFLAGS_FOR_BUILD=-D_GNU_SOURCE \
 		--disable-intl --disable-gdb --disable-plugins --disable-readline
+
+[f6a7d135]: https://git.sr.ht/~mcf/qbe/commit/f6a7d135d54f5281547f20cc4f72a5e85862157c
