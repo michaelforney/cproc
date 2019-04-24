@@ -12,7 +12,7 @@ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 --------------------------------------------------------------------------------
-tree.c is based on src/search/tsearch.c by Szabolcs Nagy
+tree.c is based on musl's src/search/tsearch.c by Szabolcs Nagy
 
 Copyright © 2005-2014 Rich Felker, et al.
 
