@@ -149,7 +149,7 @@ typecompatible(struct type *t1, struct type *t2)
 			return false;
 		if (!t2->func.paraminfo) {
 			for (p1 = t1->func.params; p1; p1 = p1->next) {
-				if (!typecompatible(p1->type, typeargpromote(p1->type)))
+				if (!typecompatible(p1->type, typepromote(p1->type, -1)))
 					return false;
 			}
 			return true;
@@ -157,7 +157,7 @@ typecompatible(struct type *t1, struct type *t2)
 		for (p1 = t1->func.params, p2 = t2->func.params; p1 && p2; p1 = p1->next, p2 = p2->next) {
 			if (p1->qual != p2->qual)
 				return false;
-			tmp = t2->func.isprototype ? p2->type : typeargpromote(p2->type);
+			tmp = t2->func.isprototype ? p2->type : typepromote(p2->type, -1);
 			if (!typecompatible(p1->type, tmp))
 				return false;
 		}
@@ -186,23 +186,20 @@ typecomposite(struct type *t1, struct type *t2)
 }
 
 struct type *
-typeintpromote(struct type *t)
+typepromote(struct type *t, unsigned width)
 {
-	if (t->prop & PROPINT && typerank(t) <= typerank(&typeint))
-		return t->size < typeint.size || t->basic.issigned ? &typeint : &typeuint;
+	if (t == &typefloat)
+		return &typedouble;
+	if (t->prop & PROPINT && (typerank(t) <= typerank(&typeint) || width <= typeint.size * 8)) {
+		if (width == -1)
+			width = t->size * 8;
+		return width - t->basic.issigned < typeint.size * 8 ? &typeint : &typeuint;
+	}
 	return t;
 }
 
 struct type *
-typeargpromote(struct type *t)
-{
-	if (t == &typefloat)
-		return &typedouble;
-	return typeintpromote(t);
-}
-
-struct type *
-typecommonreal(struct type *t1, struct type *t2)
+typecommonreal(struct type *t1, unsigned w1, struct type *t2, unsigned w2)
 {
 	struct type *tmp;
 
@@ -215,8 +212,8 @@ typecommonreal(struct type *t1, struct type *t2)
 		return &typedouble;
 	if (t1 == &typefloat || t2 == &typefloat)
 		return &typefloat;
-	t1 = typeintpromote(t1);
-	t2 = typeintpromote(t2);
+	t1 = typepromote(t1, w1);
+	t2 = typepromote(t2, w2);
 	if (t1 == t2)
 		return t1;
 	if (t1->basic.issigned == t2->basic.issigned)

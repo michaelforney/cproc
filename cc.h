@@ -400,9 +400,8 @@ _Bool typecompatible(struct type *, struct type *);
 _Bool typesame(struct type *, struct type *);
 struct type *typecomposite(struct type *, struct type *);
 struct type *typeunqual(struct type *, enum typequal *);
-struct type *typecommonreal(struct type *, struct type *);
-struct type *typeargpromote(struct type *);
-struct type *typeintpromote(struct type *);
+struct type *typecommonreal(struct type *, unsigned, struct type *, unsigned);
+struct type *typepromote(struct type *, unsigned);
 enum typeprop typeprop(struct type *);
 struct member *typemember(struct type *, const char *, uint64_t *);
 
@@ -451,6 +450,7 @@ uint64_t intconstexpr(struct scope *, _Bool);
 void delexpr(struct expr *);
 
 struct expr *exprconvert(struct expr *, struct type *);
+struct expr *exprpromote(struct expr *);
 
 /* eval */
 

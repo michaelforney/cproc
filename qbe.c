@@ -382,7 +382,7 @@ mkfunc(char *name, struct type *t, struct scope *s)
 	for (p = t->func.params; p; p = p->next) {
 		if (!p->name)
 			error(&tok.loc, "parameter name omitted in function definition");
-		if (!t->func.isprototype && !typecompatible(p->type, typeargpromote(p->type)))
+		if (!t->func.isprototype && !typecompatible(p->type, typepromote(p->type, -1)))
 			error(&tok.loc, "old-style function definition with parameter type incompatible with promoted type is not yet supported");
 		emittype(p->type);
 		d = mkdecl(DECLOBJECT, p->type, p->qual, LINKNONE);

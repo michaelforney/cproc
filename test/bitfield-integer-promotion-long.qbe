@@ -1,0 +1,6 @@
+export data $c1 = align 4 { w 1, }
+export data $c2 = align 4 { w 1, }
+export data $c3 = align 4 { w 1, }
+export data $s1 = align 8 { z 8 }
+export data $s2 = align 8 { z 8 }
+export data $s3 = align 8 { z 8 }

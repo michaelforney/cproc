@@ -107,12 +107,29 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 	fatal("internal error: unknown unary operator %d", op);
 }
 
+static unsigned
+bitfieldwidth(struct expr *e)
+{
+	if (e->kind != EXPRBITFIELD)
+		return -1;
+	return e->type->size * 8 - e->bitfield.bits.before - e->bitfield.bits.after;
+}
+
+struct expr *
+exprpromote(struct expr *e)
+{
+	struct type *t;
+
+	t = typepromote(e->type, bitfieldwidth(e));
+	return exprconvert(e, t);
+}
+
 static struct type *
 commonreal(struct expr **e1, struct expr **e2)
 {
 	struct type *t;
 
-	t = typecommonreal((*e1)->type, (*e2)->type);
+	t = typecommonreal((*e1)->type, bitfieldwidth(*e1), (*e2)->type, bitfieldwidth(*e2));
 	*e1 = exprconvert(*e1, t);
 	*e2 = exprconvert(*e2, t);
 
@@ -208,8 +225,8 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 	case TSHR:
 		if (!(lp & PROPINT) || !(rp & PROPINT))
 			error(loc, "operands to '%s' operator must be integer", tokstr[op]);
-		l = exprconvert(l, typeintpromote(l->type));
-		r = exprconvert(r, typeintpromote(r->type));
+		l = exprpromote(l);
+		r = exprpromote(r);
 		t = l->type;
 		break;
 	default:
@@ -597,7 +614,7 @@ postfixexpr(struct scope *s, struct expr *r)
 					error(&tok.loc, "too many arguments for function call");
 				*end = assignexpr(s);
 				if (!t->func.isprototype || (t->func.isvararg && !p))
-					*end = exprconvert(*end, typeargpromote((*end)->type));
+					*end = exprpromote(*end);
 				else
 					*end = exprconvert(*end, p->type);
 				end = &(*end)->next;
@@ -682,14 +699,16 @@ unaryexpr(struct scope *s)
 		e = castexpr(s);
 		if (!(e->type->prop & PROPARITH))
 			error(&tok.loc, "operand of unary '+' operator must have arithmetic type");
-		e = exprconvert(e, typeintpromote(e->type));
+		if (e->type->prop & PROPINT)
+			e = exprpromote(e);
 		break;
 	case TSUB:
 		next();
 		e = castexpr(s);
 		if (!(e->type->prop & PROPARITH))
 			error(&tok.loc, "operand of unary '-' operator must have arithmetic type");
-		e = exprconvert(e, typeintpromote(e->type));
+		if (e->type->prop & PROPINT)
+			e = exprpromote(e);
 		e = mkbinaryexpr(&tok.loc, TSUB, mkconstexpr(&typeint, 0), e);
 		break;
 	case TBNOT:
@@ -697,7 +716,7 @@ unaryexpr(struct scope *s)
 		e = castexpr(s);
 		if (!(e->type->prop & PROPINT))
 			error(&tok.loc, "operand of '~' operator must have integer type");
-		e = exprconvert(e, typeintpromote(e->type));
+		e = exprpromote(e);
 		e = mkbinaryexpr(&tok.loc, TXOR, e, mkconstexpr(e->type, -1));
 		break;
 	case TLNOT:

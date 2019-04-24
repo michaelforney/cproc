@@ -1,0 +1,17 @@
+export
+function w $main() {
+@start.1
+@body.2
+	%.1 =w sub 0, 1
+	%.2 =l copy $s
+	%.3 =l mul 0, 1
+	%.4 =l add %.2, %.3
+	%.5 =l copy %.4
+	%.6 =w loaduw %.5
+	%.7 =w shl %.6, 30
+	%.8 =w shr %.7, 30
+	%.9 =w copy %.8
+	%.10 =w csgtw %.1, %.9
+	ret %.10
+}
+export data $s = align 4 { z 4 }
