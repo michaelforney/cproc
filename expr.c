@@ -132,9 +132,9 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 	case TLOR:
 	case TLAND:
 		if (!(lp & PROPSCALAR))
-			error(loc, "left-hand-side of logical operator must be scalar");
+			error(loc, "left operand of '%s' operator must be scalar", tokstr[op]);
 		if (!(rp & PROPSCALAR))
-			error(loc, "right-hand-side of logical operator must be scalar");
+			error(loc, "right operand of '%s' operator must be scalar", tokstr[op]);
 		l = exprconvert(l, &typebool);
 		r = exprconvert(r, &typebool);
 		t = &typeint;
@@ -201,13 +201,13 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 	case TMUL:
 	case TDIV:
 		if (!(lp & PROPARITH) || !(rp & PROPARITH))
-			error(loc, "operands to '%c' operator must be arithmetic", op == TMUL ? '*' : '/');
+			error(loc, "operands to '%s' operator must be arithmetic", tokstr[op]);
 		t = commonreal(&l, &r);
 		break;
 	case TSHL:
 	case TSHR:
 		if (!(lp & PROPINT) || !(rp & PROPINT))
-			error(loc, "operands to '%s' operator must be integer", op == TSHL ? "<<" : ">>");
+			error(loc, "operands to '%s' operator must be integer", tokstr[op]);
 		l = exprconvert(l, typeintpromote(l->type));
 		r = exprconvert(r, typeintpromote(r->type));
 		t = l->type;
@@ -373,7 +373,7 @@ primaryexpr(struct scope *s)
 			else if (tolower(end[0]) == 'l' && !end[1])
 				e->type = &typeldouble;
 			else
-				error(&tok.loc, "invalid floating constant suffix '%s'", *end);
+				error(&tok.loc, "invalid floating constant suffix '%s'", end);
 		} else {
 			/* integer constant */
 			errno = 0;
@@ -616,14 +616,14 @@ postfixexpr(struct scope *s, struct expr *r)
 		case TARROW:
 			op = tok.kind;
 			if (r->type->kind != TYPEPOINTER)
-				error(&tok.loc, "arrow operator must be applied to pointer to struct/union");
+				error(&tok.loc, "'%s' operator must be applied to pointer to struct/union", tokstr[op]);
 			t = r->type->base;
 			tq = r->type->qual;
 			if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
-				error(&tok.loc, "arrow operator must be applied to pointer to struct/union");
+				error(&tok.loc, "'%s' operator must be applied to pointer to struct/union", tokstr[op]);
 			next();
 			if (tok.kind != TIDENT)
-				error(&tok.loc, "expected identifier after '->' operator");
+				error(&tok.loc, "expected identifier after '%s' operator", tokstr[op]);
 			lvalue = op == TARROW || r->unary.base->lvalue;
 			r = exprconvert(r, mkpointertype(&typechar, QUALNONE));
 			offset = 0;
