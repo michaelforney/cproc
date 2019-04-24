@@ -659,9 +659,9 @@ unaryexpr(struct scope *s)
 		next();
 		l = unaryexpr(s);
 		if (!l->lvalue)
-			error(&tok.loc, "operand of %srement operator must be an lvalue", op == TINC ? "inc" : "dec");
+			error(&tok.loc, "operand of '%s' operator must be an lvalue", tokstr[op]);
 		if (l->qual & QUALCONST)
-			error(&tok.loc, "operand of %srement operator is const qualified", op == TINC ? "inc" : "dec");
+			error(&tok.loc, "operand of '%s' operator is const qualified", tokstr[op]);
 		e = mkexpr(EXPRINCDEC, l->type);
 		e->incdec.op = op;
 		e->incdec.base = l;

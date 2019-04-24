@@ -9,7 +9,7 @@
 
 struct token tok;
 
-static const char *tokstr[] = {
+const char *tokstr[] = {
 	/* keyword */
 	[TAUTO] = "auto",
 	[TBREAK] = "break",
