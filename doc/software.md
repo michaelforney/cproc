@@ -64,7 +64,8 @@ Configure with
 
 ## zstd
 
-Builds after disabling CPU identification inline assembly.
+Requires disabling CPU identification inline assembly and deprecation
+warnings.
 
 ```diff
 diff --git a/lib/common/cpu.h b/lib/common/cpu.h
@@ -80,5 +81,9 @@ index 5f0923fc..10dd7d7f 100644
      /* The following block like the normal cpuid branch below, but gcc
       * reserves ebx for use of its pic register so we must specially
 ```
+
+Build with
+
+	make CC=/path/to/cc CFLAGS='-DZDICT_DISABLE_DEPRECATE_WARNINGS -DZBUFF_DISABLE_DEPRECATE_WARNINGS' zstd
 
 Some tests fail, which still need to be investigated.
