@@ -290,14 +290,12 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 		}
 		if (lval.bits.before || lval.bits.after) {
 			mask = 0xffffffffffffffffu >> lval.bits.after + 64 - t->size * 8 ^ (1 << lval.bits.before) - 1;
-			v = funcinst(f, IOR, t->repr,
+			v = funcinst(f, ISHL, t->repr, v, mkintconst(&i32, lval.bits.before));
+			v = funcinst(f, IAND, t->repr, v, mkintconst(t->repr, mask));
+			v = funcinst(f, IOR, t->repr, v,
 				funcinst(f, IAND, t->repr,
 					funcinst(f, loadop, t->repr, lval.addr),
 					mkintconst(t->repr, ~mask),
-				),
-				funcinst(f, IAND, t->repr,
-					funcinst(f, ISHL, t->repr, v, mkintconst(&i32, lval.bits.before)),
-					mkintconst(t->repr, mask),
 				),
 			);
 		}
