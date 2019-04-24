@@ -9,6 +9,14 @@ Builds without issue as of [ef9f6f35].
 
 [ef9f6f35]: https://git.suckless.org/sbase/commit/ef9f6f359a0762b738302ae05822514d72b70450.html
 
+## mcpp
+
+Builds without issue.
+
+Requires a [QBE bugfix] to avoid issues with large stack allocations.
+
+[QBE bugfix]: https://git.sr.ht/~mcf/qbe/commit/74a0c69d65fcd4fc19ebfdf715a976ac0b572aa7
+
 ## binutils
 
 QBE must be built with `NPred` (in `all.h`) at least 297, or patched to
@@ -53,3 +61,24 @@ Configure with
 		--disable-intl --disable-gdb --disable-plugins --disable-readline
 
 [f6a7d135]: https://git.sr.ht/~mcf/qbe/commit/f6a7d135d54f5281547f20cc4f72a5e85862157c
+
+## zstd
+
+Builds after disabling CPU identification inline assembly.
+
+```diff
+diff --git a/lib/common/cpu.h b/lib/common/cpu.h
+index 5f0923fc..10dd7d7f 100644
+--- a/lib/common/cpu.h
++++ b/lib/common/cpu.h
+@@ -52,6 +52,7 @@ MEM_STATIC ZSTD_cpuid_t ZSTD_cpuid(void) {
+             f7c = (U32)reg[2];
+         }
+     }
++#elif 1
+ #elif defined(__i386__) && defined(__PIC__) && !defined(__clang__) && defined(__GNUC__)
+     /* The following block like the normal cpuid branch below, but gcc
+      * reserves ebx for use of its pic register so we must specially
+```
+
+Some tests fail, which still need to be investigated.
