@@ -523,6 +523,22 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 }
 
 static struct expr *
+mkincdecexpr(enum tokenkind op, struct expr *base, bool post)
+{
+	struct expr *e;
+
+	if (!base->lvalue)
+		error(&tok.loc, "operand of '%s' operator must be an lvalue", tokstr[op]);
+	if (base->qual & QUALCONST)
+		error(&tok.loc, "operand of '%s' operator is const qualified", tokstr[op]);
+	e = mkexpr(EXPRINCDEC, base->type);
+	e->incdec.op = op;
+	e->incdec.base = base;
+	e->incdec.post = post;
+	return e;
+}
+
+static struct expr *
 postfixexpr(struct scope *s, struct expr *r)
 {
 	struct expr *e, *arr, *idx, *tmp, **end;
@@ -630,10 +646,7 @@ postfixexpr(struct scope *s, struct expr *r)
 			break;
 		case TINC:
 		case TDEC:
-			e = mkexpr(EXPRINCDEC, r->type);
-			e->incdec.op = tok.kind;
-			e->incdec.base = r;
-			e->incdec.post = 1;
+			e = mkincdecexpr(tok.kind, r, true);
 			next();
 			break;
 		default:
@@ -658,14 +671,7 @@ unaryexpr(struct scope *s)
 	case TDEC:
 		next();
 		l = unaryexpr(s);
-		if (!l->lvalue)
-			error(&tok.loc, "operand of '%s' operator must be an lvalue", tokstr[op]);
-		if (l->qual & QUALCONST)
-			error(&tok.loc, "operand of '%s' operator is const qualified", tokstr[op]);
-		e = mkexpr(EXPRINCDEC, l->type);
-		e->incdec.op = op;
-		e->incdec.base = l;
-		e->incdec.post = 0;
+		e = mkincdecexpr(op, l, false);
 		break;
 	case TBAND:
 	case TMUL:
