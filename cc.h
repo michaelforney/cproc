@@ -353,7 +353,7 @@ struct expr {
 			struct expr *exprs;
 		} comma;
 		struct {
-			int kind;
+			enum builtinkind kind;
 			struct expr *arg;
 		} builtin;
 		struct value *temp;
