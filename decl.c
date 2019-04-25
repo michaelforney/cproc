@@ -938,6 +938,7 @@ decl(struct scope *s, struct func *f)
 				stmt(f, s);
 				emitfunc(f, d->linkage == LINKEXTERN);
 				s = delscope(s);
+				delfunc(f);
 				d->defined = true;
 				return true;
 			}

@@ -487,6 +487,7 @@ struct value *mkintconst(struct repr *, uint64_t);
 uint64_t intconstvalue(struct value *);
 
 struct func *mkfunc(char *, struct type *, struct scope *);
+void delfunc(struct func *);
 struct type *functype(struct func *);
 void funclabel(struct func *, struct value *);
 struct value *funcexpr(struct func *, struct expr *);

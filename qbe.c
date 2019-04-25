@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
 #include "util.h"
@@ -411,6 +412,23 @@ mkfunc(char *name, struct type *t, struct scope *s)
 	funclabel(f, mkblock("body"));
 
 	return f;
+}
+
+void
+delfunc(struct func *f)
+{
+	struct block *b;
+	struct inst **inst;
+
+	while (b = f->start) {
+		f->start = b->next;
+		arrayforeach (&b->insts, inst)
+			free(*inst);
+		free(b->insts.val);
+		free(b);
+	}
+	delmap(f->gotos, free);
+	free(f);
 }
 
 struct type *
