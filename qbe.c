@@ -883,6 +883,9 @@ funcexpr(struct func *f, struct expr *e)
 			funcinst(f, IVASTART, NULL, l);
 			break;
 		case BUILTINVAARG:
+			/* https://todo.sr.ht/~mcf/cc-issues/52 */
+			if (!(e->type->prop & PROPSCALAR))
+				error(&tok.loc, "va_arg with non-scalar type is not yet supported");
 			l = funcexpr(f, e->base);
 			return funcinst(f, IVAARG, e->type->repr, l);
 		case BUILTINVAEND:
