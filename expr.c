@@ -137,7 +137,7 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 		if (base->kind == EXPRBITFIELD)
 			error(&tok.loc, "cannot take address of bit-field");
 		expr = mkexpr(EXPRUNARY, mkpointertype(base->type, base->qual));
-		expr->unary.op = op;
+		expr->op = op;
 		expr->unary.base = base;
 		return expr;
 	case TMUL:
@@ -146,7 +146,7 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 		expr = mkexpr(EXPRUNARY, base->type->base);
 		expr->qual = base->type->qual;
 		expr->lvalue = true;
-		expr->unary.op = op;
+		expr->op = op;
 		expr->unary.base = base;
 		return decay(expr);
 	}
@@ -280,7 +280,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 		fatal("internal error: unknown binary operator %d", op);
 	}
 	e = mkexpr(EXPRBINARY, t);
-	e->binary.op = op;
+	e->op = op;
 	e->binary.l = l;
 	e->binary.r = r;
 
@@ -643,7 +643,7 @@ mkincdecexpr(enum tokenkind op, struct expr *base, bool post)
 	if (base->qual & QUALCONST)
 		error(&tok.loc, "operand of '%s' operator is const qualified", tokstr[op]);
 	e = mkexpr(EXPRINCDEC, base->type);
-	e->incdec.op = op;
+	e->op = op;
 	e->incdec.base = base;
 	e->incdec.post = post;
 	return e;

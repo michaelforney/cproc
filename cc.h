@@ -305,6 +305,7 @@ struct expr {
 	struct type *type;
 	/* the type qualifiers of the object this expression refers to (ignored for non-lvalues) */
 	enum typequal qual;
+	enum tokenkind op;
 	struct expr *next;
 	union {
 		struct {
@@ -330,19 +331,16 @@ struct expr {
 			struct init *init;
 		} compound;
 		struct {
-			enum tokenkind op;
 			_Bool post;
 			struct expr *base;
 		} incdec;
 		struct {
-			enum tokenkind op;
 			struct expr *base;
 		} unary;
 		struct {
 			struct expr *e;
 		} cast;
 		struct {
-			enum tokenkind op;
 			struct expr *l, *r;
 		} binary;
 		struct {

@@ -108,11 +108,11 @@ eval(struct expr *expr)
 		break;
 	case EXPRUNARY:
 		l = eval(expr->unary.base);
-		if (expr->unary.op != TBAND)
+		if (expr->op != TBAND)
 			break;
 		switch (l->kind) {
 		case EXPRUNARY:
-			if (l->unary.op == TMUL)
+			if (l->op == TMUL)
 				expr = eval(l->unary.base);
 			break;
 		case EXPRSTRING:
@@ -142,19 +142,19 @@ eval(struct expr *expr)
 		r = eval(expr->binary.r);
 		expr->binary.l = l;
 		expr->binary.r = r;
-		switch (expr->binary.op) {
+		switch (expr->op) {
 		case TADD:
 			if (r->kind == EXPRBINARY)
 				c = l, l = r, r = c;
 			if (r->kind != EXPRCONST)
 				break;
 			if (l->kind == EXPRCONST) {
-				binary(expr, expr->binary.op, l, r);
+				binary(expr, expr->op, l, r);
 			} else if (l->kind == EXPRBINARY && l->type->kind == TYPEPOINTER && l->binary.r->kind == EXPRCONST) {
-				if (l->binary.op == TADD || l->binary.op == TSUB) {
+				if (l->op == TADD || l->op == TSUB) {
 					/* (P ± C1) + C2  ->  P + (C2 ± C1) */
 					expr->binary.l = l->binary.l;
-					binary(expr->binary.r, l->binary.op, r, l->binary.r);
+					binary(expr->binary.r, l->op, r, l->binary.r);
 				}
 			}
 			break;
@@ -170,7 +170,7 @@ eval(struct expr *expr)
 		default:
 			if (l->kind != EXPRCONST || r->kind != EXPRCONST)
 				break;
-			binary(expr, expr->binary.op, l, r);
+			binary(expr, expr->op, l, r);
 		}
 		break;
 	case EXPRCOND:

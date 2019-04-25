@@ -518,7 +518,7 @@ funclval(struct func *f, struct expr *e)
 		lval.addr = d->value;
 		break;
 	case EXPRUNARY:
-		if (e->unary.op != TMUL)
+		if (e->op != TMUL)
 			break;
 		lval.addr = funcexpr(f, e->unary.base);
 		break;
@@ -652,7 +652,7 @@ funcexpr(struct func *f, struct expr *e)
 			r = mkfltconst(e->type->repr, 1);
 		else
 			fatal("not a scalar");
-		v = funcinst(f, e->incdec.op == TINC ? IADD : ISUB, e->type->repr, l, r);
+		v = funcinst(f, e->op == TINC ? IADD : ISUB, e->type->repr, l, r);
 		funcstore(f, e->type, e->qual, lval, v);
 		return e->incdec.post ? l : v;
 	case EXPRCALL:
@@ -671,7 +671,7 @@ funcexpr(struct func *f, struct expr *e)
 		//	funcret(f, NULL);
 		return v;
 	case EXPRUNARY:
-		switch (e->unary.op) {
+		switch (e->op) {
 		case TBAND:
 			lval = funclval(f, e->unary.base);
 			return lval.addr;
@@ -738,13 +738,13 @@ funcexpr(struct func *f, struct expr *e)
 		return funcinst(f, op, dst->repr, l, r);
 	}
 	case EXPRBINARY:
-		if (e->binary.op == TLOR || e->binary.op == TLAND) {
+		if (e->op == TLOR || e->op == TLAND) {
 			label[0] = mkblock("logic_right");
 			label[1] = mkblock("logic_join");
 
 			l = funcexpr(f, e->binary.l);
 			label[2] = (struct value *)f->end;
-			if (e->binary.op == TLOR)
+			if (e->op == TLOR)
 				funcjnz(f, l, label[1], label[0]);
 			else
 				funcjnz(f, l, label[0], label[1]);
@@ -759,7 +759,7 @@ funcexpr(struct func *f, struct expr *e)
 		t = e->binary.l->type;
 		if (t->kind == TYPEPOINTER)
 			t = &typeulong;
-		switch (e->binary.op) {
+		switch (e->op) {
 		case TMUL:
 			op = IMUL;
 			break;
@@ -1191,7 +1191,7 @@ dataitem(struct expr *expr, uint64_t size)
 
 	switch (expr->kind) {
 	case EXPRUNARY:
-		if (expr->unary.op != TBAND)
+		if (expr->op != TBAND)
 			fatal("not a address expr");
 		expr = expr->unary.base;
 		if (expr->kind != EXPRIDENT)
