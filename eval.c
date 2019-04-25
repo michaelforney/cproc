@@ -107,23 +107,23 @@ eval(struct expr *expr)
 		expr->ident.decl = d;
 		break;
 	case EXPRUNARY:
-		l = eval(expr->unary.base);
+		l = eval(expr->base);
 		if (expr->op != TBAND)
 			break;
 		switch (l->kind) {
 		case EXPRUNARY:
 			if (l->op == TMUL)
-				expr = eval(l->unary.base);
+				expr = eval(l->base);
 			break;
 		case EXPRSTRING:
 			l->ident.decl = stringdecl(l);
 			l->kind = EXPRIDENT;
-			expr->unary.base = l;
+			expr->base = l;
 			break;
 		}
 		break;
 	case EXPRCAST:
-		l = eval(expr->cast.e);
+		l = eval(expr->base);
 		if (l->kind == EXPRCONST) {
 			expr->kind = EXPRCONST;
 			if (l->type->prop & PROPINT && expr->type->prop & PROPFLOAT)
@@ -176,7 +176,7 @@ eval(struct expr *expr)
 	case EXPRCOND:
 		l = expr->cond.t;
 		r = expr->cond.f;
-		c = eval(expr->cond.e);
+		c = eval(expr->base);
 		if (c->kind != EXPRCONST)
 			break;
 		return eval(c->constant.i ? l : r);

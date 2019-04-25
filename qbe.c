@@ -493,7 +493,7 @@ funclval(struct func *f, struct expr *e)
 
 	if (e->kind == EXPRBITFIELD) {
 		lval.bits = e->bitfield.bits;
-		e = e->bitfield.base;
+		e = e->base;
 	}
 	switch (e->kind) {
 	case EXPRIDENT:
@@ -520,7 +520,7 @@ funclval(struct func *f, struct expr *e)
 	case EXPRUNARY:
 		if (e->op != TMUL)
 			break;
-		lval.addr = funcexpr(f, e->unary.base);
+		lval.addr = funcexpr(f, e->base);
 		break;
 	default:
 		if (e->type->kind != TYPESTRUCT && e->type->kind != TYPEUNION)
@@ -642,8 +642,8 @@ funcexpr(struct func *f, struct expr *e)
 		lval = funclval(f, e);
 		return funcload(f, e->type, lval);
 	case EXPRINCDEC:
-		lval = funclval(f, e->incdec.base);
-		l = funcload(f, e->incdec.base->type, lval);
+		lval = funclval(f, e->base);
+		l = funcload(f, e->base->type, lval);
 		if (e->type->kind == TYPEPOINTER)
 			r = mkintconst(e->type->repr, e->type->base->size);
 		else if (e->type->prop & PROPINT)
@@ -657,26 +657,26 @@ funcexpr(struct func *f, struct expr *e)
 		return e->incdec.post ? l : v;
 	case EXPRCALL:
 		argvals = xreallocarray(NULL, e->call.nargs + 3, sizeof(argvals[0]));
-		argvals[0] = funcexpr(f, e->call.func);
+		argvals[0] = funcexpr(f, e->base);
 		emittype(e->type);
 		for (argval = &argvals[1], arg = e->call.args; arg; ++argval, arg = arg->next) {
 			emittype(arg->type);
 			*argval = funcexpr(f, arg);
 		}
 		*argval = NULL;
-		op = e->call.func->type->base->func.isvararg ? IVACALL : ICALL;
+		op = e->base->type->base->func.isvararg ? IVACALL : ICALL;
 		v = funcinstn(f, op, e->type == &typevoid ? NULL : e->type->repr, argvals);
 		free(argvals);
-		//if (e->call.func->type->base->func.isnoreturn)
+		//if (e->base->type->base->func.isnoreturn)
 		//	funcret(f, NULL);
 		return v;
 	case EXPRUNARY:
 		switch (e->op) {
 		case TBAND:
-			lval = funclval(f, e->unary.base);
+			lval = funclval(f, e->base);
 			return lval.addr;
 		case TMUL:
-			r = funcexpr(f, e->unary.base);
+			r = funcexpr(f, e->base);
 			return funcload(f, e->type, (struct lvalue){r});
 		}
 		fatal("internal error; unknown unary expression");
@@ -684,10 +684,10 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRCAST: {
 		struct type *src, *dst;
 
-		l = funcexpr(f, e->cast.e);
+		l = funcexpr(f, e->base);
 		r = NULL;
 
-		src = e->cast.e->type;
+		src = e->base->type;
 		if (src->kind == TYPEPOINTER)
 			src = &typeulong;
 		dst = e->type;
@@ -847,7 +847,7 @@ funcexpr(struct func *f, struct expr *e)
 		label[1] = mkblock("cond_false");
 		label[2] = mkblock("cond_join");
 
-		v = funcexpr(f, e->cond.e);
+		v = funcexpr(f, e->base);
 		funcjnz(f, v, label[0], label[1]);
 
 		funclabel(f, label[0]);
@@ -873,23 +873,23 @@ funcexpr(struct func *f, struct expr *e)
 		}
 		return r;
 	case EXPRCOMMA:
-		for (e = e->comma.exprs; e->next; e = e->next)
+		for (e = e->base; e->next; e = e->next)
 			funcexpr(f, e);
 		return funcexpr(f, e);
 	case EXPRBUILTIN:
 		switch (e->builtin.kind) {
 		case BUILTINVASTART:
-			l = funcexpr(f, e->builtin.arg);
+			l = funcexpr(f, e->base);
 			funcinst(f, IVASTART, NULL, l);
 			break;
 		case BUILTINVAARG:
-			l = funcexpr(f, e->builtin.arg);
+			l = funcexpr(f, e->base);
 			return funcinst(f, IVAARG, e->type->repr, l);
 		case BUILTINVAEND:
 			/* no-op */
 			break;
 		case BUILTINALLOCA:
-			l = funcexpr(f, e->builtin.arg);
+			l = funcexpr(f, e->base);
 			return funcinst(f, IALLOC16, &iptr, l);
 		default:
 			fatal("internal error: unimplemented builtin");
@@ -1193,7 +1193,7 @@ dataitem(struct expr *expr, uint64_t size)
 	case EXPRUNARY:
 		if (expr->op != TBAND)
 			fatal("not a address expr");
-		expr = expr->unary.base;
+		expr = expr->base;
 		if (expr->kind != EXPRIDENT)
 			error(&tok.loc, "initializer is not a constant expression");
 		decl = expr->ident.decl;

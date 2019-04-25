@@ -240,8 +240,8 @@ parseinit(struct scope *s, struct type *t)
 			t = p.sub->type;
 			switch (t->kind) {
 			case TYPEARRAY:
-				if (expr->decayed && expr->unary.base->kind == EXPRSTRING) {
-					expr = expr->unary.base;
+				if (expr->decayed && expr->base->kind == EXPRSTRING) {
+					expr = expr->base;
 					base = t->base;
 					/* XXX: wide string literals */
 					if (!(base->prop & PROPCHAR))

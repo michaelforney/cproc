@@ -348,7 +348,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			if (!t) {
 				e = expr(s);
 				if (e->decayed)
-					e = e->unary.base;
+					e = e->base;
 				t = e->type;
 				tq |= e->qual;
 				delexpr(e);

@@ -306,6 +306,7 @@ struct expr {
 	/* the type qualifiers of the object this expression refers to (ignored for non-lvalues) */
 	enum typequal qual;
 	enum tokenkind op;
+	struct expr *base;
 	struct expr *next;
 	union {
 		struct {
@@ -320,11 +321,10 @@ struct expr {
 			size_t size;
 		} string;
 		struct {
-			struct expr *func, *args;
+			struct expr *args;
 			size_t nargs;
 		} call;
 		struct {
-			struct expr *base;
 			struct bitfield bits;
 		} bitfield;
 		struct {
@@ -332,29 +332,18 @@ struct expr {
 		} compound;
 		struct {
 			_Bool post;
-			struct expr *base;
 		} incdec;
-		struct {
-			struct expr *base;
-		} unary;
-		struct {
-			struct expr *e;
-		} cast;
 		struct {
 			struct expr *l, *r;
 		} binary;
 		struct {
-			struct expr *e, *t, *f;
+			struct expr *t, *f;
 		} cond;
 		struct {
 			struct expr *l, *r;
 		} assign;
 		struct {
-			struct expr *exprs;
-		} comma;
-		struct {
 			enum builtinkind kind;
-			struct expr *arg;
 		} builtin;
 		struct value *temp;
 	};
