@@ -322,6 +322,52 @@ unescape(char **p)
 	return c;
 }
 
+static struct expr *
+generic(struct scope *s)
+{
+	struct expr *e, *match = NULL, *def = NULL;
+	struct type *t, *want;
+	enum typequal qual;
+
+	next();
+	expect(TLPAREN, "after '_Generic'");
+	e = assignexpr(s);
+	expect(TCOMMA, "after generic selector expression");
+	want = e->type;
+	delexpr(e);
+	do {
+		if (consume(TDEFAULT)) {
+			if (def)
+				error(&tok.loc, "multiple default expressions in generic association list");
+			expect(TCOLON, "after 'default'");
+			def = assignexpr(s);
+		} else {
+			qual = QUALNONE;
+			t = typename(s, &qual);
+			if (!t)
+				error(&tok.loc, "expected typename for generic association");
+			expect(TCOLON, "after type name");
+			e = assignexpr(s);
+			if (typecompatible(t, want) && qual == QUALNONE) {
+				if (match)
+					error(&tok.loc, "generic selector matches multiple associations");
+				match = e;
+			} else {
+				delexpr(e);
+			}
+		}
+	} while (consume(TCOMMA));
+	expect(TRPAREN, "after generic assocation list");
+	if (!match) {
+		if (!def)
+			error(&tok.loc, "generic selector matches no associations and no default was specified");
+		match = def;
+	} else if (def) {
+		delexpr(def);
+	}
+	return match;
+}
+
 /* 6.5 Expressions */
 static struct expr *
 primaryexpr(struct scope *s)
@@ -407,7 +453,8 @@ primaryexpr(struct scope *s)
 		expect(TRPAREN, "after expression");
 		break;
 	case T_GENERIC:
-		error(&tok.loc, "generic selection is not yet supported");
+		e = generic(s);
+		break;
 	default:
 		error(&tok.loc, "expected primary expression");
 	}

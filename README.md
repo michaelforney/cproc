@@ -63,7 +63,6 @@ specified in `config.h`.
 - Preprocessor ([#6]).
 - Generation of position independent code (i.e. shared libraries,
   modules, PIEs).
-- `_Generic` selection ([#44]).
 - Currently only `x86_64` is supported and tested, though QBE also
   supports `aarch64`, so it is possible that it works as well.
 
