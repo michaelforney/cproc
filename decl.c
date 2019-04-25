@@ -651,6 +651,9 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 	struct member *m;
 	size_t end;
 
+	// XXX: check incomplete type, except for flexible array member
+	if (mt.type->kind == TYPEFUNC)
+		error(&tok.loc, "struct member '%s' has function type", name);
 	assert(mt.type->align > 0);
 	if (name || width == -1) {
 		m = xmalloc(sizeof(*m));
