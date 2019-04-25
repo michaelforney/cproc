@@ -665,9 +665,11 @@ funcexpr(struct func *f, struct expr *e)
 		}
 		*argval = NULL;
 		op = e->call.func->type->base->func.isvararg ? IVACALL : ICALL;
-		return funcinstn(f, op, e->type == &typevoid ? NULL : e->type->repr, argvals);
+		v = funcinstn(f, op, e->type == &typevoid ? NULL : e->type->repr, argvals);
+		free(argvals);
 		//if (e->call.func->type->base->func.isnoreturn)
 		//	funcret(f, NULL);
+		return v;
 	case EXPRUNARY:
 		switch (e->unary.op) {
 		case TBAND:
