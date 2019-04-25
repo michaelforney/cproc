@@ -14,7 +14,7 @@ cast(struct expr *expr)
 	size = expr->type->size;
 	if (expr->type->prop & PROPFLOAT)
 		size |= F;
-	else if (expr->type->basic.issigned)
+	else if (expr->type->prop & PROPINT && expr->type->basic.issigned)
 		size |= S;
 	switch (size) {
 	case 1:   expr->constant.i = (uint8_t)expr->constant.i;  break;
@@ -33,7 +33,7 @@ binary(struct expr *expr, enum tokenkind op, struct expr *l, struct expr *r)
 	expr->kind = EXPRCONST;
 	if (l->type->prop & PROPFLOAT)
 		op |= F;
-	else if (l->type->basic.issigned)
+	else if (l->type->prop & PROPINT && l->type->basic.issigned)
 		op |= S;
 	switch (op) {
 	case TMUL:
