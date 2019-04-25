@@ -26,6 +26,59 @@ mkexpr(enum exprkind k, struct type *t)
 	return e;
 }
 
+void
+delexpr(struct expr *e)
+{
+	struct expr *sub;
+
+	switch (e->kind) {
+	case EXPRCALL:
+		delexpr(e->call.func);
+		while (sub = e->call.args) {
+			e->call.args = sub->next;
+			delexpr(sub);
+		}
+		break;
+	case EXPRBITFIELD:
+		delexpr(e->bitfield.base);
+		break;
+	case EXPRINCDEC:
+		delexpr(e->incdec.base);
+		break;
+	case EXPRUNARY:
+		delexpr(e->unary.base);
+		break;
+	case EXPRCAST:
+		delexpr(e->cast.e);
+		break;
+	case EXPRBINARY:
+		delexpr(e->binary.l);
+		delexpr(e->binary.r);
+		break;
+	case EXPRCOND:
+		delexpr(e->cond.e);
+		delexpr(e->cond.t);
+		delexpr(e->cond.f);
+		break;
+	/*
+	XXX: compound assignment causes some reuse of expressions,
+	so we can't free them without risk of a double-free
+
+	case EXPRASSIGN:
+		delexpr(e->assign.l);
+		delexpr(e->assign.r);
+		break;
+	*/
+	case EXPRCOMMA:
+		while (sub = e->comma.exprs) {
+			e->comma.exprs = sub->next;
+			delexpr(sub);
+		}
+		break;
+	}
+	free(e);
+}
+
 static struct expr *
 mkconstexpr(struct type *t, uint64_t n)
 {
@@ -35,12 +88,6 @@ mkconstexpr(struct type *t, uint64_t n)
 	e->constant.i = n;
 
 	return e;
-}
-
-void
-delexpr(struct expr *e)
-{
-	free(e);
 }
 
 static struct expr *mkunaryexpr(enum tokenkind, struct expr *);
