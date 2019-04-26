@@ -1,8 +1,12 @@
 image: debian/stretch
 sources:
-  - https://git.sr.ht/~mcf/cc
-  - git://c9x.me/qbe.git
+- https://git.sr.ht/~mcf/cc
+- git://c9x.me/qbe.git
+environment:
+  PATH: $HOME/qbe/obj:$PATH
 tasks:
-  - build: |
-      make -C qbe
-      PATH=$PWD/qbe/obj:$PATH make -C cc all check bootstrap
+- build: |
+    make -C qbe
+    cd cc
+    ./configure
+    make all check bootstrap

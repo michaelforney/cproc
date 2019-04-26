@@ -27,10 +27,20 @@ one is currently required as well.
 
 ## Building
 
-You will need to create a `config.h` appropriate for the target system. If
-missing, a default version will be created from `config.def.h`,
-which should work for most glibc systems, or musl systems with
-`-D 'DYNAMICLINKER="/lib/ld-musl-x86_64.so.1"'`.
+Run `./configure` to create a `config.h` and `config.mk` appropriate for
+your system. If your system is not supported by the configure script,
+you can create these files manually. `config.h` should define several
+string arrays (`static char *[]`):
+
+- **`startfiles`**: Objects to pass to the linker at the beginning of
+  the link command.
+- **`endfiles`**: Objects to pass to the linker at the end of the link
+  command (including libc).
+- **`preprocesscmd`**: The preprocessor command, and any necessary flags
+  for the target system.
+- **`codegencmd`**: The QBE command, and possibly explicit target flags.
+- **`assemblecmd`**: The assembler command.
+- **`linkcmd`**: The linker command.
 
 You may also want to customize your environment or `config.mk` with the
 appropriate `CC`, `CFLAGS` and `LDFLAGS`.

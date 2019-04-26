@@ -1,0 +1,154 @@
+#!/bin/sh
+
+fail() {
+	echo "$0: $*" >&2
+	exit 1
+}
+
+host=
+target=
+gcclibdir=
+
+for arg ; do
+	case "$arg" in
+	--host=*) host=${arg#*=} ;;
+	--target=*) target=${arg#*=} ;;
+	--with-cpp=*) DEFAULT_PREPROCESSOR=${arg#*=} ;;
+	--with-qbe=*) DEFAULT_QBE=${arg#*=} ;;
+	--with-as=*) DEFAULT_ASSEMBLER=${arg#*=} ;;
+	--with-ld=*) DEFAULT_LINKER=${arg#*=} ;;
+	--with-gcc-libdir=*) gcclibdir=${arg#*=} ;;
+	CC=*) CC=${arg#*=} ;;
+	CFLAGS=*) CFLAGS=${arg#*=} ;;
+	LDFLAGS=*) LDFLAGS=${arg#*=} ;;
+	*) fail "unknown option '$arg'"
+	esac
+done
+
+: ${CC:=cc}
+: ${DEFAULT_PREPROCESSOR:=cpp}
+: ${DEFAULT_QBE:=qbe}
+: ${DEFAULT_ASSEMBLER:=as}
+: ${DEFAULT_LINKER:=ld}
+
+printf 'checking host system type... '
+test -n "$host" || host=$($CC -dumpmachine 2>/dev/null) || fail "could not determine host"
+printf '%s\n' "$host"
+
+printf 'checking target system type...'
+test -n "$target" || target=$host
+printf '%s\n' "$target"
+
+case "$target" in
+x86_64*|amd64*) qbetarget=amd64_sysv ;;
+aarch64*)       qbetarget=arm64      ;;
+*) fail "unsupported architecture '${target%%-*}'"
+esac
+
+gnuc='
+	/* specify the GNU C extensions we support */
+	"-D", "__GNUC__=1",
+	"-D", "__GNUC_MINOR__=0",
+'
+
+case "$target" in
+*-linux-*musl*)
+	case "$target" in
+	x86_64*)  dynamiclinker=/lib/ld-musl-x86_64.so.1  ;;
+	aarch64*) dynamiclinker=/lib/ld-musl-aarch64.so.1 ;;
+	*) fail "unsuported target '$target'"
+	esac
+	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
+	endfiles='"-l", ":crtn.o", "-l", "c"'
+	;;
+*-linux-*gnu*)
+	case "$target" in
+	x86_64*)  dynamiclinker=/lib64/ld-linux-x86-64.so.2 ;;
+	aarch64*) dynamiclinker=/lib/ld-linux-aarch64.so.1  ;;
+	*) fail "unsuported target '$target'"
+	esac
+	startfiles='"-l", ":crt1.o", "-l", ":crti.o", "-l", ":crtbegin.o"'
+	endfiles='"-l", ":crtend.o", "-l", ":crtn.o", "-l", "c"'
+	if [ -z "$gcclibdir" ] ; then
+		test "$host" = "$target" || fail "gcc libdir must be specified when building a cross-compiler"
+		crtbegin=$($CC -print-file-name=crtbegin.o 2>/dev/null)
+		gcclibdir=${crtbegin%/*}
+	fi
+	linkflags='"-L", "'$gcclibdir'"',
+	defines='
+	/* prevent glibc from using statement expressions for assert */
+	"-D", "__STRICT_ANSI__",
+'
+	;;
+*-*freebsd*)
+	dynamiclinker=/libexec/ld-elf.so.1
+	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
+	endfiles='"-l", ":crtn.o", "-l", "c"'
+	# any value of __GNUC__ will cause FreeBSD's headers to use asm for bswap
+	gnuc=
+	linkflags='"-L", "/usr/lib"',
+	defines='
+	"-D", "_Pragma(x)=",
+	"-D", "_Nullable=",
+	"-D", "_Nonnull=",
+
+	"-D", "__GNUCLIKE_BUILTIN_STDARG",
+	"-D", "__GNUCLIKE_BUILTIN_VARARGS",
+
+	/* required to define _RuneLocale, needed by xlocale/_ctype.h */
+	"-D", "_USE_CTYPE_INLINE_",
+	/* workaround for #42 */
+	"-D", "_XLOCALE_INLINE=static inline",
+	/* used like attribute after declarator, so _Alignas will not work here */
+	"-D", "__aligned(x)=",
+	/* TLS is not yet supported (#8) */
+	"-D", "__NO_TLS",
+
+	/* disable warnings for redefining _Pragma */
+	"-Wno-builtin-macro-redefined",
+'
+	;;
+*)
+	fail "unknown target '$target', please create config.h manually"
+esac
+
+printf "creating config.h... "
+cat >config.h <<EOF
+static char *startfiles[]    = {$startfiles};
+static char *endfiles[]      = {$endfiles};
+static char *preprocesscmd[] = {
+	"$DEFAULT_PREPROCESSOR", "-P", "-std=c11",
+
+	/* clear preprocessor GNU C version */
+	"-U", "__GNUC__",
+	"-U", "__GNUC_MINOR__",
+
+	/* we don't yet support these optional features */
+	"-D", "__STDC_NO_ATOMICS__",
+	"-D", "__STDC_NO_COMPLEX__",
+	"-D", "__STDC_NO_VLA__",
+
+	/* ignore attributes and extension markers */
+	"-D", "__attribute__(x)=",
+	"-D", "__extension__=",
+
+	/* alternate keywords */
+	"-D", "__alignof__=_Alignof",
+	"-D", "__inline=inline",
+	"-D", "__inline__=inline",
+	"-D", "__signed__=signed",
+	"-D", "__thread=_Thread_local",
+$gnuc$defines};
+static char *codegencmd[]    = {"$DEFAULT_QBE", "-t", "$qbetarget"};
+static char *assemblecmd[]   = {"$DEFAULT_ASSEMBLER"};
+static char *linkcmd[]       = {"$DEFAULT_LINKER", "--dynamic-linker", "$dynamiclinker", $linkflags};
+EOF
+echo done
+
+printf "creating config.mk... "
+cat >config.mk <<EOF
+CC=${CC:-cc}
+CFLAGS=${CFLAGS:--std=c11 -Wall -Wno-parentheses -Wno-switch -g -pipe}
+LDFLAGS=$LDFLAGS
+EOF
+echo done
