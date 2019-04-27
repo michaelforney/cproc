@@ -462,8 +462,17 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 	switch (tok.kind) {
 	case TLPAREN:
 		next();
-		if (allowabstract && tok.kind != TMUL && (tok.kind != TIDENT || istypename(s, tok.lit)))
+		switch (tok.kind) {
+		case TMUL:
+		case TLPAREN:
+			break;
+		case TIDENT:
+			if (!allowabstract || !istypename(s, tok.lit))
+				break;
+			/* fallthrough */
+		default:
 			goto func;
+		}
 		declaratortypes(s, result, name, allowabstract);
 		expect(TRPAREN, "after parenthesized declarator");
 		break;
