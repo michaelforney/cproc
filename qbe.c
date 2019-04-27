@@ -237,9 +237,20 @@ funcalloc(struct func *f, struct decl *d)
 	arrayaddptr(&f->start->insts, inst);
 }
 
-static void
+static struct value *
+funcbits(struct func *f, struct type *t, struct value *v, struct bitfield b)
+{
+	if (b.after)
+		v = funcinst(f, ISHL, t->repr, v, mkintconst(&i32, b.after));
+	if (b.before + b.after)
+		v = funcinst(f, t->basic.issigned ? ISAR : ISHR, t->repr, v, mkintconst(&i32, b.before + b.after));
+	return v;
+}
+
+static struct value *
 funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, struct value *v)
 {
+	struct value *r;
 	enum instkind loadop, storeop;
 	enum typeprop tp;
 	unsigned long long mask;
@@ -250,6 +261,7 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 		error(&tok.loc, "cannot store to 'const' object");
 	tp = t->prop;
 	assert(!lval.bits.before && !lval.bits.after || tp & PROPINT);
+	r = v;
 	switch (t->kind) {
 	case TYPESTRUCT:
 	case TYPEUNION:
@@ -292,6 +304,7 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 		if (lval.bits.before || lval.bits.after) {
 			mask = 0xffffffffffffffffu >> lval.bits.after + 64 - t->size * 8 ^ (1 << lval.bits.before) - 1;
 			v = funcinst(f, ISHL, t->repr, v, mkintconst(&i32, lval.bits.before));
+			r = funcbits(f, t, v, lval.bits);
 			v = funcinst(f, IAND, t->repr, v, mkintconst(t->repr, mask));
 			v = funcinst(f, IOR, t->repr, v,
 				funcinst(f, IAND, t->repr,
@@ -303,6 +316,7 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 		funcinst(f, storeop, NULL, v, lval.addr);
 		break;
 	}
+	return r;
 }
 
 static struct value *
@@ -334,11 +348,7 @@ funcload(struct func *f, struct type *t, struct lvalue lval)
 		}
 	}
 	v = funcinst(f, op, t->repr, lval.addr);
-	if (lval.bits.after)
-		v = funcinst(f, ISHL, t->repr, v, mkintconst(&i32, lval.bits.after));
-	if (lval.bits.before + lval.bits.after)
-		v = funcinst(f, t->basic.issigned ? ISAR : ISHR, t->repr, v, mkintconst(&i32, lval.bits.before + lval.bits.after));
-	return v;
+	return funcbits(f, t, v, lval.bits);
 }
 
 struct value *
@@ -653,7 +663,7 @@ funcexpr(struct func *f, struct expr *e)
 		else
 			fatal("not a scalar");
 		v = funcinst(f, e->op == TINC ? IADD : ISUB, e->type->repr, l, r);
-		funcstore(f, e->type, e->qual, lval, v);
+		v = funcstore(f, e->type, e->qual, lval, v);
 		return e->incdec.post ? l : v;
 	case EXPRCALL:
 		argvals = xreallocarray(NULL, e->call.nargs + 3, sizeof(argvals[0]));
@@ -869,7 +879,7 @@ funcexpr(struct func *f, struct expr *e)
 			e->assign.l->temp = r;
 		} else {
 			lval = funclval(f, e->assign.l);
-			funcstore(f, e->assign.l->type, e->assign.l->qual, lval, r);
+			r = funcstore(f, e->assign.l->type, e->assign.l->qual, lval, r);
 		}
 		return r;
 	case EXPRCOMMA:
