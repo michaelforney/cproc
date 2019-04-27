@@ -44,7 +44,6 @@ static char *preprocesscmd[] = {
 	"-D", "__signed__=signed",
 	"-D", "__thread=_Thread_local",
 };
-static char *compilecmd[] = {"cc-qbe"};
 static char *codegencmd[] = {"qbe"};
 static char *assemblecmd[] = {"as"};
 static char *linkcmd[] = {"ld", "--dynamic-linker=" DYNAMICLINKER};

@@ -320,8 +320,6 @@ compilecommand(char *arg)
 		fatal("target of /proc/self/exe is too large");
 	}
 	strcpy(self + n, "-qbe");
-	if (access(self, X_OK) < 0)
-		return NULL;
 	cmd = strdup(self);
 	if (!cmd)
 		fatal("strdup:");
@@ -338,13 +336,10 @@ main(int argc, char *argv[])
 	size_t i;
 
 	arrayaddbuf(&phases[PREPROCESS].cmd, preprocesscmd, sizeof(preprocesscmd));
-	arrayaddbuf(&phases[COMPILE].cmd, compilecmd, sizeof(compilecmd));
+	arrayaddptr(&phases[COMPILE].cmd, compilecommand(argv[0]));
 	arrayaddbuf(&phases[CODEGEN].cmd, codegencmd, sizeof(codegencmd));
 	arrayaddbuf(&phases[ASSEMBLE].cmd, assemblecmd, sizeof(assemblecmd));
 	arrayaddbuf(&phases[LINK].cmd, linkcmd, sizeof(linkcmd));
-	arg = compilecommand(argv[0]);
-	if (arg)
-		*(char **)phases[COMPILE].cmd.val = arg;
 
 	argv0 = progname(argv[0], "cc");
 	for (;;) {
