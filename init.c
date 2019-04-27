@@ -163,8 +163,6 @@ focus(struct initparser *p)
 		p->sub->mem = p->sub->type->structunion.members;
 		t = p->sub->mem->type;
 		break;
-	default:
-		t = p->sub->type;
 	}
 	subobj(p, t, 0);
 }
@@ -224,13 +222,16 @@ parseinit(struct scope *s, struct type *t)
 				designator(s, &p);
 			else if (p.sub != p.cur)
 				advance(&p);
-			else
+			else if (p.cur->type->kind == TYPESTRUCT || p.cur->type->kind == TYPEUNION)
 				focus(&p);
 		}
-		if (tok.kind == TLBRACE) {
-			next();
-			if (p.cur && p.cur->type == p.sub->type)
-				error(&tok.loc, "nested braces around scalar initializer");
+		if (consume(TLBRACE)) {
+			if (p.cur == p.sub) {
+				if (p.cur->type->prop & PROPSCALAR)
+					error(&tok.loc, "nested braces around scalar initializer");
+				assert(p.cur->type->kind == TYPEARRAY);
+				focus(&p);
+			}
 			p.cur = p.sub;
 			p.cur->iscur = true;
 			continue;
@@ -240,17 +241,16 @@ parseinit(struct scope *s, struct type *t)
 			t = p.sub->type;
 			switch (t->kind) {
 			case TYPEARRAY:
-				if (expr->decayed && expr->base->kind == EXPRSTRING) {
-					expr = expr->base;
-					base = t->base;
-					/* XXX: wide string literals */
-					if (!(base->prop & PROPCHAR))
-						error(&tok.loc, "array initializer is string literal with incompatible type");
-					if (t->incomplete)
-						updatearray(t, expr->string.size);
-					goto add;
-				}
-				break;
+				if (!expr->decayed || expr->base->kind != EXPRSTRING)
+					break;
+				base = t->base;
+				/* XXX: wide string literals */
+				if (!(base->prop & PROPCHAR))
+					break;
+				expr = expr->base;
+				if (t->incomplete)
+					updatearray(t, expr->string.size);
+				goto add;
 			case TYPESTRUCT:
 			case TYPEUNION:
 				if (typecompatible(expr->type, t))
