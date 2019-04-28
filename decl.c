@@ -714,17 +714,15 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 			}
 			t->size += (width - b->bits + 7) / 8;
 			b->bits = (b->bits - width) % 8;
-		} else {
-			if (m) {
-				m->offset = 0;
-				m->bits.before = 0;
-				m->bits.after = mt.type->size * 8 - width;
-			}
+		} else if (m) {
+			m->offset = 0;
+			m->bits.before = 0;
+			m->bits.after = mt.type->size * 8 - width;
 			if (t->size < mt.type->size)
 				t->size = mt.type->size;
 		}
 	}
-	if (t->align < align)
+	if (m && t->align < align)
 		t->align = align;
 }
 

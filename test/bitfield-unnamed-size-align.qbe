@@ -1,0 +1,4 @@
+export data $s1 = align 4 { w 2, }
+export data $s2 = align 4 { w 1, }
+export data $u1 = align 4 { w 1, }
+export data $u2 = align 4 { w 1, }
