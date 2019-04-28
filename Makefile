@@ -14,7 +14,7 @@ DRIVER_SRC=\
 DRIVER_OBJ=$(DRIVER_SRC:%.c=$(objdir)/%.o)
 
 config.h:
-	@cp config.def.h $@
+	./configure
 
 $(objdir)/cc: $(DRIVER_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(DRIVER_OBJ)
