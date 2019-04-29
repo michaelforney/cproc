@@ -42,7 +42,7 @@ $(objdir)/cc-qbe: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OBJ)
 
 $(objdir)/decl.o    : decl.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ decl.c
-$(objdir)/driver.o  : driver.c  util.h            $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ driver.c
+$(objdir)/driver.o  : driver.c  util.h config.h   $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ driver.c
 $(objdir)/eval.o    : eval.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ eval.c
 $(objdir)/expr.o    : expr.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ expr.c
 $(objdir)/init.o    : init.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ init.c
