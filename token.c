@@ -55,6 +55,7 @@ const char *tokstr[] = {
 	[T_NORETURN] = "_Noreturn",
 	[T_STATIC_ASSERT] = "_Static_assert",
 	[T_THREAD_LOCAL] = "_Thread_local",
+	[T__ASM__] = "__asm__",
 	[T__TYPEOF__] = "__typeof__",
 
 	/* punctuator */

@@ -26,6 +26,7 @@ keyword(struct token *tok)
 		{"_Noreturn",      T_NORETURN},
 		{"_Static_assert", T_STATIC_ASSERT},
 		{"_Thread_local",  T_THREAD_LOCAL},
+		{"__asm__",        T__ASM__},
 		{"__typeof__",     T__TYPEOF__},
 		{"auto",           TAUTO},
 		{"break",          TBREAK},
