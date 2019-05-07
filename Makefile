@@ -59,17 +59,19 @@ $(objdir)/tree.o    : tree.c    util.h            $(stagedeps) ; $(CC) $(CFLAGS)
 $(objdir)/type.o    : type.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ type.c
 $(objdir)/util.o    : util.c    util.h            $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ util.c
 
+# Make sure stage2 and stage3 binaries are stripped by adding -s to
+# LDFLAGS. Otherwise they will contain paths to object files, which
+# differ between stages.
+
 .PHONY: stage2
 stage2: all
 	@mkdir -p $@
-	$(MAKE) objdir=$@ stagedeps='cc cc-qbe' CC=$(objdir)/cc
-	strip $@/cc $@/cc-qbe
+	$(MAKE) objdir=$@ stagedeps='cc cc-qbe' CC=$(objdir)/cc LDFLAGS='$(LDFLAGS) -s'
 
 .PHONY: stage3
 stage3: stage2
 	@mkdir -p $@
-	$(MAKE) objdir=$@ stagedeps='stage2/cc stage2/cc-qbe' CC=$(objdir)/stage2/cc
-	strip $@/cc $@/cc-qbe
+	$(MAKE) objdir=$@ stagedeps='stage2/cc stage2/cc-qbe' CC=$(objdir)/stage2/cc LDFLAGS='$(LDFLAGS) -s'
 
 .PHONY: bootstrap
 bootstrap: stage2 stage3
