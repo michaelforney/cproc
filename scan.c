@@ -207,6 +207,8 @@ charconst(struct scanner *s)
 			return TCHARCONST;
 		case '\n':
 			error(&s->loc, "newline in character constant");
+		case EOF:
+			error(&s->loc, "EOF in character constant");
 		default:
 			nextchar(s);
 			break;
@@ -229,6 +231,8 @@ stringlit(struct scanner *s)
 			return TSTRINGLIT;
 		case '\n':
 			error(&s->loc, "newline in string literal");
+		case EOF:
+			error(&s->loc, "EOF in string literal");
 		default:
 			nextchar(s);
 			break;
@@ -244,12 +248,16 @@ comment(struct scanner *s)
 	switch (s->chr) {
 	case '/':  /* C++-style comment */
 		do nextchar(s);
-		while (s->chr != '\n');
+		while (s->chr != '\n' && s->chr != EOF);
 		return true;
 	case '*':  /* C-style comment */
 		nextchar(s);
-		do last = s->chr, nextchar(s);
-		while (last != '*' || s->chr != '/');
+		do {
+			last = s->chr;
+			nextchar(s);
+			if (s->chr == EOF)
+				error(&s->loc, "EOF in comment");
+		} while (last != '*' || s->chr != '/');
 		nextchar(s);
 		return true;
 	default:
