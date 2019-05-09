@@ -17,6 +17,7 @@ for arg ; do
 	--with-qbe=*) DEFAULT_QBE=${arg#*=} ;;
 	--with-as=*) DEFAULT_ASSEMBLER=${arg#*=} ;;
 	--with-ld=*) DEFAULT_LINKER=${arg#*=} ;;
+	--with-ldso=*) DEFAULT_DYNAMIC_LINKER=${arg#*=} ;;
 	--with-gcc-libdir=*) gcclibdir=${arg#*=} ;;
 	CC=*) CC=${arg#*=} ;;
 	CFLAGS=*) CFLAGS=${arg#*=} ;;
@@ -53,18 +54,18 @@ gnuc='
 
 case "$target" in
 *-linux-*musl*)
-	case "$target" in
-	x86_64*)  dynamiclinker=/lib/ld-musl-x86_64.so.1  ;;
-	aarch64*) dynamiclinker=/lib/ld-musl-aarch64.so.1 ;;
+	test "$DEFAULT_DYNAMIC_LINKER" || case "$target" in
+	x86_64*)  DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-x86_64.so.1  ;;
+	aarch64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-aarch64.so.1 ;;
 	*) fail "unsuported target '$target'"
 	esac
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
 	endfiles='"-l", ":crtn.o", "-l", "c"'
 	;;
 *-linux-*gnu*)
-	case "$target" in
-	x86_64*)  dynamiclinker=/lib64/ld-linux-x86-64.so.2 ;;
-	aarch64*) dynamiclinker=/lib/ld-linux-aarch64.so.1  ;;
+	test "$DEFAULT_DYNAMIC_LINKER" || case "$target" in
+	x86_64*)  DEFAULT_DYNAMIC_LINKER=/lib64/ld-linux-x86-64.so.2 ;;
+	aarch64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-linux-aarch64.so.1  ;;
 	*) fail "unsuported target '$target'"
 	esac
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o", "-l", ":crtbegin.o"'
@@ -81,7 +82,7 @@ case "$target" in
 '
 	;;
 *-*freebsd*)
-	dynamiclinker=/libexec/ld-elf.so.1
+	: ${DEFAULT_DYNAMIC_LINKER:=/libexec/ld-elf.so.1}
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
 	endfiles='"-l", ":crtn.o", "-l", "c"'
 	# any value of __GNUC__ will cause FreeBSD's headers to use asm for bswap
@@ -141,7 +142,7 @@ static char *preprocesscmd[] = {
 $gnuc$defines};
 static char *codegencmd[]    = {"$DEFAULT_QBE", "-t", "$qbetarget"};
 static char *assemblecmd[]   = {"$DEFAULT_ASSEMBLER"};
-static char *linkcmd[]       = {"$DEFAULT_LINKER", "--dynamic-linker", "$dynamiclinker", $linkflags};
+static char *linkcmd[]       = {"$DEFAULT_LINKER", "--dynamic-linker", "$DEFAULT_DYNAMIC_LINKER", $linkflags};
 EOF
 echo done
 
