@@ -66,7 +66,7 @@ case "$target" in
 	*) fail "unsuported target '$target'"
 	esac
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
-	endfiles='"-l", ":crtn.o", "-l", "c"'
+	endfiles='"-l", "c", "-l", ":crtn.o"'
 	;;
 *-linux-*gnu*)
 	test "$DEFAULT_DYNAMIC_LINKER" || case "$target" in
@@ -75,7 +75,7 @@ case "$target" in
 	*) fail "unsuported target '$target'"
 	esac
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o", "-l", ":crtbegin.o"'
-	endfiles='"-l", ":crtend.o", "-l", ":crtn.o", "-l", "c"'
+	endfiles='"-l", "c", "-l", ":crtend.o", "-l", ":crtn.o"'
 	if [ -z "$gcclibdir" ] ; then
 		test "$host" = "$target" || fail "gcc libdir must be specified when building a cross-compiler"
 		crtbegin=$($CC -print-file-name=crtbegin.o 2>/dev/null)
@@ -90,7 +90,7 @@ case "$target" in
 *-*freebsd*)
 	: ${DEFAULT_DYNAMIC_LINKER:=/libexec/ld-elf.so.1}
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
-	endfiles='"-l", ":crtn.o", "-l", "c"'
+	endfiles='"-l", "c", "-l", ":crtn.o"'
 	# any value of __GNUC__ will cause FreeBSD's headers to use asm for bswap
 	gnuc=
 	linkflags='"-L", "/usr/lib"',
