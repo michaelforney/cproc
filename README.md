@@ -27,6 +27,10 @@ it may address some issues that have not yet made it upstream. Since
 the preprocessor is not yet implemented, an external one is currently
 required as well.
 
+All architectures supported by QBE should work (currently x86\_64 and
+aarch64), though you might run into some problems with aarch64 since
+it's not as well tested.
+
 ## Building
 
 Run `./configure` to create a `config.h` and `config.mk` appropriate for
@@ -75,8 +79,6 @@ specified in `config.h`.
 - Preprocessor ([#6]).
 - Generation of position independent code (i.e. shared libraries,
   modules, PIEs).
-- Currently only `x86_64` is supported and tested, though QBE also
-  supports `aarch64`, so it is possible that it works as well.
 
 ## Issue tracker
 
