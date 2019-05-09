@@ -27,10 +27,6 @@ for arg ; do
 done
 
 : ${CC:=cc}
-: ${DEFAULT_PREPROCESSOR:=cpp}
-: ${DEFAULT_QBE:=qbe}
-: ${DEFAULT_ASSEMBLER:=as}
-: ${DEFAULT_LINKER:=ld}
 
 printf 'checking host system type... '
 test -n "$host" || host=$($CC -dumpmachine 2>/dev/null) || fail "could not determine host"
@@ -39,6 +35,16 @@ printf '%s\n' "$host"
 printf 'checking target system type...'
 test -n "$target" || target=$host
 printf '%s\n' "$target"
+
+toolprefix=
+if [ "$host" != "$target" ] ; then
+	toolprefix=$target-
+fi
+
+: ${DEFAULT_PREPROCESSOR:=${toolprefix}cpp}
+: ${DEFAULT_QBE:=qbe}
+: ${DEFAULT_ASSEMBLER:=${toolprefix}as}
+: ${DEFAULT_LINKER:=${toolprefix}ld}
 
 case "$target" in
 x86_64*|amd64*) qbetarget=amd64_sysv ;;
