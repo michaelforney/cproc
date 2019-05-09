@@ -32,7 +32,7 @@ printf 'checking host system type... '
 test -n "$host" || host=$($CC -dumpmachine 2>/dev/null) || fail "could not determine host"
 printf '%s\n' "$host"
 
-printf 'checking target system type...'
+printf 'checking target system type... '
 test -n "$target" || target=$host
 printf '%s\n' "$target"
 
