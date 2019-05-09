@@ -3,7 +3,7 @@ function $f(w %.1, ...) {
 @start.1
 	%.2 =l alloc4 4
 	storew %.1, %.2
-	%.3 =l alloc8 24
+	%.3 =l alloc8 32
 @body.2
 	vastart %.3
 @while_cond.3
