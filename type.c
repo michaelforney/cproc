@@ -40,11 +40,11 @@ struct type typedouble  = FLTTYPE(TYPEDOUBLE, 8, &f64);
 struct type typeldouble = FLTTYPE(TYPELDOUBLE, 16, NULL);  // XXX: not supported by qbe
 
 static struct type typevaliststruct = {
-	.kind = TYPESTRUCT, .size = 24, .align = 8,
+	.kind = TYPESTRUCT, .size = 32, .align = 8,
 	.prop = PROPOBJECT|PROPAGGR,
 };
 struct type typevalist = {
-	.kind = TYPEARRAY, .size = 24, .align = 8, .array = {1}, .base = &typevaliststruct,
+	.kind = TYPEARRAY, .size = 32, .align = 8, .array = {1}, .base = &typevaliststruct,
 	.prop = PROPOBJECT|PROPDERIVED|PROPAGGR,
 };
 struct type typevalistptr = {
