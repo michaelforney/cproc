@@ -145,6 +145,7 @@ static char *preprocesscmd[] = {
 	"-D", "__inline__=inline",
 	"-D", "__signed__=signed",
 	"-D", "__thread=_Thread_local",
+	"-D", "__volatile__=volatile",
 $gnuc$defines};
 static char *codegencmd[]    = {"$DEFAULT_QBE", "-t", "$qbetarget"};
 static char *assemblecmd[]   = {"$DEFAULT_ASSEMBLER"};
