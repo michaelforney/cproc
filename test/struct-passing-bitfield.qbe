@@ -1,0 +1,7 @@
+type :s.1 = { l, }
+export
+function $f(:s.1 %.1) {
+@start.1
+@body.2
+	ret
+}

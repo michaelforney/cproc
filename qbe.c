@@ -1063,9 +1063,9 @@ static void
 emittype(struct type *t)
 {
 	static uint64_t id;
-	struct member *m;
+	struct member *m, *other;
 	struct type *sub;
-	uint64_t i;
+	uint64_t i, off;
 
 	if (!t->repr || t->repr->abi.id || t->kind != TYPESTRUCT && t->kind != TYPEUNION)
 		return;
@@ -1081,18 +1081,31 @@ emittype(struct type *t)
 	fputs("type :", stdout);
 	emitname(&t->repr->abi);
 	fputs(" = { ", stdout);
-	for (m = t->structunion.members; m; m = m->next) {
-		if (t->kind == TYPEUNION)
+	for (m = t->structunion.members, off = 0; m;) {
+		if (t->kind == TYPESTRUCT) {
+			/* look for a subsequent member with a larger storage unit */
+			for (other = m->next; other && other->offset < ALIGNUP(m->offset + 1, 8); other = other->next) {
+				if (other->offset <= m->offset)
+					m = other;
+			}
+			off = m->offset + m->type->size;
+		} else {
 			fputs("{ ", stdout);
+		}
 		for (i = 1, sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
 			i *= sub->array.length;
 		emitrepr(sub->repr, true, true);
 		if (i > 1)
 			printf(" %" PRIu64, i);
-		if (t->kind == TYPEUNION)
-			fputs(" } ", stdout);
-		else
+		if (t->kind == TYPESTRUCT) {
 			fputs(", ", stdout);
+			/* skip subsequent members contained within the same storage unit */
+			do m = m->next;
+			while (m && m->offset < off);
+		} else {
+			fputs(" } ", stdout);
+			m = m->next;
+		}
 	}
 	puts("}");
 }
