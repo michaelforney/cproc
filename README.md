@@ -11,7 +11,7 @@ of building some useful [software] including itself, mcpp, binutils,
 and more.
 
 It was inspired by several other small C compilers including [8cc],
-[c], and [scc].
+[c], [lacc], and [scc].
 
 ## Requirements
 
@@ -97,6 +97,7 @@ be created, which will then become the preferred form of contribution.
 [software]: https://man.sr.ht/~mcf/cc/doc/software.md
 [8cc]: https://github.com/rui314/8cc
 [c]: https://github.com/andrewchambers/c
+[lacc]: https://github.com/larmel/lacc
 [scc]: http://www.simple-cc.org/
 [QBE branch]: https://git.sr.ht/~mcf/qbe
 [5.2.1.1]: http://port70.net/~nsz/c/c11/n1570.html#5.2.1.1
