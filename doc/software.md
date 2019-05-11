@@ -13,10 +13,6 @@ Builds without issue as of [ef9f6f35].
 
 Builds without issue.
 
-Requires a [QBE bugfix] to avoid issues with large stack allocations.
-
-[QBE bugfix]: https://git.sr.ht/~mcf/qbe/commit/74a0c69d65fcd4fc19ebfdf715a976ac0b572aa7
-
 ## binutils
 
 QBE must be built with `NPred` (in `all.h`) at least 297, or patched to
