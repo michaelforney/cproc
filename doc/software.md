@@ -5,9 +5,11 @@ special procedures necessary.
 
 ## sbase
 
-Builds without issue as of [ef9f6f35].
+Builds without issue with musl. On glibc, there are some errors due to
+the declaration of `strsep` conflicting with the system declaration in
+usage of `restrict` (see [#50]).
 
-[ef9f6f35]: https://git.suckless.org/sbase/commit/ef9f6f359a0762b738302ae05822514d72b70450.html
+[#50]: https://todo.sr.ht/~mcf/cc-issues/50
 
 ## mcpp
 
