@@ -557,7 +557,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->base = exprconvert(assignexpr(s), &typeulong);
 		break;
 	case BUILTINCONSTANTP:
-		e = mkconstexpr(&typeint, eval(condexpr(s))->kind == EXPRCONST);
+		e = mkconstexpr(&typeint, eval(condexpr(s), EVALARITH)->kind == EXPRCONST);
 		break;
 	case BUILTININFF:
 		e = mkexpr(EXPRCONST, &typefloat);
@@ -969,8 +969,8 @@ condexpr(struct scope *s)
 	} else if (t == &typevoid && f == &typevoid) {
 		e->type = &typevoid;
 	} else {
-		e->cond.t = eval(e->cond.t);
-		e->cond.f = eval(e->cond.f);
+		e->cond.t = eval(e->cond.t, EVALARITH);
+		e->cond.f = eval(e->cond.f, EVALARITH);
 		if (nullpointer(e->cond.t) && f->kind == TYPEPOINTER) {
 			e->type = f;
 		} else if (nullpointer(e->cond.f) && t->kind == TYPEPOINTER) {
@@ -998,7 +998,7 @@ condexpr(struct scope *s)
 struct expr *
 constexpr(struct scope *s)
 {
-	return eval(condexpr(s));
+	return eval(condexpr(s), EVALARITH);
 }
 
 uint64_t

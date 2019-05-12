@@ -442,7 +442,12 @@ struct expr *exprpromote(struct expr *);
 
 /* eval */
 
-struct expr *eval(struct expr *);
+enum evalkind {
+	EVALARITH,  /* arithmetic constant expression */
+	EVALINIT,   /* initializer constant expression */
+};
+
+struct expr *eval(struct expr *, enum evalkind);
 
 /* init */
 

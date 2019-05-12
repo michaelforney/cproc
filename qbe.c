@@ -1269,7 +1269,7 @@ emitdata(struct decl *d, struct init *init)
 	else if (d->align < d->type->align)
 		error(&tok.loc, "object requires alignment %d, which is stricter than %d", d->type->align, d->align);
 	for (cur = init; cur; cur = cur->next)
-		cur->expr = eval(cur->expr);
+		cur->expr = eval(cur->expr, EVALINIT);
 	if (d->linkage == LINKEXTERN)
 		fputs("export ", stdout);
 	fputs("data ", stdout);
