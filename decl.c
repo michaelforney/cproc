@@ -951,17 +951,10 @@ decl(struct scope *s, struct func *f)
 			}
 			break;
 		}
-		switch (tok.kind) {
-		case TCOMMA:
-			next();
-			allowfunc = 0;
-			break;
-		case TSEMICOLON:
-			next();
+		if (consume(TSEMICOLON))
 			return true;
-		default:
-			error(&tok.loc, "expected ',' or ';' after declarator");
-		}
+		expect(TCOMMA, "or ';' after declarator");
+		allowfunc = 0;
 	}
 }
 
