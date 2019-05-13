@@ -82,6 +82,11 @@ bootstrap: stage2 stage3
 check: all
 	@CCQBE=./cc-qbe ./runtests
 
+.PHONY: qbe
+qbe:
+	git submodule update --init qbe
+	$(MAKE) -C qbe
+
 .PHONY: clean
 clean:
 	rm -rf cc $(DRIVER_OBJ) cc-qbe $(OBJ) stage2 stage3
