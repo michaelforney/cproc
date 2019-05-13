@@ -28,8 +28,7 @@ the preprocessor is not yet implemented, an external one is currently
 required as well.
 
 All architectures supported by QBE should work (currently x86\_64 and
-aarch64), though you might run into some problems with aarch64 since
-it's not as well tested.
+aarch64).
 
 ## Building
 
