@@ -44,9 +44,9 @@ struct input {
 	bool lib;
 };
 
-extern char **environ;
 static struct {
 	bool nostdlib;
+	bool verbose;
 } flags;
 static struct phase phases[] = {
 	[PREPROCESS] = {.name = "preprocess"},
@@ -114,6 +114,21 @@ changeext(const char *name, const char *ext)
 }
 
 static int
+spawn(pid_t *pid, struct array *args, posix_spawn_file_actions_t *actions)
+{
+	extern char **environ;
+	char **arg;
+
+	if (flags.verbose) {
+		fprintf(stderr, "%s: spawning", argv0);
+		for (arg = args->val; *arg; ++arg)
+			fprintf(stderr, " %s", *arg);
+		fputc('\n', stderr);
+	}
+	return posix_spawnp(pid, *(char **)args->val, actions, NULL, args->val, environ);
+}
+
+static int
 spawnphase(struct phase *phase, int *fd, char *input, char *output, bool last)
 {
 	int ret, pipefd[2];
@@ -143,7 +158,7 @@ spawnphase(struct phase *phase, int *fd, char *input, char *output, bool last)
 			goto err2;
 	}
 
-	ret = posix_spawnp(&phase->pid, *(char **)phase->cmd.val, &actions, NULL, phase->cmd.val, environ);
+	ret = spawn(&phase->pid, &phase->cmd, &actions);
 	if (ret)
 		goto err2;
 	if (!last) {
@@ -281,7 +296,7 @@ buildexe(struct input *inputs, size_t ninputs, char *output)
 		arrayaddbuf(&p->cmd, endfiles, sizeof(endfiles));
 	arrayaddptr(&p->cmd, NULL);
 
-	ret = posix_spawnp(&pid, *(char **)p->cmd.val, NULL, NULL, p->cmd.val, environ);
+	ret = spawn(&pid, &p->cmd, NULL);
 	if (ret)
 		fatal("%s: spawn \"%s\": %s", p->name, *(char **)p->cmd.val, strerror(errno));
 	if (waitpid(pid, &status, 0) < 0)
@@ -378,7 +393,7 @@ main(int argc, char *argv[])
 		} else if (strcmp(arg, "-pedantic") == 0) {
 			/* ignore */
 		} else {
-			if (arg[2] != '\0' && strchr("cESs", arg[1]))
+			if (arg[2] != '\0' && strchr("cESsv", arg[1]))
 				usage(NULL);
 			switch (arg[1]) {
 			case 'c':
@@ -431,6 +446,9 @@ main(int argc, char *argv[])
 			case 'U':
 				arrayaddptr(&phases[PREPROCESS].cmd, "-U");
 				arrayaddptr(&phases[PREPROCESS].cmd, nextarg(&argv));
+				break;
+			case 'v':
+				flags.verbose = true;
 				break;
 			case 'W':
 				if (arg[2] && arg[3] == ',') {
