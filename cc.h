@@ -375,7 +375,7 @@ void ppinit(const char *);
 
 void next(void);
 _Bool peek(int);
-char *expect(int, const char *);
+char *expect(enum tokenkind, const char *);
 _Bool consume(int);
 
 /* type */

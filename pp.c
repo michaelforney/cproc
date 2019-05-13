@@ -123,7 +123,7 @@ peek(int kind)
 }
 
 char *
-expect(int kind, const char *msg)
+expect(enum tokenkind kind, const char *msg)
 {
 	char *lit, want[64], got[64];
 
