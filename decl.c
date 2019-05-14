@@ -924,7 +924,7 @@ decl(struct scope *s, struct func *f)
 				error(&tok.loc, "function '%s' with block scope may only have storage class 'extern'", name);
 			if (!t->func.isprototype && t->func.params) {
 				if (!allowfunc)
-					error(&tok.loc, "function declaration not allowed");
+					error(&tok.loc, "function definition not allowed");
 				/* collect type information for parameters before we check compatibility */
 				while (paramdecl(s, t->func.params))
 					;
@@ -938,7 +938,7 @@ decl(struct scope *s, struct func *f)
 			d = declcommon(s, kind, name, t, tq, sc, prior);
 			if (tok.kind == TLBRACE) {
 				if (!allowfunc)
-					error(&tok.loc, "function declaration not allowed");
+					error(&tok.loc, "function definition not allowed");
 				if (d->defined)
 					error(&tok.loc, "function '%s' redefined", name);
 				s = mkscope(&filescope);
