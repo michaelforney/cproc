@@ -775,6 +775,58 @@ typename(struct scope *s, enum typequal *tq)
 	return t.type;
 }
 
+static enum linkage
+getlinkage(enum declkind kind, enum storageclass sc, struct decl *prior, bool filescope)
+{
+	if (sc & SCSTATIC)
+		return filescope ? LINKINTERN : LINKNONE;
+	if (sc & SCEXTERN || kind == DECLFUNC)
+		return prior ? prior->linkage : LINKEXTERN;
+	return filescope ? LINKEXTERN : LINKNONE;
+}
+
+static struct decl *
+declcommon(struct scope *s, enum declkind kind, char *name, struct type *t, enum typequal tq, enum storageclass sc, struct decl *prior)
+{
+	struct decl *d;
+	enum linkage linkage;
+	const char *kindstr = kind == DECLFUNC ? "function" : "object";
+
+	if (prior) {
+		if (prior->linkage == LINKNONE)
+			error(&tok.loc, "%s '%s' with no linkage redeclared", kindstr, name);
+		linkage = getlinkage(kind, sc, prior, s == &filescope);
+		if (prior->linkage != linkage)
+			error(&tok.loc, "%s '%s' redeclared with different linkage", kindstr, name);
+		if (!typecompatible(t, prior->type) || tq != prior->qual)
+			error(&tok.loc, "%s '%s' redeclared with incompatible type", kindstr, name);
+		prior->type = typecomposite(t, prior->type);
+		return prior;
+	}
+	if (s->parent)
+		prior = scopegetdecl(s->parent, name, true);
+	linkage = getlinkage(kind, sc, prior, s == &filescope);
+	if (linkage != LINKNONE && s->parent) {
+		/* XXX: should maintain map of identifiers with linkage to their declaration, and use that */
+		if (s->parent != &filescope)
+			prior = scopegetdecl(&filescope, name, false);
+		if (prior && prior->linkage != LINKNONE) {
+			if (prior->kind != kind)
+				error(&tok.loc, "'%s' redeclared with different kind", name);
+			if (prior->linkage != linkage)
+				error(&tok.loc, "%s '%s' redeclared with different linkage", kindstr, name);
+			if (!typecompatible(t, prior->type) || tq != prior->qual)
+				error(&tok.loc, "%s '%s' redeclared with incompatible type", kindstr, name);
+			t = typecomposite(t, prior->type);
+		}
+	}
+	d = mkdecl(kind, t, tq, linkage);
+	scopeputdecl(s, name, d);
+	if (kind == DECLFUNC || linkage != LINKNONE || sc & SCSTATIC)
+		d->value = mkglobal(name, linkage == LINKNONE);
+	return d;
+}
+
 bool
 decl(struct scope *s, struct func *f)
 {
@@ -787,9 +839,8 @@ decl(struct scope *s, struct func *f)
 	struct param *p;
 	char *name;
 	int allowfunc = !f;
-	struct decl *d;
+	struct decl *d, *prior;
 	enum declkind kind;
-	enum linkage linkage;
 	uint64_t c;
 	int align;
 
@@ -823,52 +874,20 @@ decl(struct scope *s, struct func *f)
 		t = qt.type;
 		tq = qt.qual;
 		kind = sc & SCTYPEDEF ? DECLTYPE : t->kind == TYPEFUNC ? DECLFUNC : DECLOBJECT;
-		d = scopegetdecl(s, name, false);
-		if (d && d->kind != kind)
+		prior = scopegetdecl(s, name, false);
+		if (prior && prior->kind != kind)
 			error(&tok.loc, "'%s' redeclared with different kind", name);
 		switch (kind) {
 		case DECLTYPE:
 			if (align)
 				error(&tok.loc, "typedef '%s' declared with alignment specifier", name);
-			if (!d)
+			if (!prior)
 				scopeputdecl(s, name, mkdecl(DECLTYPE, t, tq, LINKNONE));
-			else if (!typesame(d->type, t) || d->qual != tq)
+			else if (!typesame(prior->type, t) || prior->qual != tq)
 				error(&tok.loc, "typedef '%s' redefined with different type", name);
 			break;
 		case DECLOBJECT:
-			if (d) {
-				if (d->linkage == LINKNONE)
-					error(&tok.loc, "object '%s' with no linkage redeclared", name);
-				if (!(sc & SCEXTERN)) {
-					linkage = f ? LINKNONE : sc & SCSTATIC ? LINKINTERN : LINKEXTERN;
-					if (d->linkage != linkage)
-						error(&tok.loc, "object '%s' redeclared with different linkage", name);
-				}
-				if (!typecompatible(d->type, t) || d->qual != tq)
-					error(&tok.loc, "object '%s' redeclared with incompatible type", name);
-				d->type = typecomposite(t, d->type);
-			} else {
-				if (sc & SCEXTERN) {
-					if (s->parent)
-						d = scopegetdecl(s->parent, name, true);
-					linkage = d && d->linkage != LINKNONE ? d->linkage : LINKEXTERN;
-					d = scopegetdecl(&filescope, name, false);
-					if (d) {
-						if (d->linkage != linkage)
-							error(&tok.loc, "object '%s' redeclared with different linkage", name);
-						if (!typecompatible(d->type, t) || d->qual != tq)
-							error(&tok.loc, "object '%s' redeclared with incompatible type", name);
-						t = typecomposite(t, d->type);
-					}
-				} else {
-					linkage = f ? LINKNONE : sc & SCSTATIC ? LINKINTERN : LINKEXTERN;
-				}
-
-				d = mkdecl(kind, t, tq, linkage);
-				scopeputdecl(s, name, d);
-				if (linkage != LINKNONE || sc & SCSTATIC)
-					d->value = mkglobal(name, linkage == LINKNONE);
-			}
+			d = declcommon(s, kind, name, t, tq, sc, prior);
 			if (d->align < align)
 				d->align = align;
 			if (consume(TASSIGN)) {
@@ -916,25 +935,7 @@ decl(struct scope *s, struct func *f)
 						error(&tok.loc, "old-style function definition does not declare '%s'", p->name);
 				}
 			}
-			if (d) {
-				if (!typecompatible(t, d->type) || tq != d->qual)
-					error(&tok.loc, "function '%s' redeclared with incompatible type", name);
-				d->type = typecomposite(t, d->type);
-			} else {
-				if (s->parent)
-					d = scopegetdecl(s->parent, name, 1);
-				if (d && d->linkage != LINKNONE) {
-					linkage = d->linkage;
-					if (!typecompatible(t, d->type) || tq != d->qual)
-						error(&tok.loc, "function '%s' redeclared with incompatible type", name);
-					t = typecomposite(t, d->type);
-				} else {
-					linkage = sc & SCSTATIC ? LINKINTERN : LINKEXTERN;
-				}
-				d = mkdecl(kind, t, tq, linkage);
-				d->value = mkglobal(name, false);
-				scopeputdecl(s, name, d);
-			}
+			d = declcommon(s, kind, name, t, tq, sc, prior);
 			if (tok.kind == TLBRACE) {
 				if (!allowfunc)
 					error(&tok.loc, "function declaration not allowed");
