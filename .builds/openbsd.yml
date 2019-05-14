@@ -1,0 +1,17 @@
+image: openbsd/latest
+sources:
+- https://git.sr.ht/~mcf/cc
+- git://c9x.me/qbe.git
+packages:
+- gmake
+environment:
+  PATH: $HOME/qbe/obj:$PATH
+tasks:
+- build: |
+    gmake -C qbe
+    cd cc
+    ./configure
+    make all check
+    # OpenBSD support is not quite there (#53), so just build hello world
+    ./cc -o hello test/hello.c
+    ./hello
