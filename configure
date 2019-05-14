@@ -115,6 +115,13 @@ case "$target" in
 	"-Wno-builtin-macro-redefined",
 '
 	;;
+*-*openbsd*)
+	: ${DEFAULT_DYNAMIC_LINKER:=/usr/libexec/ld.so}
+	startfiles='"-l", ":crt0.o", "-l", ":crtbegin.o"'
+	endfiles='"-l", "c", "-l", ":crtend.o"'
+	linkflags='"-L", "/usr/lib"'
+	defines=''
+	;;
 *)
 	fail "unknown target '$target', please create config.h manually"
 esac
