@@ -85,3 +85,47 @@ Build with
 	make CC=/path/to/cc CFLAGS='-DZDICT_DISABLE_DEPRECATE_WARNINGS -DZBUFF_DISABLE_DEPRECATE_WARNINGS' zstd
 
 Some tests fail, which still need to be investigated.
+
+## st
+
+Requires a few changes to avoid wide string literals and including
+`math.h` on musl targets. On glibc, the declaration of `sigpause` in
+`signal.h` with an asm label is not yet supported ([#60]), but since
+this is not used, you can define it away by adding `-D '__asm__(x)='`
+to your `CFLAGS`.
+
+```diff
+diff --git a/config.def.h b/config.def.h
+index 482901e..bd963ae 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -32,7 +32,7 @@ static float chscale = 1.0;
+  *
+  * More advanced example: L" `'\"()[]{}"
+  */
+-wchar_t *worddelimiters = L" ";
++wchar_t *worddelimiters = (wchar_t[]){' ', 0};
+ 
+ /* selection timeouts (in milliseconds) */
+ static unsigned int doubleclicktimeout = 300;
+diff --git a/x.c b/x.c
+index 5828a3b..6e006cc 100644
+--- a/x.c
++++ b/x.c
+@@ -1,6 +1,5 @@
+ /* See LICENSE for license details. */
+ #include <errno.h>
+-#include <math.h>
+ #include <limits.h>
+ #include <locale.h>
+ #include <signal.h>
+@@ -15,6 +14,8 @@
+ #include <X11/Xft/Xft.h>
+ #include <X11/XKBlib.h>
+ 
++float ceilf(float);
++
+ static char *argv0;
+ #include "arg.h"
+ #include "st.h"
+```
