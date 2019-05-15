@@ -85,7 +85,7 @@ case "$target" in
 		crtbegin=$($CC -print-file-name=crtbegin.o 2>/dev/null)
 		gcclibdir=${crtbegin%/*}
 	fi
-	linkflags='"-L", "'$gcclibdir'"'
+	linkflags='"-L", "'$gcclibdir'",'
 	defines='
 	/* prevent glibc from using statement expressions for assert */
 	"-D", "__STRICT_ANSI__",
@@ -97,7 +97,7 @@ case "$target" in
 	endfiles='"-l", "c", "-l", ":crtn.o"'
 	# any value of __GNUC__ will cause FreeBSD's headers to use asm for bswap
 	gnuc=
-	linkflags='"-L", "/usr/lib"'
+	linkflags='"-L", "/usr/lib",'
 	defines='
 	"-D", "_Pragma(x)=",
 	"-D", "_Nullable=",
@@ -123,13 +123,13 @@ case "$target" in
 	: ${DEFAULT_DYNAMIC_LINKER:=/usr/libexec/ld.so}
 	startfiles='"-l", ":crt0.o", "-l", ":crtbegin.o"'
 	endfiles='"-l", "c", "-l", ":crtend.o"'
-	linkflags='"-L", "/usr/lib"'
+	linkflags='"-L", "/usr/lib",'
 	;;
 *)
 	fail "unknown target '$target', please create config.h manually"
 esac
 
-test "$DEFAULT_DYNAMIC_LINKER" && linkflags=$linkflags', "--dynamic-linker", "'$DEFAULT_DYNAMIC_LINKER'"'
+test "$DEFAULT_DYNAMIC_LINKER" && linkflags=$linkflags' "--dynamic-linker", "'$DEFAULT_DYNAMIC_LINKER'"'
 
 printf "creating config.h... "
 cat >config.h <<EOF
