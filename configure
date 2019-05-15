@@ -148,6 +148,7 @@ static char *preprocesscmd[] = {
 
 	/* alternate keywords */
 	"-D", "__alignof__=_Alignof",
+	"-D", "__asm=__asm__",
 	"-D", "__inline=inline",
 	"-D", "__inline__=inline",
 	"-D", "__signed__=signed",
