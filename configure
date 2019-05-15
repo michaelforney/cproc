@@ -52,6 +52,10 @@ aarch64*)       qbetarget=arm64      ;;
 *) fail "unsupported architecture '${target%%-*}'"
 esac
 
+startfiles=0
+endfiles=0
+defines=
+linkflags=
 gnuc='
 	/* specify the GNU C extensions we support */
 	"-D", "__GNUC__=1",
@@ -120,7 +124,6 @@ case "$target" in
 	startfiles='"-l", ":crt0.o", "-l", ":crtbegin.o"'
 	endfiles='"-l", "c", "-l", ":crtend.o"'
 	linkflags='"-L", "/usr/lib"'
-	defines=''
 	;;
 *)
 	fail "unknown target '$target', please create config.h manually"
