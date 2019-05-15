@@ -156,6 +156,7 @@ static char *preprocesscmd[] = {
 	"-D", "__asm=__asm__",
 	"-D", "__inline=inline",
 	"-D", "__inline__=inline",
+	"-D", "__signed=signed",
 	"-D", "__signed__=signed",
 	"-D", "__thread=_Thread_local",
 	"-D", "__volatile__=volatile",
