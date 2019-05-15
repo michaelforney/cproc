@@ -285,14 +285,14 @@ buildexe(struct input *inputs, size_t ninputs, char *output)
 
 	arrayaddptr(&p->cmd, "-o");
 	arrayaddptr(&p->cmd, output);
-	if (!flags.nostdlib)
+	if (!flags.nostdlib && startfiles[0])
 		arrayaddbuf(&p->cmd, startfiles, sizeof(startfiles));
 	for (i = 0; i < ninputs; ++i) {
 		if (inputs[i].lib)
 			arrayaddptr(&p->cmd, "-l");
 		arrayaddptr(&p->cmd, inputs[i].name);
 	}
-	if (!flags.nostdlib)
+	if (!flags.nostdlib && endfiles[0])
 		arrayaddbuf(&p->cmd, endfiles, sizeof(endfiles));
 	arrayaddptr(&p->cmd, NULL);
 
