@@ -2,10 +2,11 @@ export
 function w $main() {
 @start.1
 @body.2
-	%.1 =w copy 0
+	%.1 =w copy 1
 	%.2 =w extub %.1
-	%.3 =w copy 256
+	%.3 =w copy 2
 	%.4 =w extub %.3
-	%.5 =w csltw %.2, %.4
-	ret %.5
+	%.5 =w sub %.2, %.4
+	%.6 =w csgtw %.5, 0
+	ret %.6
 }

@@ -204,8 +204,6 @@ typecommonreal(struct type *t1, unsigned w1, struct type *t2, unsigned w2)
 	struct type *tmp;
 
 	assert(t1->prop & PROPREAL && t2->prop & PROPREAL);
-	if (t1 == t2)
-		return t1;
 	if (t1 == &typeldouble || t2 == &typeldouble)
 		return &typeldouble;
 	if (t1 == &typedouble || t2 == &typedouble)
