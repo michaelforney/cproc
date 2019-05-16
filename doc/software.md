@@ -89,10 +89,7 @@ Some tests fail, which still need to be investigated.
 ## st
 
 Requires a few changes to avoid wide string literals and including
-`math.h` on musl targets. On glibc, the declaration of `sigpause` in
-`signal.h` with an asm label is not yet supported ([#60]), but since
-this is not used, you can define it away by adding `-D '__asm__(x)='`
-to your `CFLAGS`.
+`math.h` on musl targets.
 
 ```diff
 diff --git a/config.def.h b/config.def.h
