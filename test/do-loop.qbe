@@ -14,12 +14,12 @@ function w $main() {
 	%.7 =w cnew %.6, 0
 	jnz %.7, @if_true.6, @if_false.7
 @if_true.6
-	jmp @do_cont.4
+	jmp @do_cond.4
 @if_false.7
 	%.8 =w loadsw %.3
 	%.9 =w add %.8, 1
 	storew %.9, %.3
-@do_cont.4
+@do_cond.4
 	%.10 =w loadsw %.1
 	%.11 =w sub %.10, 1
 	storew %.11, %.1
