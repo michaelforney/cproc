@@ -177,24 +177,26 @@ stmt(struct func *f, struct scope *s)
 		next();
 
 		label[0] = mkblock("do_body");
-		label[1] = mkblock("do_join");
+		label[1] = mkblock("do_cond");
+		label[2] = mkblock("do_join");
 
 		s = mkscope(s);
 		s = mkscope(s);
-		s->continuelabel = label[0];
-		s->breaklabel = label[1];
+		s->continuelabel = label[1];
+		s->breaklabel = label[2];
 		funclabel(f, label[0]);
 		stmt(f, s);
 		s = delscope(s);
 
 		expect(TWHILE, "after 'do' statement");
 		expect(TLPAREN, "after 'while'");
+		funclabel(f, label[1]);
 		e = expr(s);
 		expect(TRPAREN, "after expression");
 
 		v = funcexpr(f, e);
-		funcjnz(f, v, label[0], label[1]);  // XXX: compare to 0
-		funclabel(f, label[1]);
+		funcjnz(f, v, label[0], label[2]);  // XXX: compare to 0
+		funclabel(f, label[2]);
 		s = delscope(s);
 		expect(TSEMICOLON, "after 'do' statement");
 		break;
