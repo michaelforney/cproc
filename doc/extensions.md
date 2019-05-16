@@ -11,6 +11,13 @@ may be implemented in the future.
 and function designator expressions do not decay into pointers, just
 like when used with `sizeof`.
 
+### `__asm__` labels
+
+A declarator can be followed by `__asm__("somelabel")` to specify the
+assembler name of the object or function. This name is taken literally, so
+the resulting symbol will not be mangled according to the target's usual
+rules. The name may contain characters not allowed in regular identifiers.
+
 ### Built-in functions and types
 
 - **`__builtin_alloca`**: Allocate memory on the stack.

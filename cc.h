@@ -474,12 +474,14 @@ struct switchcases *mkswitch(void);
 void switchcase(struct switchcases *, uint64_t, struct value *);
 
 struct value *mkblock(char *);
-struct value *mkglobal(char *, _Bool);
-struct value *mkintconst(struct repr *, uint64_t);
 
+struct value *mkglobal(char *, _Bool);
+char *globalname(struct value *);
+
+struct value *mkintconst(struct repr *, uint64_t);
 uint64_t intconstvalue(struct value *);
 
-struct func *mkfunc(char *, struct type *, struct scope *);
+struct func *mkfunc(struct decl *, char *, struct type *, struct scope *);
 void delfunc(struct func *);
 struct type *functype(struct func *);
 void funclabel(struct func *, struct value *);

@@ -68,8 +68,8 @@ struct switchcase {
 };
 
 struct func {
+	struct decl *decl, *namedecl;
 	char *name;
-	struct decl *namedecl;
 	struct type *type;
 	struct block *start, *end;
 	struct map *gotos;
@@ -366,6 +366,13 @@ mkglobal(char *name, bool private)
 	return v;
 }
 
+char *
+globalname(struct value *v)
+{
+	assert(v->kind == VALGLOBAL && !v->name.id);
+	return v->name.str;
+}
+
 /*
 XXX: If a function declared without a prototype is declared with a
 parameter affected by default argument promotion, we need to emit a QBE
@@ -373,13 +380,14 @@ function with the promoted type and implicitly convert to the declared
 parameter type before storing into the allocated memory for the parameter.
 */
 struct func *
-mkfunc(char *name, struct type *t, struct scope *s)
+mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 {
 	struct func *f;
 	struct param *p;
 	struct decl *d;
 
 	f = xmalloc(sizeof(*f));
+	f->decl = decl;
 	f->name = name;
 	f->type = t;
 	f->start = f->end = (struct block *)mkblock("start");
@@ -1187,7 +1195,8 @@ emitfunc(struct func *f, bool global)
 		emitrepr(f->type->base->repr, true, false);
 		putchar(' ');
 	}
-	printf("$%s(", f->name);
+	emitvalue(f->decl->value);
+	putchar('(');
 	for (p = f->type->func.params; p; p = p->next) {
 		if (p != f->type->func.params)
 			fputs(", ", stdout);

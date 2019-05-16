@@ -786,11 +786,12 @@ getlinkage(enum declkind kind, enum storageclass sc, struct decl *prior, bool fi
 }
 
 static struct decl *
-declcommon(struct scope *s, enum declkind kind, char *name, struct type *t, enum typequal tq, enum storageclass sc, struct decl *prior)
+declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struct type *t, enum typequal tq, enum storageclass sc, struct decl *prior)
 {
 	struct decl *d;
 	enum linkage linkage;
 	const char *kindstr = kind == DECLFUNC ? "function" : "object";
+	char *priorname;
 
 	if (prior) {
 		if (prior->linkage == LINKNONE)
@@ -800,6 +801,8 @@ declcommon(struct scope *s, enum declkind kind, char *name, struct type *t, enum
 			error(&tok.loc, "%s '%s' redeclared with different linkage", kindstr, name);
 		if (!typecompatible(t, prior->type) || tq != prior->qual)
 			error(&tok.loc, "%s '%s' redeclared with incompatible type", kindstr, name);
+		if (asmname && strcmp(globalname(prior->value), asmname) != 0)
+			error(&tok.loc, "%s '%s' redeclared with different assembler name", kindstr, name);
 		prior->type = typecomposite(t, prior->type);
 		return prior;
 	}
@@ -817,13 +820,18 @@ declcommon(struct scope *s, enum declkind kind, char *name, struct type *t, enum
 				error(&tok.loc, "%s '%s' redeclared with different linkage", kindstr, name);
 			if (!typecompatible(t, prior->type) || tq != prior->qual)
 				error(&tok.loc, "%s '%s' redeclared with incompatible type", kindstr, name);
+			priorname = globalname(prior->value);
+			if (!asmname)
+				asmname = priorname;
+			else if (strcmp(priorname, asmname) != 0)
+				error(&tok.loc, "%s '%s' redeclared with different assembler name", kindstr, name);
 			t = typecomposite(t, prior->type);
 		}
 	}
 	d = mkdecl(kind, t, tq, linkage);
 	scopeputdecl(s, name, d);
 	if (kind == DECLFUNC || linkage != LINKNONE || sc & SCSTATIC)
-		d->value = mkglobal(name, linkage == LINKNONE);
+		d->value = mkglobal(asmname ? asmname : name, linkage == LINKNONE && !asmname);
 	return d;
 }
 
@@ -837,7 +845,7 @@ decl(struct scope *s, struct func *f)
 	enum funcspec fs;
 	struct init *init;
 	struct param *p;
-	char *name;
+	char *name, *asmname;
 	int allowfunc = !f;
 	struct decl *d, *prior;
 	enum declkind kind;
@@ -873,6 +881,14 @@ decl(struct scope *s, struct func *f)
 		qt = declarator(s, base, &name, false);
 		t = qt.type;
 		tq = qt.qual;
+		if (consume(T__ASM__)) {
+			expect(TLPAREN, "after __asm__");
+			asmname = expect(TSTRINGLIT, "for assembler name");
+			expect(TRPAREN, "after assembler name");
+			allowfunc = 0;
+		} else {
+			asmname = NULL;
+		}
 		kind = sc & SCTYPEDEF ? DECLTYPE : t->kind == TYPEFUNC ? DECLFUNC : DECLOBJECT;
 		prior = scopegetdecl(s, name, false);
 		if (prior && prior->kind != kind)
@@ -881,13 +897,15 @@ decl(struct scope *s, struct func *f)
 		case DECLTYPE:
 			if (align)
 				error(&tok.loc, "typedef '%s' declared with alignment specifier", name);
+			if (asmname)
+				error(&tok.loc, "typedef '%s' declared with assembler label", name);
 			if (!prior)
 				scopeputdecl(s, name, mkdecl(DECLTYPE, t, tq, LINKNONE));
 			else if (!typesame(prior->type, t) || prior->qual != tq)
 				error(&tok.loc, "typedef '%s' redefined with different type", name);
 			break;
 		case DECLOBJECT:
-			d = declcommon(s, kind, name, t, tq, sc, prior);
+			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			if (d->align < align)
 				d->align = align;
 			if (consume(TASSIGN)) {
@@ -935,14 +953,14 @@ decl(struct scope *s, struct func *f)
 						error(&tok.loc, "old-style function definition does not declare '%s'", p->name);
 				}
 			}
-			d = declcommon(s, kind, name, t, tq, sc, prior);
+			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			if (tok.kind == TLBRACE) {
 				if (!allowfunc)
 					error(&tok.loc, "function definition not allowed");
 				if (d->defined)
 					error(&tok.loc, "function '%s' redefined", name);
 				s = mkscope(&filescope);
-				f = mkfunc(name, t, s);
+				f = mkfunc(d, name, t, s);
 				stmt(f, s);
 				/* XXX: need to keep track of function in case a later declaration specifies extern */
 				if (!(fs & FUNCINLINE) || sc)

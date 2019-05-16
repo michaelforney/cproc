@@ -1,0 +1,7 @@
+export data $"y" = align 4 { w 2, }
+export
+function $"g"() {
+@start.1
+@body.2
+	ret
+}
