@@ -416,8 +416,12 @@ done:
 	default:
 		error(&tok.loc, "invalid combination of type specifiers");
 	}
-	if (!t && (tq || (sc && *sc) || (fs && *fs)))
+	if (!t && (tq || sc && *sc || fs && *fs))
 		error(&tok.loc, "declaration has no type specifier");
+	if (t && tq && t->kind == TYPEARRAY) {
+		t = mkarraytype(t->base, t->qual | tq, t->array.length);
+		tq = QUALNONE;
+	}
 
 	return (struct qualtype){t, tq};
 }

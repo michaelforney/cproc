@@ -1,0 +1,10 @@
+export
+function $f(l %.1) {
+@start.1
+	%.2 =l alloc8 8
+	storel %.1, %.2
+@body.2
+	%.3 =l extsw 0
+	storel %.3, %.2
+	ret
+}
