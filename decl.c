@@ -917,9 +917,7 @@ decl(struct scope *s, struct func *f)
 			} else {
 				init = NULL;
 			}
-			if (sc & SCEXTERN)
-				break;
-			if (init || f) {
+			if (init || d->linkage == LINKNONE) {
 				if (d->linkage != LINKNONE || sc & SCSTATIC)
 					emitdata(d, init);
 				else
@@ -929,7 +927,7 @@ decl(struct scope *s, struct func *f)
 					d->tentative = false;
 					listremove(&d->link);
 				}
-			} else if (!d->defined && !d->tentative) {
+			} else if (!(sc & SCEXTERN) && !d->defined && !d->tentative) {
 				d->tentative = true;
 				listinsert(tentativedefns.prev, &d->link);
 			}
