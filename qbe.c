@@ -537,16 +537,14 @@ funclval(struct func *f, struct expr *e)
 		break;
 	case EXPRUNARY:
 		if (e->op != TMUL)
-			break;
+			error(&tok.loc, "expression is not an object");
 		lval.addr = funcexpr(f, e->base);
 		break;
 	default:
 		if (e->type->kind != TYPESTRUCT && e->type->kind != TYPEUNION)
-			break;
+			error(&tok.loc, "expression is not an object");
 		lval.addr = funcinst(f, ICOPY, &iptr, funcexpr(f, e));
 	}
-	if (!lval.addr)
-		error(&tok.loc, "expression is not an object");
 	return lval;
 }
 
