@@ -68,6 +68,25 @@ Configure with
 
 [f6a7d135]: https://git.sr.ht/~mcf/qbe/commit/f6a7d135d54f5281547f20cc4f72a5e85862157c
 
+## gcc 4.7
+
+Requires a number patches available here:
+https://github.com/michaelforney/gcc/tree/gcc-4_7-branch
+
+Also requires gmp headers modified for C99 inline semantics:
+https://hg.sr.ht/~mcf/gmp-6.1/rev/53195faa26dfeafeacd57f54035373988e2a16a3
+
+Build with
+
+```
+git clone -b gcc-4_7-branch https://github.com/michaelforney/gcc
+cd gcc
+hg clone https://hg.sr.ht/~mcf/gmp-6.1 gmp
+(cd gmp && aux_dir=. ltdl_dir=. ./.bootstrap)
+./configure --disable-multilib --disable-bootstrap --disable-lto --enable-languages=c,c++
+make
+```
+
 ## zstd
 
 Requires disabling CPU identification inline assembly and deprecation

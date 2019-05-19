@@ -5,10 +5,9 @@ the [ISC] license.
 
 Several GNU C [extensions] are also implemented.
 
-There is still much to do and some parts of the code are a little
-rough, but it currently implements most of the language and is capable
-of building some useful [software] including itself, mcpp, binutils,
-and more.
+There is still much to do and some parts of the code are a little rough,
+but it currently implements most of the language and is capable of
+[building software] including itself, mcpp, gcc 4.7, binutils, and more.
 
 It was inspired by several other small C compilers including [8cc],
 [c], [lacc], and [scc].
@@ -100,7 +99,7 @@ be created, which will then become the preferred form of contribution.
 [C11]: http://port70.net/~nsz/c/c11/n1570.html
 [ISC]: https://git.sr.ht/~mcf/cc/blob/master/LICENSE
 [extensions]: https://man.sr.ht/~mcf/cc/doc/extensions.md
-[software]: https://man.sr.ht/~mcf/cc/doc/software.md
+[building software]: https://man.sr.ht/~mcf/cc/doc/software.md
 [8cc]: https://github.com/rui314/8cc
 [c]: https://github.com/andrewchambers/c
 [lacc]: https://github.com/larmel/lacc
