@@ -56,11 +56,6 @@ startfiles=0
 endfiles=0
 defines=
 linkflags=
-gnuc='
-	/* specify the GNU C extensions we support */
-	"-D", "__GNUC__=1",
-	"-D", "__GNUC_MINOR__=0",
-'
 
 case "$target" in
 *-linux-*musl*)
@@ -95,8 +90,6 @@ case "$target" in
 	: ${DEFAULT_DYNAMIC_LINKER:=/libexec/ld-elf.so.1}
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
 	endfiles='"-l", "c", "-l", ":crtn.o"'
-	# any value of __GNUC__ will cause FreeBSD's headers to use asm for bswap
-	gnuc=
 	linkflags='"-L", "/usr/lib",'
 	defines='
 	"-D", "_Pragma(x)=",
@@ -160,7 +153,7 @@ static char *preprocesscmd[] = {
 	"-D", "__signed__=signed",
 	"-D", "__thread=_Thread_local",
 	"-D", "__volatile__=volatile",
-$gnuc$defines};
+$defines};
 static char *codegencmd[]    = {"$DEFAULT_QBE", "-t", "$qbetarget"};
 static char *assemblecmd[]   = {"$DEFAULT_ASSEMBLER"};
 static char *linkcmd[]       = {"$DEFAULT_LINKER", $linkflags};
