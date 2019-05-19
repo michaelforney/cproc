@@ -552,8 +552,8 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "VLAs are not yet supported");
 				i = e->constant.i;
-				if (i == 0 || e->type->basic.issigned && i > INT64_MAX)
-					error(&tok.loc, "array length must be positive");
+				if (e->type->basic.issigned && i > INT64_MAX)
+					error(&tok.loc, "array length must be non-negative");
 				delexpr(e);
 				expect(TRBRACK, "after array length");
 			}
