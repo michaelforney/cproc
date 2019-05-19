@@ -7,22 +7,30 @@ special procedures necessary.
 
 Builds without issue with musl. On glibc, there are some errors due to
 the declaration of `strsep` conflicting with the system declaration in
-usage of `restrict` (see [#50]).
+usage of `restrict` (see [#50]). This can be resolved with the diff below.
+
+```diff
+diff --git a/util.h b/util.h
+index 6c0aba9..9b6022c 100644
+--- a/util.h
++++ b/util.h
+@@ -57,6 +57,7 @@ size_t strlcpy(char *, const char *, size_t);
+ size_t estrlcpy(char *, const char *, size_t);
+ 
+ #undef strsep
++#define strsep xstrsep
+ char *strsep(char **, const char *);
+ 
+ /* regex */
+```
 
 [#50]: https://todo.sr.ht/~mcf/cc-issues/50
 
 ## mcpp
 
-Builds without issue.
+Builds without issue. Requires `CFLAGS=-D_POSIX_C_SOURCE=200112L`.
 
 ## binutils
-
-QBE must be built with `NPred` (in `all.h`) at least 297, or patched to
-use dynamic arrays for phi predecessors ([f6a7d135]).
-
-On glibc systems, you must make sure to include `crtbegin.o` and
-`crtend.o` from gcc at the end of `startfiles` and beginning of `endfiles`
-respectively.
 
 On musl systems, you must define `long double` to match `double` (as
 below) to avoid errors in unused `static inline` functions in musl's
@@ -47,16 +55,16 @@ https://github.com/michaelforney/binutils-gdb/
 - Make `regcomp` and `regexec` match the header declaration in usage of
   `restrict`.
 - Don't declare `vasprintf` unless it was checked for and not
-  found. Several subdirectories in binutils include `libiberty.h`,
-  but don't use `vasprintf`, causing conflicting declarations with libc
-  in usage of `restrict`.
+  found (applied to libiberty upstream).
 - Make sure `config.h` is included in `arlex.c` so that the appropriate
   feature-test macros get defined to expose `strdup`.
 
 Configure with
 
-	./configure CC=/path/to/cc CFLAGS_FOR_BUILD=-D_GNU_SOURCE \
-		--disable-intl --disable-gdb --disable-plugins --disable-readline
+```
+./configure CFLAGS_FOR_BUILD=-D_GNU_SOURCE \
+	--disable-intl --disable-gdb --disable-plugins --disable-readline
+```
 
 [f6a7d135]: https://git.sr.ht/~mcf/qbe/commit/f6a7d135d54f5281547f20cc4f72a5e85862157c
 
