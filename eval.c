@@ -109,8 +109,6 @@ eval(struct expr *expr, enum evalkind kind)
 		expr->ident.decl = d;
 		break;
 	case EXPRUNARY:
-		if (kind != EVALINIT)
-			break;
 		l = eval(expr->base, kind);
 		if (expr->op != TBAND)
 			break;
@@ -120,6 +118,8 @@ eval(struct expr *expr, enum evalkind kind)
 				expr = eval(l->base, kind);
 			break;
 		case EXPRSTRING:
+			if (kind != EVALINIT)
+				break;
 			l->ident.decl = stringdecl(l);
 			l->kind = EXPRIDENT;
 			expr->base = l;
