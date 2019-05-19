@@ -450,6 +450,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 	struct list *ptr;
 	struct type *t;
 	struct param **p;
+	struct expr *e;
 	uint64_t i;
 	enum typequal tq;
 
@@ -547,7 +548,13 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				i = 0;
 				next();
 			} else {
-				i = intconstexpr(s, false);
+				e = constexpr(s);
+				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
+					error(&tok.loc, "VLAs are not yet supported");
+				i = e->constant.i;
+				if (i == 0 || e->type->basic.issigned && i > INT64_MAX)
+					error(&tok.loc, "array length must be positive");
+				delexpr(e);
 				expect(TRBRACK, "after array length");
 			}
 			t = mkarraytype(NULL, tq, i);
