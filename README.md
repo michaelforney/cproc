@@ -1,3 +1,5 @@
+(mirrored on [GitHub][GitHub mirror])
+
 [![builds.sr.ht status](https://builds.sr.ht/~mcf/cc.svg)](https://builds.sr.ht/~mcf/cc)
 
 This is a [C11] compiler using [QBE] as a backend. It is released under
