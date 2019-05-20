@@ -81,10 +81,6 @@ case "$target" in
 		gcclibdir=${crtbegin%/*}
 	fi
 	linkflags='"-L", "'$gcclibdir'",'
-	defines='
-	/* prevent glibc from using statement expressions for assert */
-	"-D", "__STRICT_ANSI__",
-'
 	;;
 *-*freebsd*)
 	: ${DEFAULT_DYNAMIC_LINKER:=/libexec/ld-elf.so.1}
@@ -129,7 +125,7 @@ cat >config.h <<EOF
 static char *startfiles[]    = {$startfiles};
 static char *endfiles[]      = {$endfiles};
 static char *preprocesscmd[] = {
-	"$DEFAULT_PREPROCESSOR", "-P", "-std=c11",
+	"$DEFAULT_PREPROCESSOR", "-P",
 
 	/* clear preprocessor GNU C version */
 	"-U", "__GNUC__",
