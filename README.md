@@ -26,8 +26,19 @@ it may address some issues that have not yet made it upstream. Since
 the preprocessor is not yet implemented, an external one is currently
 required as well.
 
+## Supported targets
+
 All architectures supported by QBE should work (currently x86\_64 and
 aarch64).
+
+The following targets are tested by the continuous build and known to
+bootstrap and pass all tests:
+
+- `x86_64-linux-musl`
+- `x86_64-linux-gnu`
+- `x86_64-freebsd`
+- `aarch64-linux-musl`
+- `aarch64-linux-gnu`
 
 ## Building
 
