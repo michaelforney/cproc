@@ -17,8 +17,6 @@
 
 #include "util.h"
 
-extern int pipe2(int[2], int);
-
 enum phaseid {
 	PREPROCESS = 1,
 	COMPILE,
@@ -149,9 +147,17 @@ spawnphase(struct phase *phase, int *fd, char *input, char *output, bool last)
 	if (*fd != -1)
 		ret = posix_spawn_file_actions_adddup2(&actions, *fd, 0);
 	if (!last) {
-		if (pipe2(pipefd, O_CLOEXEC) < 0) {
+		if (pipe(pipefd) < 0) {
 			ret = errno;
 			goto err1;
+		}
+		if (fcntl(pipefd[0], F_SETFD, FD_CLOEXEC) < 0) {
+			ret = errno;
+			goto err2;
+		}
+		if (fcntl(pipefd[1], F_SETFD, FD_CLOEXEC) < 0) {
+			ret = errno;
+			goto err2;
 		}
 		ret = posix_spawn_file_actions_adddup2(&actions, pipefd[1], 1);
 		if (ret)
