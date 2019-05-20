@@ -43,7 +43,7 @@ things will break if any functions with `long double` get called.
 ```
 
 Requires several patches available here:
-https://github.com/michaelforney/binutils-gdb/
+https://github.com/michaelforney/binutils-gdb/tree/cc-fixes
 
 - Fix function pointer subtraction in `bfd/doc/chew.c` (applied upstream).
 - Skip unsupported `LDFLAGS`, only tested to work against `CXX` by
@@ -71,7 +71,7 @@ Configure with
 ## gcc 4.7
 
 Requires a number patches available here:
-https://github.com/michaelforney/gcc/tree/gcc-4_7-branch
+https://github.com/michaelforney/gcc/tree/cc-fixes
 
 Also requires gmp headers modified for C99 inline semantics:
 https://hg.sr.ht/~mcf/gmp-6.1/rev/53195faa26dfeafeacd57f54035373988e2a16a3
@@ -79,7 +79,7 @@ https://hg.sr.ht/~mcf/gmp-6.1/rev/53195faa26dfeafeacd57f54035373988e2a16a3
 Build with
 
 ```
-git clone -b gcc-4_7-branch https://github.com/michaelforney/gcc
+git clone -b cc-fixes https://github.com/michaelforney/gcc
 cd gcc
 hg clone https://hg.sr.ht/~mcf/gmp-6.1 gmp
 (cd gmp && aux_dir=. ltdl_dir=. ./.bootstrap)
