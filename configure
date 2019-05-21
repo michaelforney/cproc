@@ -139,16 +139,6 @@ static char *preprocesscmd[] = {
 	/* ignore attributes and extension markers */
 	"-D", "__attribute__(x)=",
 	"-D", "__extension__=",
-
-	/* alternate keywords */
-	"-D", "__alignof__=_Alignof",
-	"-D", "__asm=__asm__",
-	"-D", "__inline=inline",
-	"-D", "__inline__=inline",
-	"-D", "__signed=signed",
-	"-D", "__signed__=signed",
-	"-D", "__thread=_Thread_local",
-	"-D", "__volatile__=volatile",
 $defines};
 static char *codegencmd[]    = {"$DEFAULT_QBE", "-t", "$qbetarget"};
 static char *assemblecmd[]   = {"$DEFAULT_ASSEMBLER"};
