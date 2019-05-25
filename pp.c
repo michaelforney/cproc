@@ -29,6 +29,7 @@ keyword(struct token *tok)
 		{"__alignof__",    T_ALIGNOF},
 		{"__asm",          T__ASM__},
 		{"__asm__",        T__ASM__},
+		{"__attribute__",  T__ATTRIBUTE__},
 		{"__inline",       TINLINE},
 		{"__inline__",     TINLINE},
 		{"__signed",       TSIGNED},

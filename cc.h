@@ -57,6 +57,7 @@ enum tokenkind {
 	T_STATIC_ASSERT,
 	T_THREAD_LOCAL,
 	T__ASM__,
+	T__ATTRIBUTE__,
 	T__TYPEOF__,
 
 	/* punctuator */
