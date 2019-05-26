@@ -111,8 +111,6 @@ Build with
 
 	make CC=/path/to/cc CFLAGS='-DZDICT_DISABLE_DEPRECATE_WARNINGS -DZBUFF_DISABLE_DEPRECATE_WARNINGS' zstd
 
-Some tests fail, which still need to be investigated.
-
 ## st
 
 Requires a few changes to avoid wide string literals and including
