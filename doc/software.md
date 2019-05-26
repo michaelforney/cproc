@@ -5,26 +5,7 @@ special procedures necessary.
 
 ## sbase
 
-Builds without issue with musl. On glibc, there are some errors due to
-the declaration of `strsep` conflicting with the system declaration in
-usage of `restrict` (see [#50]). This can be resolved with the diff below.
-
-```diff
-diff --git a/util.h b/util.h
-index 6c0aba9..9b6022c 100644
---- a/util.h
-+++ b/util.h
-@@ -57,6 +57,7 @@ size_t strlcpy(char *, const char *, size_t);
- size_t estrlcpy(char *, const char *, size_t);
- 
- #undef strsep
-+#define strsep xstrsep
- char *strsep(char **, const char *);
- 
- /* regex */
-```
-
-[#50]: https://todo.sr.ht/~mcf/cc-issues/50
+Builds without issue.
 
 ## mcpp
 
