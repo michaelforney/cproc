@@ -41,11 +41,6 @@ if [ "$host" != "$target" ] ; then
 	toolprefix=$target-
 fi
 
-: ${DEFAULT_PREPROCESSOR:=${toolprefix}cpp}
-: ${DEFAULT_QBE:=qbe}
-: ${DEFAULT_ASSEMBLER:=${toolprefix}as}
-: ${DEFAULT_LINKER:=${toolprefix}ld}
-
 case "$target" in
 x86_64*|amd64*) qbetarget=amd64_sysv ;;
 aarch64*)       qbetarget=arm64      ;;
@@ -110,6 +105,7 @@ case "$target" in
 	;;
 *-*openbsd*)
 	: ${DEFAULT_DYNAMIC_LINKER:=/usr/libexec/ld.so}
+	test "$host" = "$target" && : ${DEFAULT_PREPROCESSOR:=/usr/libexec/cpp}
 	startfiles='"-l", ":crt0.o", "-l", ":crtbegin.o"'
 	endfiles='"-l", "c", "-l", ":crtend.o"'
 	linkflags='"-L", "/usr/lib",'
@@ -117,6 +113,11 @@ case "$target" in
 *)
 	fail "unknown target '$target', please create config.h manually"
 esac
+
+: ${DEFAULT_PREPROCESSOR:=${toolprefix}cpp}
+: ${DEFAULT_QBE:=qbe}
+: ${DEFAULT_ASSEMBLER:=${toolprefix}as}
+: ${DEFAULT_LINKER:=${toolprefix}ld}
 
 test "$DEFAULT_DYNAMIC_LINKER" && linkflags=$linkflags' "--dynamic-linker", "'$DEFAULT_DYNAMIC_LINKER'"'
 
