@@ -109,6 +109,13 @@ case "$target" in
 	startfiles='"-l", ":crt0.o", "-l", ":crtbegin.o"'
 	endfiles='"-l", "c", "-l", ":crtend.o"'
 	linkflags='"-L", "/usr/lib",'
+	defines='
+	/* required to prevent libc headers from declaring functions with conflicting linkage */
+	"-D", "_ANSI_LIBRARY",
+
+	/* used like attribute after declarator, so _Alignas will not work here */
+	"-D", "__aligned(x)=",
+'
 	;;
 *)
 	fail "unknown target '$target', please create config.h manually"
