@@ -7,11 +7,11 @@ packages:
 environment:
   PATH: $HOME/qbe/obj:$PATH
 tasks:
+- setup: |
+    # avoid __asm__ on non __GNUC__ compilers
+    patch -d /usr/include/amd64 < cc/.builds/openbsd.diff
 - build: |
     gmake -C qbe
     cd cc
     ./configure
-    make all check
-    # OpenBSD support is not quite there (#53), so just build hello world
-    ./cc -o hello test/hello.c
-    ./hello
+    make all check bootstrap
