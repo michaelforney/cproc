@@ -1,2 +1,2 @@
 export data $a = align 8 { w 5, z 4 }
-export data $b = align 8 { d d_0x1.ep+2, }
+export data $b = align 8 { d d_7.5, }

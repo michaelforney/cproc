@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <float.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1035,7 +1036,7 @@ emitvalue(struct value *v)
 	switch (v->kind) {
 	case VALCONST:
 		if (v->repr->base == 's' || v->repr->base == 'd')
-			printf("%c_%a", v->repr->base, v->f);
+			printf("%c_%.*g", v->repr->base, DECIMAL_DIG, v->f);
 		else
 			printf("%" PRIu64, v->i);
 		break;
@@ -1243,7 +1244,7 @@ dataitem(struct expr *expr, uint64_t size)
 		break;
 	case EXPRCONST:
 		if (expr->type->prop & PROPFLOAT)
-			printf("%c_%a", expr->type->size == 4 ? 's' : 'd', expr->constant.f);
+			printf("%c_%.*g", expr->type->size == 4 ? 's' : 'd', DECIMAL_DIG, expr->constant.f);
 		else
 			printf("%" PRIu64, expr->constant.i);
 		break;
