@@ -9,7 +9,7 @@ environment:
 tasks:
 - setup: |
     # avoid __asm__ on non __GNUC__ compilers
-    patch -d /usr/include/amd64 < cc/.builds/openbsd.diff
+    doas patch -d /usr/include/amd64 < cc/.builds/openbsd.diff
 - build: |
     gmake -C qbe
     cd cc
