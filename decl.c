@@ -150,7 +150,7 @@ static struct type *
 tagspec(struct scope *s)
 {
 	struct type *t;
-	char *tag;
+	char *tag, *name;
 	enum typekind kind;
 	struct decl *d;
 	struct expr *e;
@@ -217,18 +217,27 @@ tagspec(struct scope *s)
 		break;
 	case TYPEENUM:
 		for (i = 0; tok.kind == TIDENT; ++i) {
-			d = mkdecl(DECLCONST, &typeint, QUALNONE, LINKNONE);
-			scopeputdecl(s, tok.lit, d);
+			name = tok.lit;
 			next();
 			if (consume(TASSIGN)) {
 				e = constexpr(s);
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "expected integer constant expression");
-				if (e->type->basic.issigned && e->constant.i >= 1ull << 63)
-					t->basic.issigned = true;
 				i = e->constant.i;
+				if (e->type->basic.issigned && i >= 1ull << 63) {
+					if (i < -1ull << 31)
+						goto invalid;
+					t->basic.issigned = true;
+				} else if (i >= 1ull << 31) {
+					goto invalid;
+				}
+			} else if (i == 1ull << 31) {
+			invalid:
+				error(&tok.loc, "enumerator '%s' value cannot be represented as 'int'", name);
 			}
+			d = mkdecl(DECLCONST, &typeint, QUALNONE, LINKNONE);
 			d->value = mkintconst(t->repr, i);
+			scopeputdecl(s, name, d);
 			if (!consume(TCOMMA))
 				break;
 		}
