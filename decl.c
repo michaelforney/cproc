@@ -709,6 +709,7 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 			if (t->size < mt.type->size)
 				t->size = mt.type->size;
 		}
+		b->bits = 0;
 	} else {  /* bit-field */
 		if (!(mt.type->prop & PROPINT))
 			error(&tok.loc, "bit-field has invalid type");
