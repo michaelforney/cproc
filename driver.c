@@ -433,6 +433,13 @@ main(int argc, char *argv[])
 				if (strcmp(arg, "-M") == 0 || strcmp(arg, "-MM") == 0) {
 					arrayaddptr(&phases[PREPROCESS].cmd, arg);
 					last = PREPROCESS;
+				} else if (strcmp(arg, "-MD") == 0 || strcmp(arg, "-MMD") == 0) {
+					arrayaddptr(&phases[PREPROCESS].cmd, arg);
+				} else if (strcmp(arg, "-MT") == 0 || strcmp(arg, "-MF") == 0) {
+					if (!--argc)
+						usage(NULL);
+					arrayaddptr(&phases[PREPROCESS].cmd, arg);
+					arrayaddptr(&phases[PREPROCESS].cmd, *++argv);
 				} else {
 					usage(NULL);
 				}
