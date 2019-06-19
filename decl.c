@@ -887,13 +887,18 @@ decl(struct scope *s, struct func *f)
 	base = declspecs(s, &sc, &fs, &align);
 	if (!base.type)
 		return false;
-	if (!f) {
+	if (f) {
+		if (sc == SCTHREADLOCAL)
+			error(&tok.loc, "block scope declaration containing '_Thread_local' must contain 'static' or 'extern'");
+	} else {
 		/* 6.9p2 */
 		if (sc & SCAUTO)
 			error(&tok.loc, "external declaration must not contain 'auto'");
 		if (sc & SCREGISTER)
 			error(&tok.loc, "external declaration must not contain 'register'");
 	}
+	if (sc & SCTHREADLOCAL)
+		error(&tok.loc, "'_Thread_local' is not yet supported");
 	if (consume(TSEMICOLON)) {
 		/* XXX 6.7p2 error unless in function parameter/struct/union, or tag/enum members are declared */
 		return true;
