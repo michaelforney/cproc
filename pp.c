@@ -35,6 +35,7 @@ keyword(struct token *tok)
 		{"__signed",       TSIGNED},
 		{"__signed__",     TSIGNED},
 		{"__thread",       T_THREAD_LOCAL},
+		{"__typeof",       T__TYPEOF__},
 		{"__typeof__",     T__TYPEOF__},
 		{"__volatile__",   TVOLATILE},
 		{"auto",           TAUTO},
