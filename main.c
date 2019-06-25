@@ -18,12 +18,15 @@ int
 main(int argc, char *argv[])
 {
 	bool pponly = false;
-	char *output = NULL;
+	char *output = NULL, *target = NULL;
 
 	argv0 = progname(argv[0], "cc-qbe");
 	ARGBEGIN {
 	case 'E':
 		pponly = true;
+		break;
+	case 't':
+		target = EARGF(usage());
 		break;
 	case 'o':
 		output = EARGF(usage());
@@ -31,6 +34,8 @@ main(int argc, char *argv[])
 	default:
 		usage();
 	} ARGEND
+
+	targinit(target);
 
 	if (argc > 1)
 		usage();

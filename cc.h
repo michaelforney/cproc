@@ -406,6 +406,16 @@ extern struct type typellong, typeullong;
 extern struct type typefloat, typedouble, typeldouble;
 extern struct type typevalist, typevalistptr;
 
+/* targ */
+
+struct target {
+	const char *name;
+};
+
+extern struct target *targ;
+
+void targinit(const char *);
+
 /* decl */
 
 struct decl *mkdecl(enum declkind, struct type *, enum typequal, enum linkage);

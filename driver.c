@@ -347,11 +347,17 @@ compilecommand(char *arg)
 	return cmd;
 }
 
+static int
+hasprefix(const char *str, const char *pfx)
+{
+	return memcmp(str, pfx, strlen(pfx)) == 0;
+}
+
 int
 main(int argc, char *argv[])
 {
 	enum phaseid first = 0, last = LINK;
-	char *arg, *end, *output = NULL;
+	char *arg, *end, *output = NULL, *arch, *qbearch;
 	struct array inputs = {0}, *cmd;
 	struct input *input;
 	size_t i;
@@ -361,6 +367,18 @@ main(int argc, char *argv[])
 	arrayaddbuf(&phases[CODEGEN].cmd, codegencmd, sizeof(codegencmd));
 	arrayaddbuf(&phases[ASSEMBLE].cmd, assemblecmd, sizeof(assemblecmd));
 	arrayaddbuf(&phases[LINK].cmd, linkcmd, sizeof(linkcmd));
+
+	if (hasprefix(target, "x86_64-") || hasprefix(target, "amd64-")) {
+		arch = "x86_64";
+		qbearch = "amd64_sysv";
+	} else if (hasprefix(target, "aarch64-")) {
+		arch = "aarch64";
+		qbearch = "arm64";
+	}
+	arrayaddptr(&phases[COMPILE].cmd, "-t");
+	arrayaddptr(&phases[COMPILE].cmd, arch);
+	arrayaddptr(&phases[CODEGEN].cmd, "-t");
+	arrayaddptr(&phases[CODEGEN].cmd, qbearch);
 
 	argv0 = progname(argv[0], "cc");
 	for (;;) {

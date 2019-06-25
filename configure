@@ -41,12 +41,6 @@ if [ "$host" != "$target" ] ; then
 	toolprefix=$target-
 fi
 
-case "$target" in
-x86_64*|amd64*) qbetarget=amd64_sysv ;;
-aarch64*)       qbetarget=arm64      ;;
-*) fail "unsupported architecture '${target%%-*}'"
-esac
-
 startfiles=0
 endfiles=0
 defines=
@@ -130,6 +124,7 @@ test "$DEFAULT_DYNAMIC_LINKER" && linkflags=$linkflags' "--dynamic-linker", "'$D
 
 printf "creating config.h... "
 cat >config.h <<EOF
+static char target[]         = "$target";
 static char *startfiles[]    = {$startfiles};
 static char *endfiles[]      = {$endfiles};
 static char *preprocesscmd[] = {
@@ -148,7 +143,7 @@ static char *preprocesscmd[] = {
 	"-D", "__attribute__(x)=",
 	"-D", "__extension__=",
 $defines};
-static char *codegencmd[]    = {"$DEFAULT_QBE", "-t", "$qbetarget"};
+static char *codegencmd[]    = {"$DEFAULT_QBE"};
 static char *assemblecmd[]   = {"$DEFAULT_ASSEMBLER"};
 static char *linkcmd[]       = {"$DEFAULT_LINKER", $linkflags};
 EOF
