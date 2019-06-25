@@ -415,6 +415,7 @@ primaryexpr(struct scope *s)
 {
 	struct expr *e;
 	struct decl *d;
+	struct type *t;
 	char *src, *dst, *end;
 	int base;
 
@@ -453,10 +454,15 @@ primaryexpr(struct scope *s)
 		break;
 	case TCHARCONST:
 		src = tok.lit;
-		if (*src != '\'')
-			fatal("wide character constant not yet implemented");
+		t = &typeint;
+		switch (*src) {
+		case 'L': ++src; t = targ->typewchar; break;
+		case 'u': ++src; t = &typeushort;     break;
+		case 'U': ++src; t = &typeuint;       break;
+		}
+		assert(*src == '\'');
 		++src;
-		e = mkconstexpr(&typeint, unescape(&src));
+		e = mkconstexpr(t, unescape(&src));
 		if (*src != '\'')
 			error(&tok.loc, "character constant contains more than one character: %c", *src);
 		next();

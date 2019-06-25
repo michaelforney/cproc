@@ -410,6 +410,7 @@ extern struct type typevalist, typevalistptr;
 
 struct target {
 	const char *name;
+	struct type *typewchar;
 };
 
 extern struct target *targ;
