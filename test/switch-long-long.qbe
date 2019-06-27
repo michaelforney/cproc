@@ -1,0 +1,30 @@
+export
+function w $main() {
+@start.1
+@body.2
+	jmp @switch_cond.3
+@switch_case.5
+	ret 1
+@switch_case.6
+	ret 0
+@switch_cond.3
+	%.1 =w ceql 1249835483136, 0
+	jnz %.1, @switch_case.5, @switch_ne.7
+@switch_ne.7
+	%.2 =w cultl 1249835483136, 0
+	jnz %.2, @switch_lt.8, @switch_gt.9
+@switch_lt.8
+	jmp @switch_join.4
+@switch_gt.9
+	%.3 =w ceql 1249835483136, 1249835483136
+	jnz %.3, @switch_case.6, @switch_ne.10
+@switch_ne.10
+	%.4 =w cultl 1249835483136, 1249835483136
+	jnz %.4, @switch_lt.11, @switch_gt.12
+@switch_lt.11
+	jmp @switch_join.4
+@switch_gt.12
+	jmp @switch_join.4
+@switch_join.4
+	ret 2
+}

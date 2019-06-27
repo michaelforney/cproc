@@ -995,11 +995,11 @@ casesearch(struct func *f, struct value *v, struct switchcase *c, struct value *
 	label[2] = mkblock("switch_gt");
 
 	// XXX: linear search if c->node.height < 4
-	key = mkintconst(&i64, c->node.key);
-	res = funcinst(f, ICEQW, &i32, v, key);
+	key = mkintconst(v->repr, c->node.key);
+	res = funcinst(f, v->repr->base == 'w' ? ICEQW : ICEQL, &i32, v, key);
 	funcjnz(f, res, c->body, label[0]);
 	funclabel(f, label[0]);
-	res = funcinst(f, ICULTW, typeint.repr, v, key);
+	res = funcinst(f, v->repr->base == 'w' ? ICULTW : ICULTL, &i32, v, key);
 	funcjnz(f, res, label[1], label[2]);
 	funclabel(f, label[1]);
 	casesearch(f, v, c->node.child[0], defaultlabel);
