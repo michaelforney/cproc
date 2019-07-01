@@ -138,6 +138,7 @@ static char *preprocesscmd[] = {
 	"-D", "__STDC_NO_ATOMICS__",
 	"-D", "__STDC_NO_COMPLEX__",
 	"-D", "__STDC_NO_VLA__",
+	"-U", "__SIZEOF_INT128__",
 
 	/* ignore attributes and extension markers */
 	"-D", "__attribute__(x)=",
