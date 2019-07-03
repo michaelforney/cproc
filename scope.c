@@ -16,6 +16,7 @@ scopeinit(void)
 	} builtins[] = {
 		{"__builtin_alloca",     {.kind = DECLBUILTIN, .builtin = BUILTINALLOCA}},
 		{"__builtin_constant_p", {.kind = DECLBUILTIN, .builtin = BUILTINCONSTANTP}},
+		{"__builtin_expect",     {.kind = DECLBUILTIN, .builtin = BUILTINEXPECT}},
 		{"__builtin_inff",       {.kind = DECLBUILTIN, .builtin = BUILTININFF}},
 		{"__builtin_nanf",       {.kind = DECLBUILTIN, .builtin = BUILTINNANF}},
 		{"__builtin_offsetof",   {.kind = DECLBUILTIN, .builtin = BUILTINOFFSETOF}},

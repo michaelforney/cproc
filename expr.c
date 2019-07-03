@@ -565,6 +565,13 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 	case BUILTINCONSTANTP:
 		e = mkconstexpr(&typeint, eval(condexpr(s), EVALARITH)->kind == EXPRCONST);
 		break;
+	case BUILTINEXPECT:
+		/* just a no-op for now */
+		/* TODO: check that the expression and the expected value have type 'long' */
+		e = assignexpr(s);
+		expect(TCOMMA, "after expression");
+		delexpr(assignexpr(s));
+		break;
 	case BUILTININFF:
 		e = mkexpr(EXPRCONST, &typefloat);
 		/* TODO: use INFINITY here when we can handle musl's math.h */
