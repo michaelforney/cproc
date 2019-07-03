@@ -280,5 +280,8 @@ stmt(struct func *f, struct scope *s)
 		funcret(f, v);
 		expect(TSEMICOLON, "after 'return' statement");
 		break;
+
+	case T__ASM__:
+		error(&tok.loc, "inline assembly is not yet supported");
 	}
 }
