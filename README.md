@@ -88,7 +88,7 @@ specified in `config.h`.
 
 - Digraph and trigraph sequences ([6.4.6p3] and [5.2.1.1], will not
   be implemented).
-- Wide string literals and character constants ([#35] and [#36]).
+- Wide string literals ([#35]).
 - Variable-length arrays ([#1]).
 - `volatile`-qualified types ([#7]).
 - `_Thread_local` storage-class specifier ([#5]).
@@ -126,6 +126,5 @@ be created, which will then become the preferred form of contribution.
 [#6]: https://todo.sr.ht/~mcf/cc-issues/6
 [#7]: https://todo.sr.ht/~mcf/cc-issues/7
 [#35]: https://todo.sr.ht/~mcf/cc-issues/35
-[#36]: https://todo.sr.ht/~mcf/cc-issues/36
 [#44]: https://todo.sr.ht/~mcf/cc-issues/44
 [GitHub mirror]: https://github.com/michaelforney/cc
