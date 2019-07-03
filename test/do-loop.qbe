@@ -23,9 +23,10 @@ function w $main() {
 	%.10 =w loadsw %.1
 	%.11 =w sub %.10, 1
 	storew %.11, %.1
-	jnz %.10, @do_body.3, @do_join.5
+	%.12 =w cnew %.10, 0
+	jnz %.12, @do_body.3, @do_join.5
 @do_join.5
-	%.12 =w loadsw %.3
-	%.13 =w cnew %.12, 2
-	ret %.13
+	%.13 =w loadsw %.3
+	%.14 =w cnew %.13, 2
+	ret %.14
 }

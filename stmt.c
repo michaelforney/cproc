@@ -153,7 +153,7 @@ stmt(struct func *f, struct scope *s)
 		next();
 		s = mkscope(s);
 		expect(TLPAREN, "after 'while'");
-		e = expr(s);
+		e = exprconvert(expr(s), &typebool);
 		expect(TRPAREN, "after expression");
 
 		label[0] = mkblock("while_cond");
@@ -191,7 +191,7 @@ stmt(struct func *f, struct scope *s)
 		expect(TWHILE, "after 'do' statement");
 		expect(TLPAREN, "after 'while'");
 		funclabel(f, label[1]);
-		e = expr(s);
+		e = exprconvert(expr(s), &typebool);
 		expect(TRPAREN, "after expression");
 
 		v = funcexpr(f, e);
@@ -226,7 +226,7 @@ stmt(struct func *f, struct scope *s)
 			delexpr(e);
 		}
 		expect(TSEMICOLON, NULL);
-		e = tok.kind == TRPAREN ? NULL : expr(s);
+		e = tok.kind == TRPAREN ? NULL : exprconvert(expr(s), &typebool);
 		expect(TRPAREN, NULL);
 
 		funclabel(f, label[1]);

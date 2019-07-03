@@ -15,6 +15,7 @@ function $f() {
 	%.5 =w loadsw %.1
 	%.6 =w add %.5, 1
 	storew %.6, %.1
+	%.7 =w cnew %.6, 0
 	jmp @for_cond.3
 @for_join.6
 	ret
