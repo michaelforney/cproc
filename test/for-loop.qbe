@@ -7,15 +7,15 @@ function $f() {
 @for_cond.3
 	%.2 =w loadsw %.1
 	%.3 =w csltw %.2, 10
-	jnz %.3, @for_body.4, @for_join.6
+	%.4 =w cnew %.3, 0
+	jnz %.4, @for_body.4, @for_join.6
 @for_body.4
-	%.4 =w loadsw %.1
-	call $g(w %.4)
-@for_cont.5
 	%.5 =w loadsw %.1
-	%.6 =w add %.5, 1
-	storew %.6, %.1
-	%.7 =w cnew %.6, 0
+	call $g(w %.5)
+@for_cont.5
+	%.6 =w loadsw %.1
+	%.7 =w add %.6, 1
+	storew %.7, %.1
 	jmp @for_cond.3
 @for_join.6
 	ret

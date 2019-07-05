@@ -220,13 +220,13 @@ stmt(struct func *f, struct scope *s)
 
 		funclabel(f, label[0]);
 		if (tok.kind != TSEMICOLON) {
-			e = expr(s);
+			e = exprconvert(expr(s), &typebool);
 			v = funcexpr(f, e);
 			funcjnz(f, v, label[1], label[3]);
 			delexpr(e);
 		}
 		expect(TSEMICOLON, NULL);
-		e = tok.kind == TRPAREN ? NULL : exprconvert(expr(s), &typebool);
+		e = tok.kind == TRPAREN ? NULL : expr(s);
 		expect(TRPAREN, NULL);
 
 		funclabel(f, label[1]);
