@@ -631,6 +631,62 @@ extend(struct func *f, struct type *t, struct value *v)
 	return funcinst(f, op, &i32, v);
 }
 
+static struct value *
+convert(struct func *f, struct type *dst, struct type *src, struct value *l)
+{
+	enum instkind op;
+	struct value *r = NULL;
+
+	if (src->kind == TYPEPOINTER)
+		src = &typeulong;
+	if (dst->kind == TYPEPOINTER)
+		dst = &typeulong;
+	if (dst->kind == TYPEVOID)
+		return NULL;
+	if (!(src->prop & PROPREAL) || !(dst->prop & PROPREAL))
+		fatal("internal error; unsupported conversion");
+	if (dst->kind == TYPEBOOL) {
+		l = extend(f, src, l);
+		r = mkintconst(src->repr, 0);
+		if (src->prop & PROPINT)
+			op = src->size == 8 ? ICNEL : ICNEW;
+		else
+			op = src->size == 8 ? ICNED : ICNES;
+	} else if (dst->prop & PROPINT) {
+		if (src->prop & PROPINT) {
+			if (dst->size <= src->size) {
+				op = ICOPY;
+			} else {
+				switch (src->size) {
+				case 4: op = src->basic.issigned ? IEXTSW : IEXTUW; break;
+				case 2: op = src->basic.issigned ? IEXTSH : IEXTUH; break;
+				case 1: op = src->basic.issigned ? IEXTSB : IEXTUB; break;
+				default: fatal("internal error; unknown int conversion");
+				}
+			}
+		} else {
+			if (!dst->basic.issigned)
+				return ftou(f, dst->repr, l);
+			op = src->size == 8 ? IDTOSI : ISTOSI;
+		}
+	} else {
+		if (src->prop & PROPINT) {
+			if (!src->basic.issigned)
+				return utof(f, dst->repr, l);
+			op = src->size == 8 ? ISLTOF : ISWTOF;
+		} else {
+			if (src->size < dst->size)
+				op = IEXTS;
+			else if (src->size > dst->size)
+				op = ITRUNCD;
+			else
+				op = ICOPY;
+		}
+	}
+
+	return funcinst(f, op, dst->repr, l, r);
+}
+
 struct value *
 funcexpr(struct func *f, struct expr *e)
 {
@@ -700,62 +756,9 @@ funcexpr(struct func *f, struct expr *e)
 		}
 		fatal("internal error; unknown unary expression");
 		break;
-	case EXPRCAST: {
-		struct type *src, *dst;
-
+	case EXPRCAST:
 		l = funcexpr(f, e->base);
-		r = NULL;
-
-		src = e->base->type;
-		if (src->kind == TYPEPOINTER)
-			src = &typeulong;
-		dst = e->type;
-		if (dst->kind == TYPEPOINTER)
-			dst = &typeulong;
-		if (dst->kind == TYPEVOID)
-			return NULL;
-		if (!(src->prop & PROPREAL) || !(dst->prop & PROPREAL))
-			fatal("internal error; unsupported conversion");
-		if (dst->kind == TYPEBOOL) {
-			l = extend(f, src, l);
-			r = mkintconst(src->repr, 0);
-			if (src->prop & PROPINT)
-				op = src->size == 8 ? ICNEL : ICNEW;
-			else
-				op = src->size == 8 ? ICNED : ICNES;
-		} else if (dst->prop & PROPINT) {
-			if (src->prop & PROPINT) {
-				if (dst->size <= src->size) {
-					op = ICOPY;
-				} else {
-					switch (src->size) {
-					case 4: op = src->basic.issigned ? IEXTSW : IEXTUW; break;
-					case 2: op = src->basic.issigned ? IEXTSH : IEXTUH; break;
-					case 1: op = src->basic.issigned ? IEXTSB : IEXTUB; break;
-					default: fatal("internal error; unknown int conversion");
-					}
-				}
-			} else {
-				if (!dst->basic.issigned)
-					return ftou(f, dst->repr, l);
-				op = src->size == 8 ? IDTOSI : ISTOSI;
-			}
-		} else {
-			if (src->prop & PROPINT) {
-				if (!src->basic.issigned)
-					return utof(f, dst->repr, l);
-				op = src->size == 8 ? ISLTOF : ISWTOF;
-			} else {
-				if (src->size < dst->size)
-					op = IEXTS;
-				else if (src->size > dst->size)
-					op = ITRUNCD;
-				else
-					op = ICOPY;
-			}
-		}
-		return funcinst(f, op, dst->repr, l, r);
-	}
+		return convert(f, e->type, e->base->type, l);
 	case EXPRBINARY:
 		if (e->op == TLOR || e->op == TLAND) {
 			label[0] = mkblock("logic_right");
