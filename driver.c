@@ -468,6 +468,9 @@ main(int argc, char *argv[])
 			case 'o':
 				output = nextarg(&argv);
 				break;
+			case 'P':
+				/* ignore */
+				break;
 			case 'S':
 				last = CODEGEN;
 				break;
