@@ -96,7 +96,7 @@ switchcase(struct switchcases *cases, uint64_t i, struct value *v)
 	c->body = v;
 }
 
-/* functions */
+/* values */
 
 struct value *
 mkblock(char *name)
@@ -114,6 +114,63 @@ mkblock(char *name)
 
 	return &b->label;
 }
+
+struct value *
+mkglobal(char *name, bool private)
+{
+	static uint64_t id;
+	struct value *v;
+
+	v = xmalloc(sizeof(*v));
+	v->kind = VALGLOBAL;
+	v->repr = &iptr;
+	v->name.str = name;
+	v->name.id = private ? ++id : 0;
+
+	return v;
+}
+
+char *
+globalname(struct value *v)
+{
+	assert(v->kind == VALGLOBAL && !v->name.id);
+	return v->name.str;
+}
+
+struct value *
+mkintconst(struct repr *r, uint64_t n)
+{
+	struct value *v;
+
+	v = xmalloc(sizeof(*v));
+	v->kind = VALCONST;
+	v->repr = r;
+	v->i = n;
+
+	return v;
+}
+
+uint64_t
+intconstvalue(struct value *v)
+{
+	assert(v->kind == VALCONST);
+	return v->i;
+}
+
+static struct value *
+mkfltconst(struct repr *r, double n)
+{
+	struct value *v;
+
+	v = xmalloc(sizeof(*v));
+	v->kind = VALCONST;
+	v->repr = r;
+	v->f = n;
+
+	return v;
+}
+
+/* functions */
 
 static void emittype(struct type *);
 static void emitvalue(struct value *);
@@ -175,39 +232,6 @@ funcinstn(struct func *f, int op, struct repr *repr, struct value *args[])
 }
 
 #define funcinst(f, op, repr, ...) funcinstn(f, op, repr, (struct value *[]){__VA_ARGS__})
-
-struct value *
-mkintconst(struct repr *r, uint64_t n)
-{
-	struct value *v;
-
-	v = xmalloc(sizeof(*v));
-	v->kind = VALCONST;
-	v->repr = r;
-	v->i = n;
-
-	return v;
-}
-
-uint64_t
-intconstvalue(struct value *v)
-{
-	assert(v->kind == VALCONST);
-	return v->i;
-}
-
-static struct value *
-mkfltconst(struct repr *r, double n)
-{
-	struct value *v;
-
-	v = xmalloc(sizeof(*v));
-	v->kind = VALCONST;
-	v->repr = r;
-	v->f = n;
-
-	return v;
-}
 
 static void
 funcalloc(struct func *f, struct decl *d)
@@ -350,28 +374,6 @@ funcload(struct func *f, struct type *t, struct lvalue lval)
 	}
 	v = funcinst(f, op, t->repr, lval.addr);
 	return funcbits(f, t, v, lval.bits);
-}
-
-struct value *
-mkglobal(char *name, bool private)
-{
-	static uint64_t id;
-	struct value *v;
-
-	v = xmalloc(sizeof(*v));
-	v->kind = VALGLOBAL;
-	v->repr = &iptr;
-	v->name.str = name;
-	v->name.id = private ? ++id : 0;
-
-	return v;
-}
-
-char *
-globalname(struct value *v)
-{
-	assert(v->kind == VALGLOBAL && !v->name.id);
-	return v->name.str;
 }
 
 /*
