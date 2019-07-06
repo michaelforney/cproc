@@ -539,7 +539,7 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 	/* allocate space for parameters */
 	for (p = t->func.params; p; p = p->next) {
 		if (!p->name)
-			error(&tok.loc, "parameter name omitted in function definition");
+			error(&tok.loc, "parameter name omitted in definition of function '%s'", name);
 		pt = t->func.isprototype ? p->type : typepromote(p->type, -1);
 		emittype(pt);
 		p->value = xmalloc(sizeof(*p->value));
