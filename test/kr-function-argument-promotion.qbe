@@ -1,0 +1,18 @@
+export
+function w $f(w %.1) {
+@start.1
+	%.2 =w extub %.1
+	%.3 =l alloc4 1
+	storeb %.2, %.3
+@body.2
+	%.4 =w loadub %.3
+	%.5 =w extub %.4
+	ret %.5
+}
+export
+function w $main() {
+@start.3
+@body.4
+	%.1 =w call $f(w 256)
+	ret %.1
+}

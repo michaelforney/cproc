@@ -376,181 +376,6 @@ funcload(struct func *f, struct type *t, struct lvalue lval)
 	return funcbits(f, t, v, lval.bits);
 }
 
-/*
-XXX: If a function declared without a prototype is declared with a
-parameter affected by default argument promotion, we need to emit a QBE
-function with the promoted type and implicitly convert to the declared
-parameter type before storing into the allocated memory for the parameter.
-*/
-struct func *
-mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
-{
-	struct func *f;
-	struct param *p;
-	struct decl *d;
-
-	f = xmalloc(sizeof(*f));
-	f->decl = decl;
-	f->name = name;
-	f->type = t;
-	f->start = f->end = (struct block *)mkblock("start");
-	f->gotos = mkmap(8);
-	f->lastid = 0;
-	emittype(t->base);
-
-	/* allocate space for parameters */
-	for (p = t->func.params; p; p = p->next) {
-		if (!p->name)
-			error(&tok.loc, "parameter name omitted in function definition");
-		if (!t->func.isprototype && !typecompatible(p->type, typepromote(p->type, -1)))
-			error(&tok.loc, "old-style function definition with parameter type incompatible with promoted type is not yet supported");
-		emittype(p->type);
-		d = mkdecl(DECLOBJECT, p->type, p->qual, LINKNONE);
-		p->value = xmalloc(sizeof(*p->value));
-		functemp(f, p->value, p->type->repr);
-		if (p->type->repr->abi.id) {
-			d->value = xmalloc(sizeof(*d->value));
-			*d->value = *p->value;
-			d->value->repr = &iptr;
-		} else {
-			funcinit(f, d, NULL);
-			funcstore(f, p->type, QUALNONE, (struct lvalue){d->value}, p->value);
-		}
-		scopeputdecl(s, p->name, d);
-	}
-
-	t = mkarraytype(&typechar, QUALCONST, strlen(name) + 1);
-	d = mkdecl(DECLOBJECT, t, QUALNONE, LINKNONE);
-	d->value = mkglobal("__func__", true);
-	scopeputdecl(s, "__func__", d);
-	/*
-	needed for glibc's assert definition with __GNUC__=2 __GNUC_MINOR__=4
-	XXX: this should also work at file scope, where it should evaluate to "toplevel"
-	*/
-	scopeputdecl(s, "__PRETTY_FUNCTION__", d);
-	f->namedecl = d;
-
-	funclabel(f, mkblock("body"));
-
-	return f;
-}
-
-void
-delfunc(struct func *f)
-{
-	struct block *b;
-	struct inst **inst;
-
-	while (b = f->start) {
-		f->start = b->next;
-		arrayforeach (&b->insts, inst)
-			free(*inst);
-		free(b->insts.val);
-		free(b);
-	}
-	delmap(f->gotos, free);
-	free(f);
-}
-
-struct type *
-functype(struct func *f)
-{
-	return f->type;
-}
-
-void
-funclabel(struct func *f, struct value *v)
-{
-	assert(v->kind == VALLABEL);
-	f->end->next = (struct block *)v;
-	f->end = f->end->next;
-}
-
-void
-funcjmp(struct func *f, struct value *v)
-{
-	funcinst(f, IJMP, NULL, v);
-	f->end->terminated = true;
-}
-
-void
-funcjnz(struct func *f, struct value *v, struct value *l1, struct value *l2)
-{
-	funcinst(f, IJNZ, NULL, v, l1, l2);
-	f->end->terminated = true;
-}
-
-void
-funcret(struct func *f, struct value *v)
-{
-	funcinst(f, IRET, NULL, v);
-	f->end->terminated = true;
-}
-
-struct gotolabel *
-funcgoto(struct func *f, char *name)
-{
-	void **entry;
-	struct gotolabel *g;
-	struct mapkey key;
-
-	mapkey(&key, name, strlen(name));
-	entry = mapput(f->gotos, &key);
-	g = *entry;
-	if (!g) {
-		g = xmalloc(sizeof(*g));
-		g->label = mkblock(name);
-		*entry = g;
-	}
-
-	return g;
-}
-
-static struct lvalue
-funclval(struct func *f, struct expr *e)
-{
-	struct lvalue lval = {0};
-	struct decl *d;
-
-	if (e->kind == EXPRBITFIELD) {
-		lval.bits = e->bitfield.bits;
-		e = e->base;
-	}
-	switch (e->kind) {
-	case EXPRIDENT:
-		d = e->ident.decl;
-		if (d->kind != DECLOBJECT && d->kind != DECLFUNC)
-			error(&tok.loc, "identifier is not an object or function");  // XXX: fix location, var name
-		if (d == f->namedecl) {
-			fputs("data ", stdout);
-			emitvalue(d->value);
-			printf(" = { b \"%s\", b 0 }\n", f->name);
-			f->namedecl = NULL;
-		}
-		lval.addr = d->value;
-		break;
-	case EXPRSTRING:
-		d = stringdecl(e);
-		lval.addr = d->value;
-		break;
-	case EXPRCOMPOUND:
-		d = mkdecl(DECLOBJECT, e->type, e->qual, LINKNONE);
-		funcinit(f, d, e->compound.init);
-		lval.addr = d->value;
-		break;
-	case EXPRUNARY:
-		if (e->op != TMUL)
-			error(&tok.loc, "expression is not an object");
-		lval.addr = funcexpr(f, e->base);
-		break;
-	default:
-		if (e->type->kind != TYPESTRUCT && e->type->kind != TYPEUNION)
-			error(&tok.loc, "expression is not an object");
-		lval.addr = funcinst(f, ICOPY, &iptr, funcexpr(f, e));
-	}
-	return lval;
-}
-
 /* TODO: move these conversions to QBE */
 static struct value *
 utof(struct func *f, struct repr *r, struct value *v)
@@ -685,6 +510,183 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 	}
 
 	return funcinst(f, op, dst->repr, l, r);
+}
+
+/*
+XXX: If a function declared without a prototype is declared with a
+parameter affected by default argument promotion, we need to emit a QBE
+function with the promoted type and implicitly convert to the declared
+parameter type before storing into the allocated memory for the parameter.
+*/
+struct func *
+mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
+{
+	struct func *f;
+	struct param *p;
+	struct decl *d;
+	struct type *pt;
+	struct value *v;
+
+	f = xmalloc(sizeof(*f));
+	f->decl = decl;
+	f->name = name;
+	f->type = t;
+	f->start = f->end = (struct block *)mkblock("start");
+	f->gotos = mkmap(8);
+	f->lastid = 0;
+	emittype(t->base);
+
+	/* allocate space for parameters */
+	for (p = t->func.params; p; p = p->next) {
+		if (!p->name)
+			error(&tok.loc, "parameter name omitted in function definition");
+		pt = t->func.isprototype ? p->type : typepromote(p->type, -1);
+		emittype(pt);
+		p->value = xmalloc(sizeof(*p->value));
+		functemp(f, p->value, pt->repr);
+		d = mkdecl(DECLOBJECT, p->type, p->qual, LINKNONE);
+		if (p->type->repr->abi.id) {
+			d->value = xmalloc(sizeof(*d->value));
+			*d->value = *p->value;
+			d->value->repr = &iptr;
+		} else {
+			v = typecompatible(p->type, pt) ? p->value : convert(f, pt, p->type, p->value);
+			funcinit(f, d, NULL);
+			funcstore(f, p->type, QUALNONE, (struct lvalue){d->value}, v);
+		}
+		scopeputdecl(s, p->name, d);
+	}
+
+	t = mkarraytype(&typechar, QUALCONST, strlen(name) + 1);
+	d = mkdecl(DECLOBJECT, t, QUALNONE, LINKNONE);
+	d->value = mkglobal("__func__", true);
+	scopeputdecl(s, "__func__", d);
+	/*
+	needed for glibc's assert definition with __GNUC__=2 __GNUC_MINOR__=4
+	XXX: this should also work at file scope, where it should evaluate to "toplevel"
+	*/
+	scopeputdecl(s, "__PRETTY_FUNCTION__", d);
+	f->namedecl = d;
+
+	funclabel(f, mkblock("body"));
+
+	return f;
+}
+
+void
+delfunc(struct func *f)
+{
+	struct block *b;
+	struct inst **inst;
+
+	while (b = f->start) {
+		f->start = b->next;
+		arrayforeach (&b->insts, inst)
+			free(*inst);
+		free(b->insts.val);
+		free(b);
+	}
+	delmap(f->gotos, free);
+	free(f);
+}
+
+struct type *
+functype(struct func *f)
+{
+	return f->type;
+}
+
+void
+funclabel(struct func *f, struct value *v)
+{
+	assert(v->kind == VALLABEL);
+	f->end->next = (struct block *)v;
+	f->end = f->end->next;
+}
+
+void
+funcjmp(struct func *f, struct value *v)
+{
+	funcinst(f, IJMP, NULL, v);
+	f->end->terminated = true;
+}
+
+void
+funcjnz(struct func *f, struct value *v, struct value *l1, struct value *l2)
+{
+	funcinst(f, IJNZ, NULL, v, l1, l2);
+	f->end->terminated = true;
+}
+
+void
+funcret(struct func *f, struct value *v)
+{
+	funcinst(f, IRET, NULL, v);
+	f->end->terminated = true;
+}
+
+struct gotolabel *
+funcgoto(struct func *f, char *name)
+{
+	void **entry;
+	struct gotolabel *g;
+	struct mapkey key;
+
+	mapkey(&key, name, strlen(name));
+	entry = mapput(f->gotos, &key);
+	g = *entry;
+	if (!g) {
+		g = xmalloc(sizeof(*g));
+		g->label = mkblock(name);
+		*entry = g;
+	}
+
+	return g;
+}
+
+static struct lvalue
+funclval(struct func *f, struct expr *e)
+{
+	struct lvalue lval = {0};
+	struct decl *d;
+
+	if (e->kind == EXPRBITFIELD) {
+		lval.bits = e->bitfield.bits;
+		e = e->base;
+	}
+	switch (e->kind) {
+	case EXPRIDENT:
+		d = e->ident.decl;
+		if (d->kind != DECLOBJECT && d->kind != DECLFUNC)
+			error(&tok.loc, "identifier is not an object or function");  // XXX: fix location, var name
+		if (d == f->namedecl) {
+			fputs("data ", stdout);
+			emitvalue(d->value);
+			printf(" = { b \"%s\", b 0 }\n", f->name);
+			f->namedecl = NULL;
+		}
+		lval.addr = d->value;
+		break;
+	case EXPRSTRING:
+		d = stringdecl(e);
+		lval.addr = d->value;
+		break;
+	case EXPRCOMPOUND:
+		d = mkdecl(DECLOBJECT, e->type, e->qual, LINKNONE);
+		funcinit(f, d, e->compound.init);
+		lval.addr = d->value;
+		break;
+	case EXPRUNARY:
+		if (e->op != TMUL)
+			error(&tok.loc, "expression is not an object");
+		lval.addr = funcexpr(f, e->base);
+		break;
+	default:
+		if (e->type->kind != TYPESTRUCT && e->type->kind != TYPEUNION)
+			error(&tok.loc, "expression is not an object");
+		lval.addr = funcinst(f, ICOPY, &iptr, funcexpr(f, e));
+	}
+	return lval;
 }
 
 struct value *
@@ -1204,7 +1206,7 @@ emitfunc(struct func *f, bool global)
 	for (p = f->type->func.params; p; p = p->next) {
 		if (p != f->type->func.params)
 			fputs(", ", stdout);
-		emitrepr(p->type->repr, true, false);
+		emitrepr(p->value->repr, true, false);
 		putchar(' ');
 		emitvalue(p->value);
 	}
