@@ -98,15 +98,20 @@ specified in `config.h`.
 - Generation of position independent code (i.e. shared libraries,
   modules, PIEs).
 
+## Mailing list
+
+There is a mailing list at [~mcf/cproc@lists.sr.ht]. Feel free to
+use it for general discussion, questions, patches, or bug reports
+(if you don't have an sr.ht account).
+
 ## Issue tracker
 
 Please report any issues to https://todo.sr.ht/~mcf/cc-issues.
 
 ## Contributing
 
-Send patches to me (address in commit log), or pull-requests on the
-[GitHub mirror]. Once I decide on a project name, a mailing list will
-be created, which will then become the preferred form of contribution.
+Patches are greatly appreciated. Send them to the mailing list
+(preferred), or as pull-requests on the [GitHub mirror].
 
 [QBE]: https://c9x.me/compile/
 [C11]: http://port70.net/~nsz/c/c11/n1570.html
@@ -127,4 +132,5 @@ be created, which will then become the preferred form of contribution.
 [#7]: https://todo.sr.ht/~mcf/cc-issues/7
 [#35]: https://todo.sr.ht/~mcf/cc-issues/35
 [#44]: https://todo.sr.ht/~mcf/cc-issues/44
+[~mcf/cproc@lists.sr.ht]: https://lists.sr.ht/~mcf/cproc
 [GitHub mirror]: https://github.com/michaelforney/cproc
