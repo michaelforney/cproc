@@ -1,6 +1,6 @@
 *.o
-/cc
-/cc-qbe
+/cproc
+/cproc-qbe
 /config.h
 /stage2
 /stage3
