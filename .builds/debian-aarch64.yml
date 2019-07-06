@@ -3,7 +3,7 @@ packages:
 - gcc-aarch64-linux-gnu
 - qemu-user
 sources:
-- https://git.sr.ht/~mcf/cc
+- https://git.sr.ht/~mcf/cproc
 - https://git.sr.ht/~mcf/qbe
 environment:
   PATH: $HOME/qbe/obj:$PATH
@@ -15,11 +15,11 @@ tasks:
     #define Deftgt T_arm64
     EOF
     make
-    cd ../cc
+    cd ../cproc
     ./configure \
       --target=aarch64-linux-gnu \
       --with-ldso=/usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1 \
       --with-gcc-libdir=/usr/lib/gcc-cross/aarch64-linux-gnu/8
     make all check
     make bootstrap LDFLAGS='-Wl,-rpath,/usr/aarch64-linux-gnu/lib'
-    file stage2/cc stage2/cc-qbe
+    file stage2/cproc stage2/cproc-qbe

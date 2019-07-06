@@ -6,7 +6,7 @@ objdir=.
 -include config.mk
 
 .PHONY: all
-all: $(objdir)/cc $(objdir)/cc-qbe
+all: $(objdir)/cproc $(objdir)/cproc-qbe
 
 DRIVER_SRC=\
 	driver.c\
@@ -16,7 +16,7 @@ DRIVER_OBJ=$(DRIVER_SRC:%.c=$(objdir)/%.o)
 config.h:
 	./configure
 
-$(objdir)/cc: $(DRIVER_OBJ)
+$(objdir)/cproc: $(DRIVER_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(DRIVER_OBJ)
 
 SRC=\
@@ -39,7 +39,7 @@ SRC=\
 	$(BACKEND).c
 OBJ=$(SRC:%.c=$(objdir)/%.o)
 
-$(objdir)/cc-qbe: $(OBJ)
+$(objdir)/cproc-qbe: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OBJ)
 
 $(objdir)/decl.o    : decl.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ decl.c
@@ -68,21 +68,21 @@ $(objdir)/util.o    : util.c    util.h            $(stagedeps) ; $(CC) $(CFLAGS)
 .PHONY: stage2
 stage2: all
 	@mkdir -p $@
-	$(MAKE) objdir=$@ stagedeps='cc cc-qbe' CC=$(objdir)/cc LDFLAGS='$(LDFLAGS) -s'
+	$(MAKE) objdir=$@ stagedeps='cproc cproc-qbe' CC=$(objdir)/cproc LDFLAGS='$(LDFLAGS) -s'
 
 .PHONY: stage3
 stage3: stage2
 	@mkdir -p $@
-	$(MAKE) objdir=$@ stagedeps='stage2/cc stage2/cc-qbe' CC=$(objdir)/stage2/cc LDFLAGS='$(LDFLAGS) -s'
+	$(MAKE) objdir=$@ stagedeps='stage2/cproc stage2/cproc-qbe' CC=$(objdir)/stage2/cproc LDFLAGS='$(LDFLAGS) -s'
 
 .PHONY: bootstrap
 bootstrap: stage2 stage3
-	cmp stage2/cc stage3/cc
-	cmp stage2/cc-qbe stage3/cc-qbe
+	cmp stage2/cproc stage3/cproc
+	cmp stage2/cproc-qbe stage3/cproc-qbe
 
 .PHONY: check
 check: all
-	@CCQBE=./cc-qbe ./runtests
+	@CCQBE=./cproc-qbe ./runtests
 
 .PHONY: qbe
 qbe:
@@ -91,4 +91,4 @@ qbe:
 
 .PHONY: clean
 clean:
-	rm -rf cc $(DRIVER_OBJ) cc-qbe $(OBJ) stage2 stage3
+	rm -rf cproc $(DRIVER_OBJ) cproc-qbe $(OBJ) stage2 stage3

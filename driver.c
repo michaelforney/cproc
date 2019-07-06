@@ -216,7 +216,7 @@ buildobj(struct input *input, char *output, enum phaseid last)
 		return;
 	if (last == LINK) {
 		last = ASSEMBLE;
-		output = strdup("/tmp/cc-XXXXXX");
+		output = strdup("/tmp/cproc-XXXXXX");
 		if (!output)
 			fatal("strdup:");
 		fd = mkstemp(output);
@@ -380,7 +380,7 @@ main(int argc, char *argv[])
 	arrayaddptr(&phases[CODEGEN].cmd, "-t");
 	arrayaddptr(&phases[CODEGEN].cmd, qbearch);
 
-	argv0 = progname(argv[0], "cc");
+	argv0 = progname(argv[0], "cproc");
 	for (;;) {
 		++argv, --argc;
 		arg = *argv;

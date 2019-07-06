@@ -1,9 +1,9 @@
 (mirrored on [GitHub][GitHub mirror])
 
-[![builds.sr.ht status](https://builds.sr.ht/~mcf/cc.svg)](https://builds.sr.ht/~mcf/cc)
+[![builds.sr.ht status](https://builds.sr.ht/~mcf/cproc.svg)](https://builds.sr.ht/~mcf/cproc)
 
-This is a [C11] compiler using [QBE] as a backend. It is released under
-the [ISC] license.
+`cproc` is a [C11] compiler using [QBE] as a backend. It is released
+under the [ISC] license.
 
 Several GNU C [extensions] are also implemented.
 
@@ -110,7 +110,7 @@ be created, which will then become the preferred form of contribution.
 
 [QBE]: https://c9x.me/compile/
 [C11]: http://port70.net/~nsz/c/c11/n1570.html
-[ISC]: https://git.sr.ht/~mcf/cc/blob/master/LICENSE
+[ISC]: https://git.sr.ht/~mcf/cproc/blob/master/LICENSE
 [extensions]: https://man.sr.ht/~mcf/cc/doc/extensions.md
 [building software]: https://man.sr.ht/~mcf/cc/doc/software.md
 [8cc]: https://github.com/rui314/8cc
@@ -127,4 +127,4 @@ be created, which will then become the preferred form of contribution.
 [#7]: https://todo.sr.ht/~mcf/cc-issues/7
 [#35]: https://todo.sr.ht/~mcf/cc-issues/35
 [#44]: https://todo.sr.ht/~mcf/cc-issues/44
-[GitHub mirror]: https://github.com/michaelforney/cc
+[GitHub mirror]: https://github.com/michaelforney/cproc

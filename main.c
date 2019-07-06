@@ -20,7 +20,7 @@ main(int argc, char *argv[])
 	bool pponly = false;
 	char *output = NULL, *target = NULL;
 
-	argv0 = progname(argv[0], "cc-qbe");
+	argv0 = progname(argv[0], "cproc-qbe");
 	ARGBEGIN {
 	case 'E':
 		pponly = true;

@@ -8,7 +8,7 @@ exitstatus=0
 out=$(mktemp)
 trap 'rm "$out"' EXIT
 for test ; do
-	if ${CCQBE:=./cc-qbe} -o $out $test && diff -Nu "${test%.c}.qbe" "$out" ; then
+	if ${CCQBE:=./cproc-qbe} -o $out $test && diff -Nu "${test%.c}.qbe" "$out" ; then
 		result="PASS"
 	else
 		result="FAIL"

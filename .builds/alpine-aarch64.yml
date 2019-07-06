@@ -3,7 +3,7 @@ packages:
 - qemu-aarch64
 - qemu-openrc
 sources:
-- https://git.sr.ht/~mcf/cc
+- https://git.sr.ht/~mcf/cproc
 - https://git.sr.ht/~mcf/qbe
 environment:
   PATH: $HOME/qbe/obj:$HOME/aarch64-linux-musl-cross/bin:$PATH
@@ -26,4 +26,4 @@ tasks:
       --target=aarch64-linux-musl \
       --with-ldso="$HOME/aarch64-linux-musl-cross/aarch64-linux-musl/lib/libc.so"
     make all check bootstrap
-    file stage2/cc stage2/cc-qbe
+    file stage2/cproc stage2/cproc-qbe
