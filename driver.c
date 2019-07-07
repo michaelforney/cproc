@@ -362,6 +362,8 @@ main(int argc, char *argv[])
 	struct input *input;
 	size_t i;
 
+	argv0 = progname(argv[0], "cproc");
+
 	arrayaddbuf(&phases[PREPROCESS].cmd, preprocesscmd, sizeof(preprocesscmd));
 	arrayaddptr(&phases[COMPILE].cmd, compilecommand(argv[0]));
 	arrayaddbuf(&phases[CODEGEN].cmd, codegencmd, sizeof(codegencmd));
@@ -374,13 +376,14 @@ main(int argc, char *argv[])
 	} else if (hasprefix(target, "aarch64-")) {
 		arch = "aarch64";
 		qbearch = "arm64";
+	} else {
+		fatal("unsupported target '%s'", target);
 	}
 	arrayaddptr(&phases[COMPILE].cmd, "-t");
 	arrayaddptr(&phases[COMPILE].cmd, arch);
 	arrayaddptr(&phases[CODEGEN].cmd, "-t");
 	arrayaddptr(&phases[CODEGEN].cmd, qbearch);
 
-	argv0 = progname(argv[0], "cproc");
 	for (;;) {
 		++argv, --argc;
 		arg = *argv;
