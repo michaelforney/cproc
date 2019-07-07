@@ -1,7 +1,13 @@
 image: alpine/edge
+packages:
+- bison
+- flex
 sources:
 - https://git.sr.ht/~mcf/cproc
 - git://c9x.me/qbe.git
+- https://git.sr.ht/~sircmpwn/annotatec
+secrets:
+- cd4f74b3-9b4f-435f-b747-e513ba03f947
 environment:
   PATH: $HOME/qbe/obj:$PATH
 tasks:
@@ -10,3 +16,8 @@ tasks:
     cd cproc
     ./configure
     make all check bootstrap
+- annotate: |
+    make -C annotatec
+    cd cproc
+    ~/annotatec/annotatec -g -C 'cpp -U __GNUC__' *.c > annotations.json
+    ~/upload-annotations annotations.json mcf cproc
