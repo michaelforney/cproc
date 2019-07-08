@@ -151,4 +151,4 @@ The following still need more work:
   nginx pcre pixman python st strace swc extlinux the\_silver\_searcher
   tinyemu transmission velox vis wld
 
-[oasis package tree] https://github.com/michaelforney/oasis/tree/master/pkg
+[oasis package tree]: https://github.com/michaelforney/oasis/tree/master/pkg
