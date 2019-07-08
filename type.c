@@ -155,8 +155,6 @@ typecompatible(struct type *t1, struct type *t2)
 			return true;
 		}
 		for (p1 = t1->func.params, p2 = t2->func.params; p1 && p2; p1 = p1->next, p2 = p2->next) {
-			if (p1->qual != p2->qual)
-				return false;
 			tmp = t2->func.isprototype ? p2->type : typepromote(p2->type, -1);
 			if (!typecompatible(p1->type, tmp))
 				return false;

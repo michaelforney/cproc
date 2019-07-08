@@ -15,3 +15,6 @@ void f5(unsigned, double);
 
 void f6(const char *, ...);
 void f6(const char[], ...);
+
+void f7(const int);
+void f7(int);
