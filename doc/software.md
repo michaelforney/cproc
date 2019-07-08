@@ -24,35 +24,26 @@ things will break if any functions with `long double` get called.
 ```
 
 Requires several patches available here:
-https://github.com/michaelforney/binutils-gdb/tree/cc-fixes
+https://github.com/michaelforney/binutils-gdb/tree/cproc-fixes
 
 - Fix function pointer subtraction in `bfd/doc/chew.c` (applied upstream).
-- Skip unsupported `LDFLAGS`, only tested to work against `CXX` by
-  configure, but applied to `CC` as well.
 - Disable `long double` support in `_bfd_doprnt`.
-- Alter some ifdefs to avoid statement expressions and VLAs.
+- Alter an ifdef to avoid VLAs when `__STDC_NO_VLA__` is defined.
 - Implement `pex_unix_exec_child` with `posix_spawn` instead of `vfork`
   and subtle `volatile` usage.
-- Make `regcomp` and `regexec` match the header declaration in usage of
-  `restrict`.
-- Don't declare `vasprintf` unless it was checked for and not
-  found (applied to libiberty upstream).
-- Make sure `config.h` is included in `arlex.c` so that the appropriate
-  feature-test macros get defined to expose `strdup`.
 
 Configure with
 
 ```
-./configure CFLAGS_FOR_BUILD=-D_GNU_SOURCE \
-	--disable-intl --disable-gdb --disable-plugins --disable-readline
+./configure --disable-gdb --disable-plugins --disable-readline
 ```
 
 [f6a7d135]: https://git.sr.ht/~mcf/qbe/commit/f6a7d135d54f5281547f20cc4f72a5e85862157c
 
 ## gcc 4.7
 
-Requires a number patches available here:
-https://github.com/michaelforney/gcc/tree/cc-fixes
+Requires a number of patches available here:
+https://github.com/michaelforney/gcc/tree/cproc-fixes
 
 Also requires gmp headers modified for C99 inline semantics:
 https://hg.sr.ht/~mcf/gmp-6.1/rev/53195faa26dfeafeacd57f54035373988e2a16a3
