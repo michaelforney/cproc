@@ -123,3 +123,32 @@ index 5828a3b..6e006cc 100644
  #include "arg.h"
  #include "st.h"
 ```
+
+## oasis linux
+
+One of the main goals of cproc is to compile the entire oasis linux
+system (excluding kernel and libc). This is a work in progress, but many
+packages have patches to fix various ISO C conformance issues, enabling
+them to be built. See the patch directories in the [oasis package tree]
+for the patches used.
+
+Currently the following build successfully:
+
+- awk bc bearssl blind bzip2 cmark dosfstools e2fsprogs expat farbfeld
+  file flex freetype fribidi fuse git ii iproute2 jbig2dec kbd less libass
+  libdrm libevdev libevent libpng libressl libtermkey libxkbcommon loksh
+  lpeg lua make mandoc myrddin monocypher msmtp mtdev ncurses nsd openntpd
+  openssh perp pigz qbe samurai sbase sdhcp sinit sshfs texi2mdoc ubase
+  unzip utf8proc wayland xz zlib zstd
+- Various OpenBSD tools (acme-client diff doas fmt m4 patch rsync yacc)
+- Parts of plan9port (rc sam)
+- Parts of util-linux (fdisk losetup)
+
+The following still need more work:
+
+- dmenu efibootmgr efivar ffmpeg fontconfig wpa\_supplicant libffi
+  libinput libjpeg-turbo libnl libpciaccess libutp mpv nasm netsurf
+  nginx pcre pixman python st strace swc extlinux the\_silver\_searcher
+  tinyemu transmission velox vis wld
+
+[oasis package tree] https://github.com/michaelforney/oasis/tree/master/pkg
