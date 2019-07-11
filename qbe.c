@@ -512,12 +512,6 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 	return funcinst(f, op, dst->repr, l, r);
 }
 
-/*
-XXX: If a function declared without a prototype is declared with a
-parameter affected by default argument promotion, we need to emit a QBE
-function with the promoted type and implicitly convert to the declared
-parameter type before storing into the allocated memory for the parameter.
-*/
 struct func *
 mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 {
