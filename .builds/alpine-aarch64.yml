@@ -21,7 +21,7 @@ tasks:
     #define Deftgt T_arm64
     EOF
     make
-    cd ../cc
+    cd ../cproc
     ./configure \
       --target=aarch64-linux-musl \
       --with-ldso="$HOME/aarch64-linux-musl-cross/aarch64-linux-musl/lib/libc.so"
