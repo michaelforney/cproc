@@ -116,8 +116,8 @@ Patches are greatly appreciated. Send them to the mailing list
 [QBE]: https://c9x.me/compile/
 [C11]: http://port70.net/~nsz/c/c11/n1570.html
 [ISC]: https://git.sr.ht/~mcf/cproc/blob/master/LICENSE
-[extensions]: https://man.sr.ht/~mcf/cc/doc/extensions.md
-[building software]: https://man.sr.ht/~mcf/cc/doc/software.md
+[extensions]: https://man.sr.ht/~mcf/cproc/doc/extensions.md
+[building software]: https://man.sr.ht/~mcf/cproc/doc/software.md
 [8cc]: https://github.com/rui314/8cc
 [c]: https://github.com/andrewchambers/c
 [lacc]: https://github.com/larmel/lacc
