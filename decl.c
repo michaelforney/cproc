@@ -156,6 +156,7 @@ tagspec(struct scope *s)
 	struct expr *e;
 	struct structbuilder b;
 	uint64_t i;
+	bool large;
 
 	switch (tok.kind) {
 	case TSTRUCT: kind = TYPESTRUCT; break;
@@ -216,6 +217,7 @@ tagspec(struct scope *s)
 		t->incomplete = false;
 		break;
 	case TYPEENUM:
+		large = false;
 		for (i = 0; tok.kind == TIDENT; ++i) {
 			name = tok.lit;
 			next();
@@ -228,15 +230,21 @@ tagspec(struct scope *s)
 					if (i < -1ull << 31)
 						goto invalid;
 					t->basic.issigned = true;
-				} else if (i >= 1ull << 31) {
+				} else if (i >= 1ull << 32) {
 					goto invalid;
 				}
-			} else if (i == 1ull << 31) {
+			} else if (i == 1ull << 32) {
 			invalid:
 				error(&tok.loc, "enumerator '%s' value cannot be represented as 'int'", name);
 			}
 			d = mkdecl(DECLCONST, &typeint, QUALNONE, LINKNONE);
 			d->value = mkintconst(t->repr, i);
+			if (i >= 1ull << 31 && i < 1ull << 63) {
+				large = true;
+				d->type = &typeuint;
+			}
+			if (large && t->basic.issigned)
+				error(&tok.loc, "neither 'int' nor 'unsigned' can represent all enumerator values");
 			scopeputdecl(s, name, d);
 			if (!consume(TCOMMA))
 				break;
