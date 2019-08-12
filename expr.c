@@ -866,40 +866,38 @@ unaryexpr(struct scope *s)
 static struct expr *
 castexpr(struct scope *s)
 {
-	struct type *t, *prev = NULL;
+	struct type *t;
 	enum typequal tq;
-	struct expr *result, *base = NULL, **end = &result;
+	struct expr *r, *e, **end;
 
+	end = &r;
 	while (consume(TLPAREN)) {
 		tq = QUALNONE;
 		t = typename(s, &tq);
 		if (!t) {
-			base = expr(s);
+			e = expr(s);
 			expect(TRPAREN, "after expression to match '('");
-			base = postfixexpr(s, base);
-			break;
+			*end = postfixexpr(s, e);
+			return r;
 		}
 		expect(TRPAREN, "after type name");
 		if (tok.kind == TLBRACE) {
-			base = mkexpr(EXPRCOMPOUND, t);
-			base->qual = tq;
-			base->lvalue = true;
-			base->compound.init = parseinit(s, t);
-			base = postfixexpr(s, decay(base));
-			break;
+			e = mkexpr(EXPRCOMPOUND, t);
+			e->qual = tq;
+			e->lvalue = true;
+			e->compound.init = parseinit(s, t);
+			e = decay(e);
+			*end = postfixexpr(s, e);
+			return r;
 		}
-		if (prev && !typecompatible(prev, t)) {
-			*end = mkexpr(EXPRCAST, prev);
-			// XXX check types 6.5.4
-			end = &(*end)->base;
-		}
-		prev = t;
+		e = mkexpr(EXPRCAST, t);
+		// XXX check types 6.5.4
+		*end = e;
+		end = &e->base;
 	}
-	if (!base)
-		base = unaryexpr(s);
-	*end = prev ? exprconvert(base, prev) : base;
+	*end = unaryexpr(s);
 
-	return result;
+	return r;
 }
 
 static int
