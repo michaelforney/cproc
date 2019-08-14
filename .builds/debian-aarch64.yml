@@ -23,3 +23,7 @@ tasks:
     make all check
     make bootstrap LDFLAGS='-Wl,-rpath,/usr/aarch64-linux-gnu/lib'
     file stage2/cproc stage2/cproc-qbe
+triggers:
+- action: email
+  condition: failure
+  to: ~mcf/cproc@lists.sr.ht

@@ -15,3 +15,7 @@ tasks:
     cd cproc
     ./configure
     make all check bootstrap
+triggers:
+- action: email
+  condition: failure
+  to: ~mcf/cproc@lists.sr.ht

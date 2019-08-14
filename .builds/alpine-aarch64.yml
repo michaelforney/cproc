@@ -27,3 +27,7 @@ tasks:
       --with-ldso="$HOME/aarch64-linux-musl-cross/aarch64-linux-musl/lib/libc.so"
     make all check bootstrap
     file stage2/cproc stage2/cproc-qbe
+triggers:
+- action: email
+  condition: failure
+  to: ~mcf/cproc@lists.sr.ht

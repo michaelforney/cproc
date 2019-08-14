@@ -21,3 +21,7 @@ tasks:
     cd cproc
     ~/annotatec/annotatec -g -C 'cpp -U __GNUC__' *.c > annotations.json
     ~/upload-annotations annotations.json mcf cproc
+triggers:
+- action: email
+  condition: failure
+  to: ~mcf/cproc@lists.sr.ht
