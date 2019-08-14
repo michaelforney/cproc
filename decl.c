@@ -864,6 +864,27 @@ declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struc
 	return d;
 }
 
+static bool
+staticassert(struct scope *s)
+{
+	struct expr *e;
+	uint64_t c;
+
+	if (!consume(T_STATIC_ASSERT))
+		return false;
+	expect(TLPAREN, "after _Static_assert");
+	c = intconstexpr(s, true);
+	expect(TCOMMA, "after static assertion expression");
+	e = assignexpr(s);
+	if (!e->decayed || e->base->kind != EXPRSTRING)
+		error(&tok.loc, "expected string literal after static assertion expression");
+	if (!c)
+		error(&tok.loc, "static assertion failed: %.*s", (int)e->base->string.size, e->base->string.data);
+	expect(TRPAREN, "after static assertion message");
+	expect(TSEMICOLON, "after static assertion");
+	return true;
+}
+
 bool
 decl(struct scope *s, struct func *f)
 {
@@ -878,23 +899,10 @@ decl(struct scope *s, struct func *f)
 	int allowfunc = !f;
 	struct decl *d, *prior;
 	enum declkind kind;
-	struct expr *e;
-	uint64_t c;
 	int align;
 
-	if (consume(T_STATIC_ASSERT)) {
-		expect(TLPAREN, "after _Static_assert");
-		c = intconstexpr(s, true);
-		expect(TCOMMA, "after static assertion expression");
-		e = assignexpr(s);
-		if (!e->decayed || e->base->kind != EXPRSTRING)
-			error(&tok.loc, "expected string literal after static assertion expression");
-		if (!c)
-			error(&tok.loc, "static assertion failed: %.*s", (int)e->base->string.size, e->base->string.data);
-		expect(TRPAREN, "after static assertion message");
-		expect(TSEMICOLON, "after static assertion");
+	if (staticassert(s))
 		return true;
-	}
 	base = declspecs(s, &sc, &fs, &align);
 	if (!base.type)
 		return false;
