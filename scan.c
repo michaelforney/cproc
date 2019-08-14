@@ -367,7 +367,10 @@ again:
 		return TQUESTION;
 	case ':':
 		nextchar(s);
-		return TCOLON;
+		if (s->chr != ':')
+			return TCOLON;
+		nextchar(s);
+		return TCOLONCOLON;
 	case ';':
 		nextchar(s);
 		return TSEMICOLON;

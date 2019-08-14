@@ -92,6 +92,7 @@ const char *tokstr[] = {
 	[TLOR] = "||",
 	[TQUESTION] = "?",
 	[TCOLON] = ":",
+	[TCOLONCOLON] = "::",
 	[TSEMICOLON] = ";",
 	[TELLIPSIS] = "...",
 	[TASSIGN] = "=",
