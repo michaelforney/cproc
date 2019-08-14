@@ -874,13 +874,16 @@ staticassert(struct scope *s)
 		return false;
 	expect(TLPAREN, "after _Static_assert");
 	c = intconstexpr(s, true);
-	expect(TCOMMA, "after static assertion expression");
-	e = assignexpr(s);
-	if (!e->decayed || e->base->kind != EXPRSTRING)
-		error(&tok.loc, "expected string literal after static assertion expression");
-	if (!c)
-		error(&tok.loc, "static assertion failed: %.*s", (int)e->base->string.size, e->base->string.data);
-	expect(TRPAREN, "after static assertion message");
+	if (consume(TCOMMA)) {
+		e = assignexpr(s);
+		if (!e->decayed || e->base->kind != EXPRSTRING)
+			error(&tok.loc, "expected string literal after static assertion expression");
+		if (!c)
+			error(&tok.loc, "static assertion failed: %.*s", (int)e->base->string.size, e->base->string.data);
+	} else if (!c) {
+		error(&tok.loc, "static assertion failed");
+	}
+	expect(TRPAREN, "after static assertion");
 	expect(TSEMICOLON, "after static assertion");
 	return true;
 }
