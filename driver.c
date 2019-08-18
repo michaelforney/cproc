@@ -17,8 +17,18 @@
 
 #include "util.h"
 
+enum filetype {
+	NONE,   /* detect based on file extension */
+	ASM,    /* assembly source */
+	ASMPP,  /* assembly source requiring preprocessing */
+	C,      /* C source */
+	CPPOUT, /* preprocessed C source */
+	OBJ,    /* object file */
+	QBE,    /* QBE IL */
+};
+
 enum phaseid {
-	PREPROCESS = 1,
+	PREPROCESS,
 	COMPILE,
 	CODEGEN,
 	ASSEMBLE,
@@ -36,7 +46,8 @@ struct phase {
 
 struct input {
 	char *name;
-	enum phaseid phase;
+	unsigned phases;
+	enum filetype filetype;
 	bool lib;
 };
 
@@ -68,8 +79,8 @@ usage(const char *fmt, ...)
 	exit(2);
 }
 
-static enum phaseid
-inputphase(const char *name)
+static enum filetype
+detectfiletype(const char *name)
 {
 	const char *dot;
 
@@ -77,16 +88,18 @@ inputphase(const char *name)
 	if (dot) {
 		++dot;
 		if (strcmp(dot, "c") == 0)
-			return PREPROCESS;
+			return C;
 		if (strcmp(dot, "i") == 0)
-			return COMPILE;
+			return CPPOUT;
 		if (strcmp(dot, "qbe") == 0)
-			return CODEGEN;
-		if (strcmp(dot, "s") == 0 || strcmp(dot, "S") == 0)
-			return ASSEMBLE;
+			return QBE;
+		if (strcmp(dot, "s") == 0)
+			return ASM;
+		if (strcmp(dot, "S") == 0)
+			return ASMPP;
 	}
 
-	return LINK;
+	return OBJ;
 }
 
 static char *
@@ -131,11 +144,11 @@ spawnphase(struct phase *phase, int *fd, char *input, char *output, bool last)
 	posix_spawn_file_actions_t actions;
 
 	phase->cmd.len = phase->cmdbase;
-	if (output) {
+	if (last && output) {
 		arrayaddptr(&phase->cmd, "-o");
 		arrayaddptr(&phase->cmd, output);
 	}
-	if (input)
+	if (input && *fd == -1)
 		arrayaddptr(&phase->cmd, input);
 	arrayaddptr(&phase->cmd, NULL);
 
@@ -200,20 +213,18 @@ succeeded(const char *phase, pid_t pid, int status)
 }
 
 static void
-buildobj(struct input *input, char *output, enum phaseid last)
+buildobj(struct input *input, char *output)
 {
-	const char *phase, *ext;
-	char *phaseoutput;
+	const char *phase;
 	size_t i, npids;
 	pid_t pid;
 	int status, ret, fd;
-	enum phaseid first = input->phase;
 	bool success = true;
 
-	if (input->phase > last || input->phase == LINK)
+	if (input->filetype == OBJ)
 		return;
-	if (last == LINK) {
-		last = ASSEMBLE;
+	if (input->phases & 1<<LINK) {
+		input->phases &= ~(1<<LINK);
 		output = strdup("/tmp/cproc-XXXXXX");
 		if (!output)
 			fatal("strdup:");
@@ -224,28 +235,29 @@ buildobj(struct input *input, char *output, enum phaseid last)
 	} else if (output) {
 		if (strcmp(output, "-") == 0)
 			output = NULL;
-	} else if (last != PREPROCESS) {
-		switch (last) {
-		case COMPILE:  ext = "qbe"; break;
-		case CODEGEN:  ext = "s";   break;
-		case ASSEMBLE: ext = "o";   break;
-		}
-		output = changeext(input->name, ext);
+	} else if (input->phases & 1<<ASSEMBLE) {
+		output = changeext(input->name, "o");
+	} else if (input->phases & 1<<CODEGEN) {
+		output = changeext(input->name, "s");
+	} else if (input->phases & 1<<COMPILE) {
+		output = changeext(input->name, "qbe");
 	}
 	if (strcmp(input->name, "-") == 0)
 		input->name = NULL;
 
 	npids = 0;
-	for (i = first, fd = -1, phaseoutput = NULL; i <= last; ++i, ++npids) {
-		if (i == last)
-			phaseoutput = output;
-		ret = spawnphase(&phases[i], &fd, input->name, phaseoutput, i == last);
+	for (i = PREPROCESS, fd = -1; input->phases; ++i) {
+		if (!(input->phases & 1<<i))
+			continue;
+		input->phases &= ~(1<<i);
+		ret = spawnphase(&phases[i], &fd, input->name, output, !input->phases);
 		if (ret) {
 			warn("%s: spawn \"%s\": %s", phases[i].name, *(char **)phases[i].cmd.val, strerror(ret));
 			goto kill;
 		}
-		input->name = phaseoutput;
+		++npids;
 	}
+	input->name = output;
 
 	while (npids > 0) {
 		pid = wait(&status);
@@ -306,7 +318,7 @@ buildexe(struct input *inputs, size_t ninputs, char *output)
 	if (waitpid(pid, &status, 0) < 0)
 		fatal("waitpid %ju:", (uintmax_t)pid);
 	for (i = 0; i < ninputs; ++i) {
-		if (inputs[i].phase < LINK)
+		if (inputs[i].filetype != OBJ)
 			unlink(inputs[i].name);
 	}
 	exit(!succeeded(p->name, pid, status));
@@ -354,7 +366,8 @@ hasprefix(const char *str, const char *pfx)
 int
 main(int argc, char *argv[])
 {
-	enum phaseid first = 0, last = LINK;
+	enum phaseid last = LINK;
+	enum filetype filetype = 0;
 	char *arg, *end, *output = NULL, *arch, *qbearch;
 	struct array inputs = {0}, *cmd;
 	struct input *input;
@@ -391,12 +404,16 @@ main(int argc, char *argv[])
 			input = arrayadd(&inputs, sizeof(*input));
 			input->name = arg;
 			input->lib = false;
-			if (first)
-				input->phase = first;
-			else if (arg[1])
-				input->phase = inputphase(arg);
-			else
-				usage("reading from standard input requires -x");
+			input->filetype = filetype == NONE && arg[1] ? detectfiletype(arg) : filetype;
+			switch (input->filetype) {
+			case ASM:    input->phases =                                     1<<ASSEMBLE|1<<LINK; break;
+			case ASMPP:  input->phases = 1<<PREPROCESS|                      1<<ASSEMBLE|1<<LINK; break;
+			case C:      input->phases = 1<<PREPROCESS|1<<COMPILE|1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
+			case CPPOUT: input->phases =               1<<COMPILE|1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
+			case QBE:    input->phases =                          1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
+			case OBJ:    input->phases =                                                 1<<LINK; break;
+			default:     usage("reading from standard input requires -x");
+			}
 			continue;
 		}
 		/* TODO: use a binary search for these long parameters */
@@ -446,7 +463,8 @@ main(int argc, char *argv[])
 				input = arrayadd(&inputs, sizeof(*input));
 				input->name = nextarg(&argv);
 				input->lib = true;
-				input->phase = LINK;
+				input->filetype = OBJ;
+				input->phases = 1<<LINK;
 				break;
 			case 'M':
 				if (strcmp(arg, "-M") == 0 || strcmp(arg, "-MM") == 0) {
@@ -506,15 +524,17 @@ main(int argc, char *argv[])
 			case 'x':
 				arg = nextarg(&argv);
 				if (strcmp(arg, "none") == 0)
-					first = 0;
+					filetype = NONE;
 				else if (strcmp(arg, "c") == 0)
-					first = PREPROCESS;
+					filetype = C;
 				else if (strcmp(arg, "cpp-output") == 0)
-					first = COMPILE;
+					filetype = CPPOUT;
 				else if (strcmp(arg, "qbe") == 0)
-					first = CODEGEN;
+					filetype = QBE;
 				else if (strcmp(arg, "assembler") == 0)
-					first = ASSEMBLE;
+					filetype = ASM;
+				else if (strcmp(arg, "assembler-with-cpp") == 0)
+					filetype = ASMPP;
 				else
 					usage("unknown language '%s'", arg);
 				break;
@@ -536,8 +556,11 @@ main(int argc, char *argv[])
 			usage("cannot specify -o with multiple input files without linking");
 		}
 	}
-	arrayforeach (&inputs, input)
-		buildobj(input, output, last);
+	arrayforeach (&inputs, input) {
+		/* only run up through the last phase */
+		input->phases &= (1 << last + 1) - 1;
+		buildobj(input, output);
+	}
 	if (last == LINK) {
 		if (!output)
 			output = "a.out";
