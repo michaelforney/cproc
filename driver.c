@@ -27,7 +27,7 @@ enum filetype {
 	QBE,    /* QBE IL */
 };
 
-enum phaseid {
+enum stage {
 	PREPROCESS,
 	COMPILE,
 	CODEGEN,
@@ -37,7 +37,7 @@ enum phaseid {
 
 #include "config.h"
 
-struct phase {
+struct stageinfo {
 	const char *name;
 	struct array cmd;
 	size_t cmdbase;
@@ -46,7 +46,7 @@ struct phase {
 
 struct input {
 	char *name;
-	unsigned phases;
+	unsigned stages;
 	enum filetype filetype;
 	bool lib;
 };
@@ -55,7 +55,7 @@ static struct {
 	bool nostdlib;
 	bool verbose;
 } flags;
-static struct phase phases[] = {
+static struct stageinfo stages[] = {
 	[PREPROCESS] = {.name = "preprocess"},
 	[COMPILE]    = {.name = "compile"},
 	[CODEGEN]    = {.name = "codegen"},
@@ -138,7 +138,7 @@ spawn(pid_t *pid, struct array *args, posix_spawn_file_actions_t *actions)
 }
 
 static int
-spawnphase(struct phase *phase, int *fd, char *input, char *output, bool last)
+spawnphase(struct stageinfo *phase, int *fd, char *input, char *output, bool last)
 {
 	int ret, pipefd[2];
 	posix_spawn_file_actions_t actions;
@@ -223,8 +223,8 @@ buildobj(struct input *input, char *output)
 
 	if (input->filetype == OBJ)
 		return;
-	if (input->phases & 1<<LINK) {
-		input->phases &= ~(1<<LINK);
+	if (input->stages & 1<<LINK) {
+		input->stages &= ~(1<<LINK);
 		output = strdup("/tmp/cproc-XXXXXX");
 		if (!output)
 			fatal("strdup:");
@@ -235,24 +235,24 @@ buildobj(struct input *input, char *output)
 	} else if (output) {
 		if (strcmp(output, "-") == 0)
 			output = NULL;
-	} else if (input->phases & 1<<ASSEMBLE) {
+	} else if (input->stages & 1<<ASSEMBLE) {
 		output = changeext(input->name, "o");
-	} else if (input->phases & 1<<CODEGEN) {
+	} else if (input->stages & 1<<CODEGEN) {
 		output = changeext(input->name, "s");
-	} else if (input->phases & 1<<COMPILE) {
+	} else if (input->stages & 1<<COMPILE) {
 		output = changeext(input->name, "qbe");
 	}
 	if (strcmp(input->name, "-") == 0)
 		input->name = NULL;
 
 	npids = 0;
-	for (i = PREPROCESS, fd = -1; input->phases; ++i) {
-		if (!(input->phases & 1<<i))
+	for (i = PREPROCESS, fd = -1; input->stages; ++i) {
+		if (!(input->stages & 1<<i))
 			continue;
-		input->phases &= ~(1<<i);
-		ret = spawnphase(&phases[i], &fd, input->name, output, !input->phases);
+		input->stages &= ~(1<<i);
+		ret = spawnphase(&stages[i], &fd, input->name, output, !input->stages);
 		if (ret) {
-			warn("%s: spawn \"%s\": %s", phases[i].name, *(char **)phases[i].cmd.val, strerror(ret));
+			warn("%s: spawn \"%s\": %s", stages[i].name, *(char **)stages[i].cmd.val, strerror(ret));
 			goto kill;
 		}
 		++npids;
@@ -263,22 +263,22 @@ buildobj(struct input *input, char *output)
 		pid = wait(&status);
 		if (pid < 0)
 			fatal("waitpid:");
-		for (i = 0; i < LEN(phases); ++i) {
-			if (pid == phases[i].pid) {
+		for (i = 0; i < LEN(stages); ++i) {
+			if (pid == stages[i].pid) {
 				--npids;
-				phases[i].pid = 0;
-				phase = phases[i].name;
+				stages[i].pid = 0;
+				phase = stages[i].name;
 				break;
 			}
 		}
-		if (i == LEN(phases))
+		if (i == LEN(stages))
 			continue;  /* unknown process */
 		if (!succeeded(phase, pid, status)) {
 kill:
 			if (success && npids > 0) {
-				for (i = 0; i < LEN(phases); ++i) {
-					if (phases[i].pid)
-						kill(phases[i].pid, SIGTERM);
+				for (i = 0; i < LEN(stages); ++i) {
+					if (stages[i].pid)
+						kill(stages[i].pid, SIGTERM);
 				}
 			}
 			success = false;
@@ -294,34 +294,34 @@ kill:
 static noreturn void
 buildexe(struct input *inputs, size_t ninputs, char *output)
 {
-	struct phase *p = &phases[LINK];
+	struct stageinfo *s = &stages[LINK];
 	size_t i;
 	int ret, status;
 	pid_t pid;
 
-	arrayaddptr(&p->cmd, "-o");
-	arrayaddptr(&p->cmd, output);
+	arrayaddptr(&s->cmd, "-o");
+	arrayaddptr(&s->cmd, output);
 	if (!flags.nostdlib && startfiles[0])
-		arrayaddbuf(&p->cmd, startfiles, sizeof(startfiles));
+		arrayaddbuf(&s->cmd, startfiles, sizeof(startfiles));
 	for (i = 0; i < ninputs; ++i) {
 		if (inputs[i].lib)
-			arrayaddptr(&p->cmd, "-l");
-		arrayaddptr(&p->cmd, inputs[i].name);
+			arrayaddptr(&s->cmd, "-l");
+		arrayaddptr(&s->cmd, inputs[i].name);
 	}
 	if (!flags.nostdlib && endfiles[0])
-		arrayaddbuf(&p->cmd, endfiles, sizeof(endfiles));
-	arrayaddptr(&p->cmd, NULL);
+		arrayaddbuf(&s->cmd, endfiles, sizeof(endfiles));
+	arrayaddptr(&s->cmd, NULL);
 
-	ret = spawn(&pid, &p->cmd, NULL);
+	ret = spawn(&pid, &s->cmd, NULL);
 	if (ret)
-		fatal("%s: spawn \"%s\": %s", p->name, *(char **)p->cmd.val, strerror(errno));
+		fatal("%s: spawn \"%s\": %s", s->name, *(char **)s->cmd.val, strerror(errno));
 	if (waitpid(pid, &status, 0) < 0)
 		fatal("waitpid %ju:", (uintmax_t)pid);
 	for (i = 0; i < ninputs; ++i) {
 		if (inputs[i].filetype != OBJ)
 			unlink(inputs[i].name);
 	}
-	exit(!succeeded(p->name, pid, status));
+	exit(!succeeded(s->name, pid, status));
 }
 
 static char *
@@ -366,7 +366,7 @@ hasprefix(const char *str, const char *pfx)
 int
 main(int argc, char *argv[])
 {
-	enum phaseid last = LINK;
+	enum stage last = LINK;
 	enum filetype filetype = 0;
 	char *arg, *end, *output = NULL, *arch, *qbearch;
 	struct array inputs = {0}, *cmd;
@@ -375,11 +375,11 @@ main(int argc, char *argv[])
 
 	argv0 = progname(argv[0], "cproc");
 
-	arrayaddbuf(&phases[PREPROCESS].cmd, preprocesscmd, sizeof(preprocesscmd));
-	arrayaddptr(&phases[COMPILE].cmd, compilecommand(argv[0]));
-	arrayaddbuf(&phases[CODEGEN].cmd, codegencmd, sizeof(codegencmd));
-	arrayaddbuf(&phases[ASSEMBLE].cmd, assemblecmd, sizeof(assemblecmd));
-	arrayaddbuf(&phases[LINK].cmd, linkcmd, sizeof(linkcmd));
+	arrayaddbuf(&stages[PREPROCESS].cmd, preprocesscmd, sizeof(preprocesscmd));
+	arrayaddptr(&stages[COMPILE].cmd, compilecommand(argv[0]));
+	arrayaddbuf(&stages[CODEGEN].cmd, codegencmd, sizeof(codegencmd));
+	arrayaddbuf(&stages[ASSEMBLE].cmd, assemblecmd, sizeof(assemblecmd));
+	arrayaddbuf(&stages[LINK].cmd, linkcmd, sizeof(linkcmd));
 
 	if (hasprefix(target, "x86_64-") || hasprefix(target, "amd64-")) {
 		arch = "x86_64";
@@ -390,10 +390,10 @@ main(int argc, char *argv[])
 	} else {
 		fatal("unsupported target '%s'", target);
 	}
-	arrayaddptr(&phases[COMPILE].cmd, "-t");
-	arrayaddptr(&phases[COMPILE].cmd, arch);
-	arrayaddptr(&phases[CODEGEN].cmd, "-t");
-	arrayaddptr(&phases[CODEGEN].cmd, qbearch);
+	arrayaddptr(&stages[COMPILE].cmd, "-t");
+	arrayaddptr(&stages[COMPILE].cmd, arch);
+	arrayaddptr(&stages[CODEGEN].cmd, "-t");
+	arrayaddptr(&stages[CODEGEN].cmd, qbearch);
 
 	for (;;) {
 		++argv, --argc;
@@ -406,12 +406,12 @@ main(int argc, char *argv[])
 			input->lib = false;
 			input->filetype = filetype == NONE && arg[1] ? detectfiletype(arg) : filetype;
 			switch (input->filetype) {
-			case ASM:    input->phases =                                     1<<ASSEMBLE|1<<LINK; break;
-			case ASMPP:  input->phases = 1<<PREPROCESS|                      1<<ASSEMBLE|1<<LINK; break;
-			case C:      input->phases = 1<<PREPROCESS|1<<COMPILE|1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
-			case CPPOUT: input->phases =               1<<COMPILE|1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
-			case QBE:    input->phases =                          1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
-			case OBJ:    input->phases =                                                 1<<LINK; break;
+			case ASM:    input->stages =                                     1<<ASSEMBLE|1<<LINK; break;
+			case ASMPP:  input->stages = 1<<PREPROCESS|                      1<<ASSEMBLE|1<<LINK; break;
+			case C:      input->stages = 1<<PREPROCESS|1<<COMPILE|1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
+			case CPPOUT: input->stages =               1<<COMPILE|1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
+			case QBE:    input->stages =                          1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
+			case OBJ:    input->stages =                                                 1<<LINK; break;
 			default:     usage("reading from standard input requires -x");
 			}
 			continue;
@@ -420,14 +420,14 @@ main(int argc, char *argv[])
 		if (strcmp(arg, "-nostdlib") == 0) {
 			flags.nostdlib = true;
 		} else if (strcmp(arg, "-static") == 0) {
-			arrayaddptr(&phases[LINK].cmd, arg);
+			arrayaddptr(&stages[LINK].cmd, arg);
 		} else if (strcmp(arg, "-emit-qbe") == 0) {
 			last = COMPILE;
 		} else if (strcmp(arg, "-include") == 0 || strcmp(arg, "-idirafter") == 0) {
 			if (!--argc)
 				usage(NULL);
-			arrayaddptr(&phases[PREPROCESS].cmd, arg);
-			arrayaddptr(&phases[PREPROCESS].cmd, *++argv);
+			arrayaddptr(&stages[PREPROCESS].cmd, arg);
+			arrayaddptr(&stages[PREPROCESS].cmd, *++argv);
 		} else if (strcmp(arg, "-pipe") == 0) {
 			/* ignore */
 		} else if (strncmp(arg, "-std=", 5) == 0) {
@@ -442,8 +442,8 @@ main(int argc, char *argv[])
 				last = ASSEMBLE;
 				break;
 			case 'D':
-				arrayaddptr(&phases[PREPROCESS].cmd, "-D");
-				arrayaddptr(&phases[PREPROCESS].cmd, nextarg(&argv));
+				arrayaddptr(&stages[PREPROCESS].cmd, "-D");
+				arrayaddptr(&stages[PREPROCESS].cmd, nextarg(&argv));
 				break;
 			case 'E':
 				last = PREPROCESS;
@@ -452,31 +452,31 @@ main(int argc, char *argv[])
 				/* ignore */
 				break;
 			case 'I':
-				arrayaddptr(&phases[PREPROCESS].cmd, "-I");
-				arrayaddptr(&phases[PREPROCESS].cmd, nextarg(&argv));
+				arrayaddptr(&stages[PREPROCESS].cmd, "-I");
+				arrayaddptr(&stages[PREPROCESS].cmd, nextarg(&argv));
 				break;
 			case 'L':
-				arrayaddptr(&phases[LINK].cmd, "-L");
-				arrayaddptr(&phases[LINK].cmd, nextarg(&argv));
+				arrayaddptr(&stages[LINK].cmd, "-L");
+				arrayaddptr(&stages[LINK].cmd, nextarg(&argv));
 				break;
 			case 'l':
 				input = arrayadd(&inputs, sizeof(*input));
 				input->name = nextarg(&argv);
 				input->lib = true;
 				input->filetype = OBJ;
-				input->phases = 1<<LINK;
+				input->stages = 1<<LINK;
 				break;
 			case 'M':
 				if (strcmp(arg, "-M") == 0 || strcmp(arg, "-MM") == 0) {
-					arrayaddptr(&phases[PREPROCESS].cmd, arg);
+					arrayaddptr(&stages[PREPROCESS].cmd, arg);
 					last = PREPROCESS;
 				} else if (strcmp(arg, "-MD") == 0 || strcmp(arg, "-MMD") == 0) {
-					arrayaddptr(&phases[PREPROCESS].cmd, arg);
+					arrayaddptr(&stages[PREPROCESS].cmd, arg);
 				} else if (strcmp(arg, "-MT") == 0 || strcmp(arg, "-MF") == 0) {
 					if (!--argc)
 						usage(NULL);
-					arrayaddptr(&phases[PREPROCESS].cmd, arg);
-					arrayaddptr(&phases[PREPROCESS].cmd, *++argv);
+					arrayaddptr(&stages[PREPROCESS].cmd, arg);
+					arrayaddptr(&stages[PREPROCESS].cmd, *++argv);
 				} else {
 					usage(NULL);
 				}
@@ -494,11 +494,11 @@ main(int argc, char *argv[])
 				last = CODEGEN;
 				break;
 			case 's':
-				arrayaddptr(&phases[LINK].cmd, "-s");
+				arrayaddptr(&stages[LINK].cmd, "-s");
 				break;
 			case 'U':
-				arrayaddptr(&phases[PREPROCESS].cmd, "-U");
-				arrayaddptr(&phases[PREPROCESS].cmd, nextarg(&argv));
+				arrayaddptr(&stages[PREPROCESS].cmd, "-U");
+				arrayaddptr(&stages[PREPROCESS].cmd, nextarg(&argv));
 				break;
 			case 'v':
 				flags.verbose = true;
@@ -506,9 +506,9 @@ main(int argc, char *argv[])
 			case 'W':
 				if (arg[2] && arg[3] == ',') {
 					switch (arg[2]) {
-					case 'p': cmd = &phases[PREPROCESS].cmd; break;
-					case 'a': cmd = &phases[ASSEMBLE].cmd; break;
-					case 'l': cmd = &phases[LINK].cmd; break;
+					case 'p': cmd = &stages[PREPROCESS].cmd; break;
+					case 'a': cmd = &stages[ASSEMBLE].cmd; break;
+					case 'l': cmd = &stages[LINK].cmd; break;
 					default: usage(NULL);
 					}
 					for (arg += 4; arg; arg = end ? end + 1 : NULL) {
@@ -544,8 +544,8 @@ main(int argc, char *argv[])
 		}
 	}
 
-	for (i = 0; i < LEN(phases); ++i)
-		phases[i].cmdbase = phases[i].cmd.len;
+	for (i = 0; i < LEN(stages); ++i)
+		stages[i].cmdbase = stages[i].cmd.len;
 	if (inputs.len == 0)
 		usage(NULL);
 	if (output) {
@@ -557,8 +557,8 @@ main(int argc, char *argv[])
 		}
 	}
 	arrayforeach (&inputs, input) {
-		/* only run up through the last phase */
-		input->phases &= (1 << last + 1) - 1;
+		/* only run up through the last stage */
+		input->stages &= (1 << last + 1) - 1;
 		buildobj(input, output);
 	}
 	if (last == LINK) {
