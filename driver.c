@@ -23,8 +23,6 @@ enum phaseid {
 	CODEGEN,
 	ASSEMBLE,
 	LINK,
-
-	NPHASES,
 };
 
 #include "config.h"
@@ -253,7 +251,7 @@ buildobj(struct input *input, char *output, enum phaseid last)
 		pid = wait(&status);
 		if (pid < 0)
 			fatal("waitpid:");
-		for (i = 0; i < NPHASES; ++i) {
+		for (i = 0; i < LEN(phases); ++i) {
 			if (pid == phases[i].pid) {
 				--npids;
 				phases[i].pid = 0;
@@ -261,12 +259,12 @@ buildobj(struct input *input, char *output, enum phaseid last)
 				break;
 			}
 		}
-		if (i == NPHASES)
+		if (i == LEN(phases))
 			continue;  /* unknown process */
 		if (!succeeded(phase, pid, status)) {
 kill:
 			if (success && npids > 0) {
-				for (i = 0; i < NPHASES; ++i) {
+				for (i = 0; i < LEN(phases); ++i) {
 					if (phases[i].pid)
 						kill(phases[i].pid, SIGTERM);
 				}
@@ -526,7 +524,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	for (i = 0; i < NPHASES; ++i)
+	for (i = 0; i < LEN(phases); ++i)
 		phases[i].cmdbase = phases[i].cmd.len;
 	if (inputs.len == 0)
 		usage(NULL);
