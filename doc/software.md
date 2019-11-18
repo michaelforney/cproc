@@ -134,21 +134,21 @@ for the patches used.
 
 Currently the following build successfully:
 
-- awk bc bearssl blind bzip2 cmark dmenu dosfstools e2fsprogs efibootmgr
-  expat farbfeld file flex fontconfig freetype fribidi fuse git ii
-  iproute2 jbig2dec kbd less libass libdrm libevdev libevent libinput
-  libjpeg-turbo libnl libpng libressl libtermkey libxkbcommon loksh lpeg
-  lua make mandoc myrddin monocypher msmtp mtdev nasm ncurses nsd openntpd
-  openssh perp pigz qbe samurai sbase sdhcp sinit sshfs st swc texi2mdoc
+- awk bc bearssl blind byacc bzip2 cmark cproc curl dmenu dosfstools
+  e2fsprogs efibootmgr elftoolchain-libelf expat farbfeld file flex
+  fontconfig freetype fribidi fuse git ii iproute2 jbig2dec kbd less
+  libass libcbor libdrm libevdev libevent libffi libinput libjpeg-turbo
+  libpng libressl libtermkey libxkbcommon loksh lpeg lua make mandoc
+  myrddin monocypher msmtp mtdev nasm ncurses nsd openntpd openssh
+  perp pigz qbe rc samurai sbase sdhcp sinit sshfs st swc texi2mdoc
   transmission ubase unzip utf8proc velox wayland wld wpa\_supplicant
   xz zlib zstd
 - Various OpenBSD tools (acme-client diff doas fmt m4 patch rsync yacc)
-- Parts of plan9port (rc sam)
 - Parts of util-linux (fdisk losetup)
 
 The following still need more work:
 
-- efivar ffmpeg libffi libpciaccess libutp mpv netsurf nginx pcre pixman
-  python strace extlinux the\_silver\_searcher tinyemu vis
+- efivar ffmpeg libfido2 libnl libpciaccess libutp mpv netsurf nginx pcre
+  pixman python strace extlinux the\_silver\_searcher tinyemu vis
 
 [oasis package tree]: https://github.com/michaelforney/oasis/tree/master/pkg
