@@ -8,10 +8,9 @@ sources:
 - https://git.sr.ht/~sircmpwn/annotatec
 secrets:
 - cd4f74b3-9b4f-435f-b747-e513ba03f947
-environment:
-  PATH: $HOME/qbe/obj:$PATH
 tasks:
 - build: |
+    PATH=$HOME/qbe/obj:$PATH
     make -C qbe
     cd cproc
     ./configure

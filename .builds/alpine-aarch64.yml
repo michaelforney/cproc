@@ -5,8 +5,6 @@ packages:
 sources:
 - https://git.sr.ht/~mcf/cproc
 - https://git.sr.ht/~mcf/qbe
-environment:
-  PATH: $HOME/qbe/obj:$HOME/aarch64-linux-musl-cross/bin:$PATH
 tasks:
 - setup: |
     # work around bugs in qemu-binfmt
@@ -15,6 +13,7 @@ tasks:
     curl -O http://musl.cc/aarch64-linux-musl-cross.tgz
     tar --warning=no-unknown-keyword -xzf aarch64-linux-musl-cross.tgz
 - build: |
+    PATH=$HOME/qbe/obj:$HOME/aarch64-linux-musl-cross/bin:$PATH
     cd qbe
     cat >config.h <<EOF
     #define Defasm Gaself

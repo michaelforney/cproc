@@ -4,13 +4,12 @@ sources:
 - git://c9x.me/qbe.git
 packages:
 - gmake
-environment:
-  PATH: $HOME/qbe/obj:$PATH
 tasks:
 - setup: |
     # avoid __asm__ on non __GNUC__ compilers
     doas patch -d /usr/include/amd64 < cproc/.builds/openbsd.diff
 - build: |
+    PATH=$HOME/qbe/obj:$PATH
     gmake -C qbe
     cd cproc
     ./configure

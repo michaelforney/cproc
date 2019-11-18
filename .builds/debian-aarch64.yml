@@ -5,10 +5,9 @@ packages:
 sources:
 - https://git.sr.ht/~mcf/cproc
 - https://git.sr.ht/~mcf/qbe
-environment:
-  PATH: $HOME/qbe/obj:$PATH
 tasks:
 - build: |
+    PATH=$HOME/qbe/obj:$PATH
     cd qbe
     cat >config.h <<EOF
     #define Defasm Gaself

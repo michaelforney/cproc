@@ -7,10 +7,9 @@ repositories:
 packages:
 - nixpkgs.gcc
 - nixpkgs.gnumake
-environment:
-  PATH: $HOME/qbe/obj:$PATH
 tasks:
 - build: |
+    PATH=$HOME/qbe/obj:$PATH
     make -C qbe
     cd cproc
     ./configure --with-ldso=
