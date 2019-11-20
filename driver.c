@@ -431,7 +431,9 @@ main(int argc, char *argv[])
 		} else if (strcmp(arg, "-pipe") == 0) {
 			/* ignore */
 		} else if (strncmp(arg, "-std=", 5) == 0) {
-			/* ignore */
+			/* pass through to the preprocessor, it may
+			 * affect its default definitions */
+			arrayaddptr(&stages[PREPROCESS].cmd, arg);
 		} else if (strcmp(arg, "-pedantic") == 0) {
 			/* ignore */
 		} else {
