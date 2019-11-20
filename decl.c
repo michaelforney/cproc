@@ -565,7 +565,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				i = 0;
 				next();
 			} else {
-				e = constexpr(s);
+				e = eval(assignexpr(s), EVALARITH);
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "VLAs are not yet supported");
 				i = e->constant.i;
