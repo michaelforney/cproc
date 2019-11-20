@@ -26,11 +26,13 @@ things will break if any functions with `long double` get called.
 Requires several patches available here:
 https://github.com/michaelforney/binutils-gdb/tree/cproc-fixes
 
-- Fix function pointer subtraction in `bfd/doc/chew.c` (applied upstream).
 - Disable `long double` support in `_bfd_doprnt`.
-- Alter an ifdef to avoid VLAs when `__STDC_NO_VLA__` is defined.
 - Implement `pex_unix_exec_child` with `posix_spawn` instead of `vfork`
   and subtle `volatile` usage.
+- Provide fallback definitions for `_libctf_*_` attribute macros,
+  accidentally omitted when merged into binutils ([#25120]).
+- Remove usage of `__thread`, only necessary when linking libctf
+  externally ([#25120]).
 
 Configure with
 
@@ -38,7 +40,7 @@ Configure with
 ./configure --disable-gdb --disable-plugins --disable-readline
 ```
 
-[f6a7d135]: https://git.sr.ht/~mcf/qbe/commit/f6a7d135d54f5281547f20cc4f72a5e85862157c
+[#25120]: https://sourceware.org/bugzilla/show_bug.cgi?id=25120
 
 ## gcc 4.7
 
