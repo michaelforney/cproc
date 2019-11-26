@@ -15,10 +15,11 @@ tasks:
     EOF
     make
     cd ../cproc
+    crtbegin=$(aarch64-linux-gnu-gcc -print-file-name=crtbegin.o)
     ./configure \
       --target=aarch64-linux-gnu \
       --with-ldso=/usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1 \
-      --with-gcc-libdir=/usr/lib/gcc-cross/aarch64-linux-gnu/8
+      --with-gcc-libdir="${crtbegin%/*}"
     make all check
     make bootstrap LDFLAGS='-Wl,-rpath,/usr/aarch64-linux-gnu/lib'
     file stage2/cproc stage2/cproc-qbe
