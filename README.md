@@ -106,7 +106,7 @@ use it for general discussion, questions, patches, or bug reports
 
 ## Issue tracker
 
-Please report any issues to https://todo.sr.ht/~mcf/cc-issues.
+Please report any issues to https://todo.sr.ht/~mcf/cproc.
 
 ## Contributing
 
