@@ -125,12 +125,12 @@ Patches are greatly appreciated. Send them to the mailing list
 [QBE branch]: https://git.sr.ht/~mcf/qbe
 [5.2.1.1]: http://port70.net/~nsz/c/c11/n1570.html#5.2.1.1
 [6.4.6p3]: http://port70.net/~nsz/c/c11/n1570.html#6.4.6p3
-[#1]: https://todo.sr.ht/~mcf/cc-issues/1
-[#3]: https://todo.sr.ht/~mcf/cc-issues/3
-[#5]: https://todo.sr.ht/~mcf/cc-issues/5
-[#6]: https://todo.sr.ht/~mcf/cc-issues/6
-[#7]: https://todo.sr.ht/~mcf/cc-issues/7
-[#35]: https://todo.sr.ht/~mcf/cc-issues/35
-[#44]: https://todo.sr.ht/~mcf/cc-issues/44
+[#1]: https://todo.sr.ht/~mcf/cproc/1
+[#3]: https://todo.sr.ht/~mcf/cproc/3
+[#5]: https://todo.sr.ht/~mcf/cproc/5
+[#6]: https://todo.sr.ht/~mcf/cproc/6
+[#7]: https://todo.sr.ht/~mcf/cproc/7
+[#35]: https://todo.sr.ht/~mcf/cproc/35
+[#44]: https://todo.sr.ht/~mcf/cproc/44
 [~mcf/cproc@lists.sr.ht]: https://lists.sr.ht/~mcf/cproc
 [GitHub mirror]: https://github.com/michaelforney/cproc
