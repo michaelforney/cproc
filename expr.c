@@ -842,18 +842,24 @@ unaryexpr(struct scope *s)
 				expect(TRPAREN, "after expression");
 				if (op == TSIZEOF)
 					e = postfixexpr(s, e);
-				if (e->decayed)
-					e = e->base;
-				t = e->type;
 			}
 		} else if (op == TSIZEOF) {
+			t = NULL;
 			e = unaryexpr(s);
-			if (e->decayed)
-				e = e->base;
-			t = e->type;
 		} else {
 			error(&tok.loc, "expected ')' after '_Alignof'");
 		}
+		if (!t) {
+			if (e->decayed)
+				e = e->base;
+			if (e->kind == EXPRBITFIELD)
+				error(&tok.loc, "%s operator applied to bitfield expression", tokstr[op]);
+			t = e->type;
+		}
+		if (t->incomplete)
+			error(&tok.loc, "%s operator applied to incomplete type", tokstr[op]);
+		if (t->kind == TYPEFUNC)
+			error(&tok.loc, "%s operator applied to function type", tokstr[op]);
 		e = mkconstexpr(&typeulong, op == TSIZEOF ? t->size : t->align);
 		break;
 	default:
