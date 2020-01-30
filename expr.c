@@ -450,6 +450,7 @@ primaryexpr(struct scope *s)
 		} while (tok.kind == TSTRINGLIT);
 		e->type->array.length = e->string.size + 1;
 		e->type->size = e->type->array.length * e->type->base->size;
+		e->type->incomplete = false;
 		e = decay(e);
 		break;
 	case TCHARCONST:
