@@ -901,7 +901,7 @@ funcexpr(struct func *f, struct expr *e)
 			funcinst(f, IVASTART, NULL, l);
 			break;
 		case BUILTINVAARG:
-			/* https://todo.sr.ht/~mcf/cc-issues/52 */
+			/* https://todo.sr.ht/~mcf/cproc/52 */
 			if (!(e->type->prop & PROPSCALAR))
 				error(&tok.loc, "va_arg with non-scalar type is not yet supported");
 			l = funcexpr(f, e->base);
@@ -1291,7 +1291,7 @@ emitdata(struct decl *d, struct init *init)
 			/*
 			XXX: Currently, if multiple union members are
 			initialized, these assertions may not hold.
-			(https://todo.sr.ht/~mcf/cc-issues/38)
+			(https://todo.sr.ht/~mcf/cproc/38)
 			*/
 			assert(cur->expr->kind == EXPRSTRING);
 			assert(init->expr->kind == EXPRCONST);
