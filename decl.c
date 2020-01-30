@@ -994,6 +994,7 @@ decl(struct scope *s, struct func *f)
 				}
 			}
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
+			d->inlinedefn = d->linkage == LINKEXTERN && fs & FUNCINLINE && !(sc & SCEXTERN) && (!prior || prior->inlinedefn);
 			if (tok.kind == TLBRACE) {
 				if (!allowfunc)
 					error(&tok.loc, "function definition not allowed");
@@ -1003,7 +1004,7 @@ decl(struct scope *s, struct func *f)
 				f = mkfunc(d, name, t, s);
 				stmt(f, s);
 				/* XXX: need to keep track of function in case a later declaration specifies extern */
-				if (!(fs & FUNCINLINE) || sc)
+				if (!d->inlinedefn)
 					emitfunc(f, d->linkage == LINKEXTERN);
 				s = delscope(s);
 				delfunc(f);

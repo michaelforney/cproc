@@ -262,6 +262,9 @@ struct decl {
 	/* alignment of object storage (may be stricter than type requires) */
 	int align;
 
+	/* the function might have an "inline definition" (C11 6.7.4p7) */
+	_Bool inlinedefn;
+
 	enum builtinkind builtin;
 };
 
