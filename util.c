@@ -130,4 +130,5 @@ listremove(struct list *list)
 {
 	list->next->prev = list->prev;
 	list->prev->next = list->next;
+	list->next = list->prev = NULL;
 }

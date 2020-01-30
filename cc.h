@@ -255,13 +255,13 @@ struct decl {
 	struct type *type;
 	enum typequal qual;
 	struct value *value;
+	_Bool defined;
 
-	/* objects and functions */
-	struct list link;
-	int align;  /* may be more strict than type requires */
-	_Bool tentative, defined;
+	/* link in list of tentative object definitions */
+	struct list tentative;
+	/* alignment of object storage (may be stricter than type requires) */
+	int align;
 
-	/* built-ins */
 	enum builtinkind builtin;
 };
 

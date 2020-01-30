@@ -65,14 +65,11 @@ mkdecl(enum declkind k, struct type *t, enum typequal tq, enum linkage linkage)
 	struct decl *d;
 
 	d = xmalloc(sizeof(*d));
+	memset(d, 0, sizeof(*d));
 	d->kind = k;
 	d->linkage = linkage;
 	d->type = t;
 	d->qual = tq;
-	d->tentative = false;
-	d->defined = false;
-	d->align = 0;
-	d->value = NULL;
 
 	return d;
 }
@@ -971,13 +968,10 @@ decl(struct scope *s, struct func *f)
 				else
 					funcinit(f, d, init);
 				d->defined = true;
-				if (d->tentative) {
-					d->tentative = false;
-					listremove(&d->link);
-				}
-			} else if (!(sc & SCEXTERN) && !d->defined && !d->tentative) {
-				d->tentative = true;
-				listinsert(tentativedefns.prev, &d->link);
+				if (d->tentative.next)
+					listremove(&d->tentative);
+			} else if (!(sc & SCEXTERN) && !d->defined && !d->tentative.next) {
+				listinsert(tentativedefns.prev, &d->tentative);
 			}
 			break;
 		case DECLFUNC:
@@ -1053,5 +1047,5 @@ emittentativedefns(void)
 	struct list *l;
 
 	for (l = tentativedefns.next; l != &tentativedefns; l = l->next)
-		emitdata(listelement(l, struct decl, link), NULL);
+		emitdata(listelement(l, struct decl, tentative), NULL);
 }
