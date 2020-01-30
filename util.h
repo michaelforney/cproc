@@ -36,7 +36,6 @@ void *xmalloc(size_t);
 char *progname(char *, char *);
 
 void listinsert(struct list *, struct list *);
-void listinsertlist(struct list *, struct list *);
 void listremove(struct list *);
 #define listelement(list, type, member) (type *)((char *)list - offsetof(type, member))
 
