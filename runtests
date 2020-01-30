@@ -4,7 +4,7 @@ if [ $# = 0 ] ; then
 	set -- test/*.c
 fi
 
-exitstatus=0
+numfail=0
 out=$(mktemp)
 trap 'rm "$out"' EXIT
 for test ; do
@@ -12,9 +12,12 @@ for test ; do
 		result="PASS"
 	else
 		result="FAIL"
-		exitstatus=1
+		numfail=$((numfail + 1))
 	fi
 	echo "[$result] $test" >&2
 done
 
-exit $exitstatus
+if [ "$numfail" -gt 0 ] ; then
+	printf "%d test(s) failed\n" "$numfail"
+	exit 1
+fi
