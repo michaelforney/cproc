@@ -1263,7 +1263,7 @@ dataitem(struct expr *expr, uint64_t size)
 			printf(", z %" PRIu64, size - i);
 		break;
 	default:
-		fatal("unimplemented initdata");
+		error(&tok.loc, "initializer is not a constant expression");
 	}
 }
 
