@@ -22,6 +22,7 @@ enum filetype {
 	ASM,    /* assembly source */
 	ASMPP,  /* assembly source requiring preprocessing */
 	C,      /* C source */
+	CHDR,   /* C header */
 	CPPOUT, /* preprocessed C source */
 	OBJ,    /* object file */
 	QBE,    /* QBE IL */
@@ -89,6 +90,8 @@ detectfiletype(const char *name)
 		++dot;
 		if (strcmp(dot, "c") == 0)
 			return C;
+		if (strcmp(dot, "h") == 0)
+			return CHDR;
 		if (strcmp(dot, "i") == 0)
 			return CPPOUT;
 		if (strcmp(dot, "qbe") == 0)
@@ -409,6 +412,7 @@ main(int argc, char *argv[])
 			case ASM:    input->stages =                                     1<<ASSEMBLE|1<<LINK; break;
 			case ASMPP:  input->stages = 1<<PREPROCESS|                      1<<ASSEMBLE|1<<LINK; break;
 			case C:      input->stages = 1<<PREPROCESS|1<<COMPILE|1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
+			case CHDR:   input->stages = 1<<PREPROCESS                                          ; break;
 			case CPPOUT: input->stages =               1<<COMPILE|1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
 			case QBE:    input->stages =                          1<<CODEGEN|1<<ASSEMBLE|1<<LINK; break;
 			case OBJ:    input->stages =                                                 1<<LINK; break;
@@ -529,6 +533,8 @@ main(int argc, char *argv[])
 					filetype = NONE;
 				else if (strcmp(arg, "c") == 0)
 					filetype = C;
+				else if (strcmp(arg, "c-header") == 0)
+					filetype = CHDR;
 				else if (strcmp(arg, "cpp-output") == 0)
 					filetype = CPPOUT;
 				else if (strcmp(arg, "qbe") == 0)
@@ -559,6 +565,9 @@ main(int argc, char *argv[])
 		}
 	}
 	arrayforeach (&inputs, input) {
+		/* ignore the input if it doesn't participate in the last stage */
+		if (!(input->stages & 1 << last))
+			continue;
 		/* only run up through the last stage */
 		input->stages &= (1 << last + 1) - 1;
 		buildobj(input, output);
