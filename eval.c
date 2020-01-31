@@ -137,8 +137,15 @@ eval(struct expr *expr, enum evalkind kind)
 			else
 				expr->constant = l->constant;
 			cast(expr);
-		} else if (l->type->kind == TYPEPOINTER && expr->type->kind == TYPEPOINTER) {
-			expr = l;
+		} else if (l->type->kind == TYPEPOINTER) {
+			/*
+			A cast from a pointer to integer is not a valid constant
+			expression, but C11 allows implementations to recognize
+			other forms of constant expressions (6.6p10), and some
+			programs expect this functionality.
+			*/
+			if (expr->type->kind == TYPEPOINTER || expr->type->prop & PROPINT && expr->type->size == typelong.size)
+				expr = l;
 		}
 		break;
 	case EXPRBINARY:
