@@ -153,7 +153,7 @@ echo done
 printf "creating config.mk... "
 cat >config.mk <<EOF
 CC=${CC:-cc}
-CFLAGS=${CFLAGS:--std=c11 -Wall -Wno-parentheses -Wno-switch -g -pipe}
+CFLAGS=${CFLAGS:--std=c11 -Wall -Wpedantic -Wno-parentheses -Wno-switch -g -pipe}
 LDFLAGS=$LDFLAGS
 EOF
 echo done
