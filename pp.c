@@ -9,6 +9,12 @@
 
 static struct token pending;
 
+void
+ppinit(void)
+{
+	next();
+}
+
 static void
 keyword(struct token *tok)
 {
@@ -90,14 +96,6 @@ keyword(struct token *tok)
 		else
 			low = mid + 1;
 	}
-}
-
-void
-ppinit(const char *file)
-{
-	if (scanfrom(file) < 0)
-		fatal("open %s:", file);
-	next();
 }
 
 static void

@@ -409,20 +409,11 @@ again:
 	}
 }
 
-int
-scanfrom(const char *name)
+void
+scanfrom(const char *name, FILE *file)
 {
 	struct scanner *s;
-	FILE *file;
 
-	if (name) {
-		file = fopen(name, "r");
-		if (!file)
-			return -1;
-	} else {
-		file = stdin;
-		name = "<stdin>";
-	}
 	s = xmalloc(sizeof(*s));
 	s->file = file;
 	s->buf.str = NULL;
@@ -433,9 +424,28 @@ scanfrom(const char *name)
 	s->loc.line = 1;
 	s->loc.col = 0;
 	s->next = scanner;
+	if (file)
+		nextchar(s);
 	scanner = s;
-	nextchar(s);
-	return 0;
+}
+
+void
+scanopen(void)
+{
+	if (!scanner->file) {
+		scanner->file = fopen(scanner->loc.file, "r");
+		if (!scanner->file)
+			fatal("open %s:", scanner->loc.file);
+		nextchar(scanner);
+	}
+}
+
+static void
+scanclose(void)
+{
+	fclose(scanner->file);
+	free(scanner->buf.str);
+	free(scanner);
 }
 
 void
@@ -446,7 +456,9 @@ scan(struct token *t)
 		t->kind = scankind(scanner);
 		if (t->kind != TEOF || !scanner->next)
 			break;
+		scanclose();
 		scanner = scanner->next;
+		scanopen();
 	}
 	if (scanner->usebuf) {
 		t->lit = bufget(&scanner->buf);

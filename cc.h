@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 struct func;
 
 enum tokenkind {
@@ -374,10 +376,13 @@ _Noreturn void error(const struct location *, const char *, ...);
 
 /* scan */
 
-int scanfrom(const char *file);
+void scanfrom(const char *, FILE *);
+void scanopen(void);
 void scan(struct token *);
 
-void ppinit(const char *);
+/* preprocessor */
+
+void ppinit(void);
 
 void next(void);
 _Bool peek(int);

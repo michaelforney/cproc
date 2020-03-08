@@ -37,12 +37,18 @@ main(int argc, char *argv[])
 
 	targinit(target);
 
-	if (argc > 1)
-		usage();
 	if (output && !freopen(output, "w", stdout))
 		fatal("open %s:", output);
 
-	ppinit(argv[0]);
+	if (argc) {
+		while (argc--)
+			scanfrom(argv[argc], NULL);
+		scanopen();
+	} else {
+		scanfrom("<stdin>", stdin);
+	}
+
+	ppinit();
 	if (pponly) {
 		while (tok.kind != TEOF) {
 			tokprint(&tok);
