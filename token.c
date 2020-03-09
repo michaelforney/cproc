@@ -136,7 +136,7 @@ tokenprint(const struct token *t)
 	fputs(str, stdout);
 }
 
-void
+static void
 tokendesc(char *buf, size_t len, enum tokenkind kind, const char *lit)
 {
 	const char *class;
@@ -160,6 +160,19 @@ tokendesc(char *buf, size_t len, enum tokenkind kind, const char *lit)
 		snprintf(buf, len, "'%s'", lit);
 	else
 		snprintf(buf, len, "<unknown>");
+}
+
+char *
+tokencheck(const struct token *t, enum tokenkind kind, const char *msg)
+{
+	char want[64], got[64];
+
+	if (t->kind != kind) {
+		tokendesc(want, sizeof(want), kind, NULL);
+		tokendesc(got, sizeof(got), t->kind, t->lit);
+		error(&t->loc, "expected %s %s, saw %s", want, msg, got);
+	}
+	return t->lit;
 }
 
 _Noreturn void error(const struct location *loc, const char *fmt, ...)
