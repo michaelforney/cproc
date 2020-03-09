@@ -1,14 +1,28 @@
 #!/bin/sh
 
+: ${CCQBE:=./cproc-qbe}
+
 if [ $# = 0 ] ; then
 	set -- test/*.c
 fi
 
 numfail=0
-out=$(mktemp)
-trap 'rm "$out"' EXIT
+got=$(mktemp)
+trap 'rm "$got"' EXIT
+
 for test ; do
-	if ${CCQBE:=./cproc-qbe} -o $out $test && diff -Nu "${test%.c}.qbe" "$out" ; then
+	name=${test%.c}
+	if [ -f "$name.qbe" ] ; then
+		want=$name.qbe
+		set -- $CCQBE -o "$got" "$test"
+	elif [ -f "$name.pp" ] ; then
+		want=$name.pp
+		set -- $CCQBE -E -o "$got" "$test"
+	else
+		echo "invalid test '$test'" >&2
+		set -- false
+	fi
+	if "$@" && diff -Nu "$want" "$got" ; then
 		result="PASS"
 	else
 		result="FAIL"
