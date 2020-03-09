@@ -162,17 +162,14 @@ tagspec(struct scope *s)
 	default: fatal("internal error: unknown tag kind");
 	}
 	next();
-	if (tok.kind == TIDENT) {
-		tag = tok.lit;
-		next();
+	if (tok.kind == TLBRACE) {
+		tag = NULL;
+		t = NULL;
+	} else {
+		tag = expect(TIDENT, "or '{' after struct/union");
 		t = scopegettag(s, tag, false);
 		if (s->parent && !t && tok.kind != TLBRACE && (kind == TYPEENUM || tok.kind != TSEMICOLON))
 			t = scopegettag(s->parent, tag, true);
-	} else if (tok.kind != TLBRACE) {
-		error(&tok.loc, "expected identifier or '{' after struct/union");
-	} else {
-		tag = NULL;
-		t = NULL;
 	}
 	if (t) {
 		if (t->kind != kind)
