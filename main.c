@@ -51,7 +51,7 @@ main(int argc, char *argv[])
 	ppinit();
 	if (pponly) {
 		while (tok.kind != TEOF) {
-			tokprint(&tok);
+			tokenprint(&tok);
 			next();
 		}
 	} else {

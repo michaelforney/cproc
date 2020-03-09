@@ -136,8 +136,8 @@ expect(enum tokenkind kind, const char *msg)
 	char *lit, want[64], got[64];
 
 	if (tok.kind != kind) {
-		tokdesc(want, sizeof(want), kind, NULL);
-		tokdesc(got, sizeof(got), tok.kind, tok.lit);
+		tokendesc(want, sizeof(want), kind, NULL);
+		tokendesc(got, sizeof(got), tok.kind, tok.lit);
 		error(&tok.loc, "expected %s %s, saw %s", want, msg, got);
 	}
 	lit = tok.lit;

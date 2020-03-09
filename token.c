@@ -112,7 +112,7 @@ const char *tokstr[] = {
 };
 
 void
-tokprint(const struct token *t)
+tokenprint(const struct token *t)
 {
 	const char *str;
 
@@ -137,7 +137,7 @@ tokprint(const struct token *t)
 }
 
 void
-tokdesc(char *buf, size_t len, enum tokenkind kind, const char *lit)
+tokendesc(char *buf, size_t len, enum tokenkind kind, const char *lit)
 {
 	const char *class;
 	bool quote;
