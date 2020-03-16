@@ -116,6 +116,8 @@ tokenprint(const struct token *t)
 {
 	const char *str;
 
+	if (t->space)
+		fputc(' ', stdout);
 	switch (t->kind) {
 	case TIDENT:
 	case TNUMBER:

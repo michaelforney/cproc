@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -7,12 +8,466 @@
 #include "util.h"
 #include "cc.h"
 
-static struct token pending;
+struct macroparam {
+	char *name;
+	/* whether or not the argument needs to be stringized */
+	bool stringize;
+};
+
+struct macroarg {
+	struct token *token;
+	size_t ntoken;
+	/* stringized argument */
+	struct token str;
+};
+
+struct macro {
+	enum {
+		MACROOBJ,
+		MACROFUNC,
+	} kind;
+	char *name;
+	/* whether or not this macro is ineligible for expansion */
+	bool hide;
+	/* parameters of function-like macro */
+	struct macroparam *param;
+	size_t nparam;
+	/* argument tokens of macro invocation */
+	struct macroarg *arg;
+	/* replacement list */
+	struct token *token;
+	size_t ntoken;
+};
+
+struct frame {
+	struct token *token;
+	size_t ntoken;
+	struct macro *macro;
+};
+
+enum ppflags ppflags;
+
+static struct array ctx;
+static struct map *macros;
+/* number of macros currently undergoing expansion */
+static size_t macrodepth;
 
 void
 ppinit(void)
 {
+	macros = mkmap(64);
 	next();
+}
+
+/* check if two macro definitions are equal, as in C11 6.10.3p2 */
+static bool
+macroequal(struct macro *m1, struct macro *m2)
+{
+	struct token *t1, *t2;
+	size_t i;
+
+	if (m1->kind != m2->kind)
+		return false;
+	if (m1->kind == MACROFUNC) {
+		if (m1->nparam != m2->nparam)
+			return false;
+		for (i = 0; i < m1->nparam; ++i) {
+			if (strcmp(m1->param[i].name, m2->param[i].name) != 0)
+				return false;
+		}
+	}
+	if (m1->ntoken != m2->ntoken)
+		return false;
+	for (t1 = m1->token, t2 = m2->token; t1 < m1->token + m1->ntoken; ++t1, ++t2) {
+		if (t1->kind != t2->kind)
+			return false;
+		if (t1->lit && strcmp(t1->lit, t2->lit) != 0)
+			return false;
+	}
+	return true;
+}
+
+/* find the index of a macro parameter with the given name */
+static size_t
+macroparam(struct macro *m, const char *name)
+{
+	size_t i;
+
+	for (i = 0; i < m->nparam; ++i) {
+		if (strcmp(m->param[i].name, name) == 0)
+			return i;
+	}
+	return -1;
+}
+
+/* lookup a macro by name */
+static struct macro *
+macroget(char *name)
+{
+	struct mapkey k;
+
+	mapkey(&k, name, strlen(name));
+	return mapget(macros, &k);
+}
+
+static void
+macrodone(struct macro *m)
+{
+	m->hide = false;
+	if (m->kind == MACROFUNC && m->nparam > 0) {
+		free(m->arg[0].token);
+		free(m->arg);
+	}
+	--macrodepth;
+}
+
+static struct token *
+framenext(struct frame *f)
+{
+	return f->ntoken--, f->token++;
+}
+
+/* push a new context frame */
+static struct frame *
+ctxpush(struct token *t, size_t n, struct macro *m)
+{
+	struct frame *f;
+
+	f = arrayadd(&ctx, sizeof(*f));
+	f->token = t;
+	f->ntoken = n;
+	f->macro = m;
+	return f;
+}
+
+/* get the next frame with tokens left */
+static struct frame *
+ctxframe(void)
+{
+	struct frame *f;
+
+	for (f = arraylast(&ctx, sizeof(*f)); ctx.len; --f, ctx.len -= sizeof(*f)) {
+		if (f->ntoken)
+			return f;
+		if (f->macro)
+			macrodone(f->macro);
+	}
+	return NULL;
+}
+
+/* get the next token from the context */
+static struct token *
+ctxnext(void)
+{
+	struct frame *f;
+	struct token *t;
+	struct macro *m;
+	size_t i;
+
+again:
+	f = ctxframe();
+	if (!f)
+		return NULL;
+	m = f->macro;
+	if (m && m->kind == MACROFUNC) {
+		/* try to expand macro parameter */
+		switch (f->token->kind) {
+		case THASH:
+			framenext(f);
+			t = framenext(f);
+			assert(t && t->kind == TIDENT);
+			i = macroparam(m, t->lit);
+			assert(i != -1);
+			f = ctxpush(&m->arg[i].str, 1, NULL);
+			break;
+		case TIDENT:
+			i = macroparam(m, f->token->lit);
+			if (i == -1)
+				break;
+			framenext(f);
+			if (m->arg[i].ntoken == 0)
+				goto again;
+			f = ctxpush(m->arg[i].token, m->arg[i].ntoken, NULL);
+			break;
+		}
+		/* XXX: token concatenation */
+	}
+	return framenext(f);
+}
+
+static void
+define(void)
+{
+	struct token *t;
+	struct macro *m;
+	struct macroparam *p;
+	struct array params = {0}, repl = {0};
+	struct mapkey k;
+	void **entry;
+	bool stringize;
+	size_t i;
+
+	if (tok.kind != TIDENT)
+		error(&tok.loc, "expected identifier after #define");
+	m = xmalloc(sizeof(*m));
+	m->name = tok.lit;
+	m->hide = false;
+	t = arrayadd(&repl, sizeof(*t));
+	scan(t);
+	if (t->kind == TLPAREN && !t->space) {
+		m->kind = MACROFUNC;
+		/* read macro parameter names */
+		while (scan(&tok), tok.kind == TIDENT) {
+			p = arrayadd(&params, sizeof(*p));
+			p->name = tok.lit;
+			p->stringize = false;
+			if (scan(&tok), tok.kind != TCOMMA)
+				break;
+		}
+		if (tok.kind != TRPAREN)
+			error(&tok.loc, "expected ')' after macro parameter list");
+		scan(t);  /* first token in replacement list */
+	} else {
+		m->kind = MACROOBJ;
+	}
+
+	/* read macro body */
+	m->param = params.val;
+	m->nparam = params.len / sizeof(m->param[0]);
+	t->space = false;
+	while (t->kind != TNEWLINE) {
+		if (t->kind == THASHHASH)
+			error(&t->loc, "'##' operator is not yet implemented");
+		stringize = t->kind == THASH;
+		t = arrayadd(&repl, sizeof(*t));
+		scan(t);
+		if (stringize && m->kind == MACROFUNC) {
+			if (t->kind != TIDENT)
+				error(&t->loc, "expected macro parameter name after '#' operator");
+			i = macroparam(m, t->lit);
+			if (i == -1)
+				error(&t->loc, "'%s' is not a macro parameter name", t->lit);
+			m->param[i].stringize = true;
+		}
+	}
+	m->token = repl.val;
+	m->ntoken = repl.len / sizeof(*t) - 1;
+	tok = *t;
+
+	mapkey(&k, m->name, strlen(m->name));
+	entry = mapput(macros, &k);
+	if (*entry && !macroequal(m, *entry))
+		error(&tok.loc, "redefinition of macro '%s'", m->name);
+	*entry = m;
+}
+
+static void
+undef(void)
+{
+	char *name;
+	struct mapkey k;
+	void **entry;
+	struct macro *m;
+
+	name = tokencheck(&tok, TIDENT, "after #undef");
+	mapkey(&k, name, strlen(name));
+	entry = mapput(macros, &k);
+	m = *entry;
+	if (m) {
+		free(name);
+		free(m->param);
+		free(m->token);
+		*entry = NULL;
+	}
+	scan(&tok);
+}
+
+static void
+directive(void)
+{
+	enum ppflags oldflags;
+	char *name;
+
+	scan(&tok);
+	if (tok.kind == TNEWLINE)
+		return;  /* empty directive */
+	oldflags = ppflags;
+	ppflags |= PPNEWLINE;
+	name = tokencheck(&tok, TIDENT, "or newline after '#'");
+	if (strcmp(name, "if") == 0) {
+		error(&tok.loc, "#if directive is not implemented");
+	} else if (strcmp(name, "ifdef") == 0) {
+		error(&tok.loc, "#ifdef directive is not implemented");
+	} else if (strcmp(name, "ifndef") == 0) {
+		error(&tok.loc, "#ifndef directive is not implemented");
+	} else if (strcmp(name, "elif") == 0) {
+		error(&tok.loc, "#elif directive is not implemented");
+	} else if (strcmp(name, "endif") == 0) {
+		error(&tok.loc, "#endif directive is not implemented");
+	} else if (strcmp(name, "include") == 0) {
+		error(&tok.loc, "#include directive is not implemented");
+	} else if (strcmp(name, "define") == 0) {
+		scan(&tok);
+		define();
+	} else if (strcmp(name, "undef") == 0) {
+		scan(&tok);
+		undef();
+	} else if (strcmp(name, "line") == 0) {
+		error(&tok.loc, "#line directive is not implemented");
+	} else if (strcmp(name, "error") == 0) {
+		error(&tok.loc, "#error directive is not implemented");
+	} else if (strcmp(name, "pragma") == 0) {
+		error(&tok.loc, "#pragma directive is not implemented");
+	} else {
+		error(&tok.loc, "invalid preprocessor directive #%s", name);
+	}
+	free(name);
+	tokencheck(&tok, TNEWLINE, "after preprocessing directive");
+	ppflags = oldflags;
+}
+
+/* get the next token without expanding it */
+static void
+nextinto(struct token *t)
+{
+	static bool newline = true;
+
+	for (;;) {
+		scan(t);
+		if (newline && t->kind == THASH) {
+			directive();
+		} else {
+			newline = tok.kind == TNEWLINE;
+			break;
+		}
+	}
+}
+
+static struct token *
+rawnext(void)
+{
+	struct token *t;
+
+	t = ctxnext();
+	if (!t) {
+		t = &tok;
+		nextinto(t);
+	}
+	return t;
+}
+
+static bool
+peekparen(void)
+{
+	static struct array pending;
+	struct token *t;
+	struct frame *f;
+
+	t = ctxnext();
+	if (t) {
+		if (t->kind == TLPAREN)
+			return true;
+		f = arraylast(&ctx, sizeof(*f));
+		--f->token;
+		++f->ntoken;
+		return false;
+	}
+	pending.len = 0;
+	do t = arrayadd(&pending, sizeof(*t)), nextinto(t);
+	while (t->kind == TNEWLINE);
+	if (t->kind == TLPAREN)
+		return true;
+	ctxpush(pending.val, pending.len / sizeof(*t), NULL);
+	return false;
+}
+
+static void
+stringize(struct array *buf, struct token *t)
+{
+	const char *lit;
+
+	lit = t->lit ? t->lit : tokstr[t->kind];
+	/* XXX: double escape string literal */
+	arrayaddbuf(buf, lit, strlen(lit));
+}
+
+static bool
+expand(struct token *t)
+{
+	struct macro *m;
+	struct macroarg *arg;
+	struct array str, tok;
+	size_t i, depth, paren;
+
+	if (t->kind != TIDENT)
+		return false;
+	m = macroget(t->lit);
+	if (!m || m->hide || t->hide) {
+		t->hide = true;
+		return false;
+	}
+	if (m->kind == MACROFUNC) {
+		if (!peekparen())
+			return false;
+		/* read macro arguments */
+		paren = 0;
+		depth = macrodepth;
+		tok = (struct array){0};
+		if (m->nparam > 0) {
+			arg = xreallocarray(NULL, m->nparam, sizeof(*arg));
+		} else {
+			arg = NULL;
+			t = rawnext();
+		}
+		for (i = 0; i < m->nparam && t->kind != TRPAREN; ++i) {
+			if (m->param[i].stringize) {
+				str = (struct array){0};
+				arrayaddbuf(&str, "\"", 1);
+			}
+			arg[i].ntoken = 0;
+			for (;;) {
+				t = rawnext();
+				if (t->kind == TEOF)
+					error(&t->loc, "EOF when reading macro parameters");
+				if (macrodepth <= depth) {
+					/* adjust current macro depth, in case it got shallower */
+					depth = macrodepth;
+					if (paren == 0 && (t->kind == TCOMMA || t->kind == TRPAREN))
+						break;
+					switch (t->kind) {
+					case TLPAREN: ++paren; break;
+					case TRPAREN: --paren; break;
+					}
+					if (m->param[i].stringize)
+						stringize(&str, t);
+				}
+				if (!expand(t)) {
+					arrayaddbuf(&tok, t, sizeof(*t));
+					++arg[i].ntoken;
+				}
+			}
+			if (m->param[i].stringize) {
+				arrayaddbuf(&str, "\"", 2);
+				arg[i].str = (struct token){
+					.kind = TSTRINGLIT,
+					.lit = str.val,
+				};
+			}
+		}
+		if (i < m->nparam)
+			error(&t->loc, "not enough arguments for macro '%s'", m->name);
+		tokencheck(t, TRPAREN, "after macro arguments");
+		t = tok.val;
+		for (i = 0; i < m->nparam; ++i) {
+			arg[i].token = t;
+			t += arg[i].ntoken;
+		}
+		m->arg = arg;
+	}
+	ctxpush(m->token, m->ntoken, m);
+	m->hide = true;
+	++macrodepth;
+	return true;
 }
 
 static void
@@ -98,36 +553,34 @@ keyword(struct token *tok)
 	}
 }
 
-static void
-nextinto(struct token *t)
-{
-	do scan(t);
-	while (t->kind == TNEWLINE);
-	if (t->kind == TIDENT)
-		keyword(t);
-}
-
 void
 next(void)
 {
-	if (pending.kind) {
-		tok = pending;
-		pending.kind = TNONE;
-	} else {
-		nextinto(&tok);
-	}
+	struct token *t;
+
+	do t = rawnext();
+	while (expand(t) || t->kind == TNEWLINE && !(ppflags & PPNEWLINE));
+	tok = *t;
+	if (tok.kind == TIDENT)
+		keyword(&tok);
 }
 
 bool
 peek(int kind)
 {
-	if (!pending.kind)
-		nextinto(&pending);
-	if (pending.kind != kind)
-		return false;
-	pending.kind = TNONE;
-	nextinto(&tok);
-	return true;
+	static struct token pending;
+	struct token old;
+
+	old = tok;
+	next();
+	if (tok.kind == kind) {
+		next();
+		return true;
+	}
+	pending = tok;
+	tok = old;
+	ctxpush(&pending, 1, NULL);
+	return false;
 }
 
 char *

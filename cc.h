@@ -121,6 +121,8 @@ struct location {
 
 struct token {
 	enum tokenkind kind;
+	/* whether or not the token is ineligible for expansion */
+	_Bool hide;
 	/* whether or not the token was preceeded by a space */
 	_Bool space;
 	struct location loc;
@@ -383,6 +385,13 @@ void scanopen(void);
 void scan(struct token *);
 
 /* preprocessor */
+
+enum ppflags {
+	/* preserve newlines in preprocessor output */
+	PPNEWLINE   = 1 << 0,
+};
+
+extern enum ppflags ppflags;
 
 void ppinit(void);
 

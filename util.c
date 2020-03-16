@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -114,6 +115,15 @@ void
 arrayaddbuf(struct array *a, const void *src, size_t n)
 {
 	memcpy(arrayadd(a, n), src, n);
+}
+
+void *
+arraylast(struct array *a, size_t n)
+{
+	if (a->len == 0)
+		return NULL;
+	assert(n <= a->len);
+	return (char *)a->val + a->len - n;
 }
 
 void

@@ -50,6 +50,7 @@ main(int argc, char *argv[])
 
 	ppinit();
 	if (pponly) {
+		ppflags |= PPNEWLINE;
 		while (tok.kind != TEOF) {
 			tokenprint(&tok);
 			next();

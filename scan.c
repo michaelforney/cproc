@@ -472,4 +472,5 @@ scan(struct token *t)
 		t->lit = NULL;
 	}
 	t->space = scanner->sawspace;
+	t->hide = false;
 }
