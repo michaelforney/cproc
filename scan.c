@@ -16,6 +16,7 @@ struct buffer {
 struct scanner {
 	int chr;
 	bool usebuf;
+	bool sawspace;
 	FILE *file;
 	struct location loc;
 	struct buffer buf;
@@ -249,7 +250,7 @@ comment(struct scanner *s)
 	case '/':  /* C++-style comment */
 		do nextchar(s);
 		while (s->chr != '\n' && s->chr != EOF);
-		return true;
+		break;
 	case '*':  /* C-style comment */
 		nextchar(s);
 		do {
@@ -259,10 +260,12 @@ comment(struct scanner *s)
 				error(&s->loc, "EOF in comment");
 		} while (last != '*' || s->chr != '/');
 		nextchar(s);
-		return true;
+		break;
 	default:
 		return false;
 	}
+	s->sawspace = true;
+	return true;
 }
 
 static int
@@ -277,6 +280,7 @@ again:
 	case '\t':
 	case '\f':
 	case '\v':
+		s->sawspace = true;
 		nextchar(s);
 		goto again;
 	case '!':
@@ -451,6 +455,7 @@ scanclose(void)
 void
 scan(struct token *t)
 {
+	scanner->sawspace = false;
 	for (;;) {
 		t->loc = scanner->loc;
 		t->kind = scankind(scanner);
@@ -466,4 +471,5 @@ scan(struct token *t)
 	} else {
 		t->lit = NULL;
 	}
+	t->space = scanner->sawspace;
 }

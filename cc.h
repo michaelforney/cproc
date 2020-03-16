@@ -121,6 +121,8 @@ struct location {
 
 struct token {
 	enum tokenkind kind;
+	/* whether or not the token was preceeded by a space */
+	_Bool space;
 	struct location loc;
 	char *lit;
 };
