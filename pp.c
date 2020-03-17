@@ -129,7 +129,7 @@ framenext(struct frame *f)
 
 /* push a new context frame */
 static struct frame *
-ctxpush(struct token *t, size_t n, struct macro *m)
+ctxpush(struct token *t, size_t n, struct macro *m, bool space)
 {
 	struct frame *f;
 
@@ -137,6 +137,8 @@ ctxpush(struct token *t, size_t n, struct macro *m)
 	f->token = t;
 	f->ntoken = n;
 	f->macro = m;
+	if (n > 0)
+		t[0].space = space;
 	return f;
 }
 
@@ -162,6 +164,7 @@ ctxnext(void)
 	struct frame *f;
 	struct token *t;
 	struct macro *m;
+	bool space;
 	size_t i;
 
 again:
@@ -171,6 +174,7 @@ again:
 	m = f->macro;
 	if (m && m->kind == MACROFUNC) {
 		/* try to expand macro parameter */
+		space = f->token->space;
 		switch (f->token->kind) {
 		case THASH:
 			framenext(f);
@@ -178,7 +182,7 @@ again:
 			assert(t && t->kind == TIDENT);
 			i = macroparam(m, t->lit);
 			assert(i != -1);
-			f = ctxpush(&m->arg[i].str, 1, NULL);
+			f = ctxpush(&m->arg[i].str, 1, NULL, space);
 			break;
 		case TIDENT:
 			i = macroparam(m, f->token->lit);
@@ -187,7 +191,7 @@ again:
 			framenext(f);
 			if (m->arg[i].ntoken == 0)
 				goto again;
-			f = ctxpush(m->arg[i].token, m->arg[i].ntoken, NULL);
+			f = ctxpush(m->arg[i].token, m->arg[i].ntoken, NULL, space);
 			break;
 		}
 		/* XXX: token concatenation */
@@ -234,7 +238,6 @@ define(void)
 	/* read macro body */
 	m->param = params.val;
 	m->nparam = params.len / sizeof(m->param[0]);
-	t->space = false;
 	while (t->kind != TNEWLINE) {
 		if (t->kind == THASHHASH)
 			error(&t->loc, "'##' operator is not yet implemented");
@@ -377,7 +380,8 @@ peekparen(void)
 	while (t->kind == TNEWLINE);
 	if (t->kind == TLPAREN)
 		return true;
-	ctxpush(pending.val, pending.len / sizeof(*t), NULL);
+	t = pending.val;
+	ctxpush(t, pending.len / sizeof(*t), NULL, t[0].space);
 	return false;
 }
 
@@ -398,6 +402,7 @@ expand(struct token *t)
 	struct macroarg *arg;
 	struct array str, tok;
 	size_t i, depth, paren;
+	bool space;
 
 	if (t->kind != TIDENT)
 		return false;
@@ -406,6 +411,7 @@ expand(struct token *t)
 		t->hide = true;
 		return false;
 	}
+	space = t->space;
 	if (m->kind == MACROFUNC) {
 		if (!peekparen())
 			return false;
@@ -464,7 +470,7 @@ expand(struct token *t)
 		}
 		m->arg = arg;
 	}
-	ctxpush(m->token, m->ntoken, m);
+	ctxpush(m->token, m->ntoken, m, space);
 	m->hide = true;
 	++macrodepth;
 	return true;
@@ -579,7 +585,7 @@ peek(int kind)
 	}
 	pending = tok;
 	tok = old;
-	ctxpush(&pending, 1, NULL);
+	ctxpush(&pending, 1, NULL, pending.space);
 	return false;
 }
 
