@@ -211,10 +211,8 @@ define(void)
 	bool stringize;
 	size_t i;
 
-	if (tok.kind != TIDENT)
-		error(&tok.loc, "expected identifier after #define");
 	m = xmalloc(sizeof(*m));
-	m->name = tok.lit;
+	m->name = tokencheck(&tok, TIDENT, "after #define");
 	m->hide = false;
 	t = arrayadd(&repl, sizeof(*t));
 	scan(t);
@@ -228,8 +226,7 @@ define(void)
 			if (scan(&tok), tok.kind != TCOMMA)
 				break;
 		}
-		if (tok.kind != TRPAREN)
-			error(&tok.loc, "expected ')' after macro parameter list");
+		tokencheck(&tok, TRPAREN, "after macro parameter list");
 		scan(t);  /* first token in replacement list */
 	} else {
 		m->kind = MACROOBJ;
@@ -245,8 +242,7 @@ define(void)
 		t = arrayadd(&repl, sizeof(*t));
 		scan(t);
 		if (stringize && m->kind == MACROFUNC) {
-			if (t->kind != TIDENT)
-				error(&t->loc, "expected macro parameter name after '#' operator");
+			tokencheck(t, TIDENT, "after '#' operator");
 			i = macroparam(m, t->lit);
 			if (i == -1)
 				error(&t->loc, "'%s' is not a macro parameter name", t->lit);
