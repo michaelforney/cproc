@@ -146,6 +146,7 @@ tokendesc(char *buf, size_t len, enum tokenkind kind, const char *lit)
 	bool quote;
 
 	switch (kind) {
+	case TEOF:       class = "EOF";                       break;
 	case TIDENT:     class = "identifier"; quote = true;  break;
 	case TNUMBER:    class = "number";     quote = true;  break;
 	case TCHARCONST: class = "character";  quote = false; break;
