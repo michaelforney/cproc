@@ -227,7 +227,7 @@ define(void)
 	m->nparam = params.len / sizeof(m->param[0]);
 
 	/* read macro body */
-	while (t->kind != TNEWLINE) {
+	while (t->kind != TNEWLINE && t->kind != TEOF) {
 		if (t->kind == THASHHASH)
 			error(&t->loc, "'##' operator is not yet implemented");
 		prev = t->kind;
