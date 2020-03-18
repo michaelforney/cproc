@@ -89,13 +89,15 @@ macroequal(struct macro *m1, struct macro *m2)
 
 /* find the index of a macro parameter with the given name */
 static size_t
-macroparam(struct macro *m, const char *name)
+macroparam(struct macro *m, struct token *t)
 {
 	size_t i;
 
-	for (i = 0; i < m->nparam; ++i) {
-		if (strcmp(m->param[i].name, name) == 0)
-			return i;
+	if (t->kind == TIDENT) {
+		for (i = 0; i < m->nparam; ++i) {
+			if (strcmp(m->param[i].name, t->lit) == 0)
+				return i;
+		}
 	}
 	return -1;
 }
@@ -142,21 +144,6 @@ ctxpush(struct token *t, size_t n, struct macro *m, bool space)
 	return f;
 }
 
-/* get the next frame with tokens left */
-static struct frame *
-ctxframe(void)
-{
-	struct frame *f;
-
-	for (f = arraylast(&ctx, sizeof(*f)); ctx.len; --f, ctx.len -= sizeof(*f)) {
-		if (f->ntoken)
-			return f;
-		if (f->macro)
-			macrodone(f->macro);
-	}
-	return NULL;
-}
-
 /* get the next token from the context */
 static struct token *
 ctxnext(void)
@@ -168,8 +155,13 @@ ctxnext(void)
 	size_t i;
 
 again:
-	f = ctxframe();
-	if (!f)
+	for (f = arraylast(&ctx, sizeof(*f)); ctx.len; --f, ctx.len -= sizeof(*f)) {
+		if (f->ntoken)
+			break;
+		if (f->macro)
+			macrodone(f->macro);
+	}
+	if (ctx.len == 0)
 		return NULL;
 	m = f->macro;
 	if (m && m->kind == MACROFUNC) {
@@ -179,13 +171,13 @@ again:
 		case THASH:
 			framenext(f);
 			t = framenext(f);
-			assert(t && t->kind == TIDENT);
-			i = macroparam(m, t->lit);
+			assert(t);
+			i = macroparam(m, t);
 			assert(i != -1);
 			f = ctxpush(&m->arg[i].str, 1, NULL, space);
 			break;
 		case TIDENT:
-			i = macroparam(m, f->token->lit);
+			i = macroparam(m, f->token);
 			if (i == -1)
 				break;
 			framenext(f);
@@ -203,12 +195,12 @@ static void
 define(void)
 {
 	struct token *t;
+	enum tokenkind prev;
 	struct macro *m;
 	struct macroparam *p;
 	struct array params = {0}, repl = {0};
 	struct mapkey k;
 	void **entry;
-	bool stringize;
 	size_t i;
 
 	m = xmalloc(sizeof(*m));
@@ -231,19 +223,19 @@ define(void)
 	} else {
 		m->kind = MACROOBJ;
 	}
-
-	/* read macro body */
 	m->param = params.val;
 	m->nparam = params.len / sizeof(m->param[0]);
+
+	/* read macro body */
 	while (t->kind != TNEWLINE) {
 		if (t->kind == THASHHASH)
 			error(&t->loc, "'##' operator is not yet implemented");
-		stringize = t->kind == THASH;
+		prev = t->kind;
 		t = arrayadd(&repl, sizeof(*t));
 		scan(t);
-		if (stringize && m->kind == MACROFUNC) {
+		if (prev == THASH && m->kind == MACROFUNC) {
 			tokencheck(t, TIDENT, "after '#' operator");
-			i = macroparam(m, t->lit);
+			i = macroparam(m, t);
 			if (i == -1)
 				error(&t->loc, "'%s' is not a macro parameter name", t->lit);
 			m->param[i].stringize = true;
