@@ -707,9 +707,7 @@ postfixexpr(struct scope *s, struct expr *r)
 			e->call.nargs = 0;
 			p = t->func.params;
 			end = &e->call.args;
-			for (;;) {
-				if (tok.kind == TRPAREN)
-					break;
+			while (tok.kind != TRPAREN) {
 				if (e->call.args)
 					expect(TCOMMA, "or ')' after function call argument");
 				if (!p && !t->func.isvararg && t->func.paraminfo)
