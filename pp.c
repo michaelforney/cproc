@@ -424,11 +424,7 @@ expand(struct token *t)
 		paren = 0;
 		depth = macrodepth;
 		tok = (struct array){0};
-		if (m->nparam > 0) {
-			arg = xreallocarray(NULL, m->nparam, sizeof(*arg));
-		} else {
-			arg = NULL;
-		}
+		arg = xreallocarray(NULL, m->nparam, sizeof(*arg));
 		t = rawnext();
 		for (i = 0; i < m->nparam; ++i) {
 			if (m->param[i].flags & PARAMSTR) {
@@ -473,10 +469,8 @@ expand(struct token *t)
 		if (t->kind != TRPAREN)
 			error(&t->loc, "too many arguments for macro '%s'", m->name);
 		for (i = 0, t = tok.val; i < m->nparam; ++i) {
-			if (m->param[i].flags & PARAMTOK) {
-				arg[i].token = t;
-				t += arg[i].ntoken;
-			}
+			arg[i].token = t;
+			t += arg[i].ntoken;
 		}
 		m->arg = arg;
 	}
