@@ -10,8 +10,10 @@
 
 struct macroparam {
 	char *name;
-	/* whether or not the argument needs to be stringized */
-	bool stringize;
+	enum {
+		PARAMTOK = 1<<0,  /* the parameter is used normally */
+		PARAMSTR = 1<<1,  /* the parameter is used with the '#' operator */
+	} flags;
 };
 
 struct macroarg {
@@ -214,7 +216,7 @@ define(void)
 		while (scan(&tok), tok.kind == TIDENT) {
 			p = arrayadd(&params, sizeof(*p));
 			p->name = tok.lit;
-			p->stringize = false;
+			p->flags = 0;
 			if (scan(&tok), tok.kind != TCOMMA)
 				break;
 		}
@@ -227,18 +229,24 @@ define(void)
 	m->nparam = params.len / sizeof(m->param[0]);
 
 	/* read macro body */
+	i = macroparam(m, t);
 	while (t->kind != TNEWLINE && t->kind != TEOF) {
 		if (t->kind == THASHHASH)
 			error(&t->loc, "'##' operator is not yet implemented");
 		prev = t->kind;
 		t = arrayadd(&repl, sizeof(*t));
 		scan(t);
-		if (prev == THASH && m->kind == MACROFUNC) {
+		if (m->kind != MACROFUNC)
+			continue;
+		if (i != -1)
+			m->param[i].flags |= PARAMTOK;
+		i = macroparam(m, t);
+		if (prev == THASH) {
 			tokencheck(t, TIDENT, "after '#' operator");
-			i = macroparam(m, t);
 			if (i == -1)
 				error(&t->loc, "'%s' is not a macro parameter name", t->lit);
-			m->param[i].stringize = true;
+			m->param[i].flags |= PARAMSTR;
+			i = -1;
 		}
 	}
 	m->token = repl.val;
@@ -423,7 +431,7 @@ expand(struct token *t)
 			t = rawnext();
 		}
 		for (i = 0; i < m->nparam && t->kind != TRPAREN; ++i) {
-			if (m->param[i].stringize) {
+			if (m->param[i].flags & PARAMSTR) {
 				str = (struct array){0};
 				arrayaddbuf(&str, "\"", 1);
 			}
@@ -441,15 +449,15 @@ expand(struct token *t)
 					case TLPAREN: ++paren; break;
 					case TRPAREN: --paren; break;
 					}
-					if (m->param[i].stringize)
+					if (m->param[i].flags & PARAMSTR)
 						stringize(&str, t);
 				}
-				if (!expand(t)) {
+				if (m->param[i].flags & PARAMTOK && !expand(t)) {
 					arrayaddbuf(&tok, t, sizeof(*t));
 					++arg[i].ntoken;
 				}
 			}
-			if (m->param[i].stringize) {
+			if (m->param[i].flags & PARAMSTR) {
 				arrayaddbuf(&str, "\"", 2);
 				arg[i].str = (struct token){
 					.kind = TSTRINGLIT,
@@ -460,10 +468,11 @@ expand(struct token *t)
 		if (i < m->nparam)
 			error(&t->loc, "not enough arguments for macro '%s'", m->name);
 		tokencheck(t, TRPAREN, "after macro arguments");
-		t = tok.val;
-		for (i = 0; i < m->nparam; ++i) {
-			arg[i].token = t;
-			t += arg[i].ntoken;
+		for (i = 0, t = tok.val; i < m->nparam; ++i) {
+			if (m->param[i].flags & PARAMTOK) {
+				arg[i].token = t;
+				t += arg[i].ntoken;
+			}
 		}
 		m->arg = arg;
 	}
