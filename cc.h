@@ -378,6 +378,7 @@ extern const char *tokstr[];
 
 void tokenprint(const struct token *);
 char *tokencheck(const struct token *, enum tokenkind, const char *);
+void tokenconcat(struct token *, const struct location *, const struct token *, const struct token *);
 _Noreturn void error(const struct location *, const char *, ...);
 
 /* scan */

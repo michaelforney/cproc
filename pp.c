@@ -13,13 +13,18 @@ struct macroparam {
 	enum {
 		PARAMTOK = 1<<0,  /* the parameter is used normally */
 		PARAMSTR = 1<<1,  /* the parameter is used with the '#' operator */
-		PARAMVAR = 1<<2,  /* the parameter is __VA_ARGS__ */
+		PARAMRAW = 1<<2,  /* the parameter is used with the '##' operator */
+		PARAMVAR = 1<<3,  /* the parameter is __VA_ARGS__ */
 	} flags;
 };
 
 struct macroarg {
+	/* expanded tokens */
 	struct token *token;
 	size_t ntoken;
+	/* unexpanded tokens */
+	struct token *raw;
+	size_t nraw;
 	/* stringized argument */
 	struct token str;
 };
@@ -153,6 +158,31 @@ ctxpush(struct token *t, size_t n, struct macro *m, bool space)
 	return f;
 }
 
+static void
+macroconcat(struct macro *m, const struct location *loc, struct token *t1, struct token *t2)
+{
+	static struct token t;
+	size_t i, n1 = 1, n2 = 1;
+	bool s1 = t1->space, s2 = t2->space;
+
+	if ((i = macroparam(m, t1)) != -1)
+		t1 = m->arg[i].raw, n1 = m->arg[i].nraw;
+	if ((i = macroparam(m, t2)) != -1)
+		t2 = m->arg[i].raw, n2 = m->arg[i].nraw;
+	t.kind = TNONE;
+	if (n1 && n2) {
+		--n1;
+		tokenconcat(&t, loc, t1 + n1, t2);
+		--n2, ++t2;
+	}
+	if (n2)
+		ctxpush(t2, n2, NULL, s2);
+	if (t.kind)
+		ctxpush(&t, 1, NULL, n1 ? t1[n1].space : s1);
+	if (n1)
+		ctxpush(t1, n1, NULL, s1);
+}
+
 /* get the next token from the context */
 static struct token *
 ctxnext(void)
@@ -173,29 +203,35 @@ again:
 	if (ctx.len == 0)
 		return NULL;
 	m = f->macro;
-	if (m && m->kind == MACROFUNC) {
-		/* try to expand macro parameter */
-		space = f->token->space;
-		switch (f->token->kind) {
-		case THASH:
-			framenext(f);
-			t = framenext(f);
-			assert(t);
-			i = macroparam(m, t);
-			assert(i != -1);
-			f = ctxpush(&m->arg[i].str, 1, NULL, space);
-			break;
-		case TIDENT:
-			i = macroparam(m, f->token);
-			if (i == -1)
-				break;
-			framenext(f);
-			if (m->arg[i].ntoken == 0)
-				goto again;
-			f = ctxpush(m->arg[i].token, m->arg[i].ntoken, NULL, space);
-			break;
+	if (m) {
+		t = f->token;
+		if (f->ntoken > 1 && t[1].kind == THASHHASH) {
+			f->token += 3, f->ntoken -= 3;
+			macroconcat(m, &t[1].loc, t, t + 2);
+			goto again;
 		}
-		/* XXX: token concatenation */
+		if (m->kind == MACROFUNC) {
+			space = t->space;
+			switch (t->kind) {
+			case THASH:
+				framenext(f);
+				t = framenext(f);
+				assert(t);
+				i = macroparam(m, t);
+				assert(i != -1);
+				f = ctxpush(&m->arg[i].str, 1, NULL, space);
+				break;
+			case TIDENT:
+				i = macroparam(m, f->token);
+				if (i == -1)
+					break;
+				framenext(f);
+				if (m->arg[i].ntoken == 0)
+					goto again;
+				f = ctxpush(m->arg[i].token, m->arg[i].ntoken, NULL, space);
+				break;
+			}
+		}
 	}
 	return framenext(f);
 }
@@ -247,8 +283,6 @@ define(void)
 	/* read macro body */
 	i = macroparam(m, t);
 	while (t->kind != TNEWLINE && t->kind != TEOF) {
-		if (t->kind == THASHHASH)
-			error(&t->loc, "'##' operator is not yet implemented");
 		prev = t->kind;
 		t = arrayadd(&repl, sizeof(*t));
 		scan(t);
@@ -257,7 +291,7 @@ define(void)
 		if (m->kind != MACROFUNC)
 			continue;
 		if (i != -1)
-			m->param[i].flags |= PARAMTOK;
+			m->param[i].flags |= t->kind == THASHHASH ? PARAMRAW : PARAMTOK;
 		i = macroparam(m, t);
 		if (prev == THASH) {
 			tokencheck(t, TIDENT, "after '#' operator");
@@ -265,11 +299,22 @@ define(void)
 				error(&t->loc, "'%s' is not a macro parameter name", t->lit);
 			m->param[i].flags |= PARAMSTR;
 			i = -1;
+		} else if (prev == THASHHASH && i != -1) {
+			m->param[i].flags |= PARAMRAW;
+			i = -1;
 		}
 	}
 	m->token = repl.val;
 	m->ntoken = repl.len / sizeof(*t) - 1;
 	tok = *t;
+	if (m->ntoken > 0) {
+		t = &m->token[0];
+		if (t->kind == THASHHASH)
+			error(&t->loc, "'##' operator cannot occur at beginning of macro replacement list");
+		t = &m->token[m->ntoken - 1];
+		if (t->kind == THASHHASH)
+			error(&t->loc, "'##' operator cannot occur at end of macro replacement list");
+	}
 
 	mapkey(&k, m->name, strlen(m->name));
 	entry = mapput(macros, &k);
@@ -424,7 +469,7 @@ expand(struct token *t)
 	struct macro *m;
 	struct macroparam *p;
 	struct macroarg *arg;
-	struct array str, tok;
+	struct array tok, raw, str;
 	size_t i, depth, paren;
 	bool space;
 
@@ -443,6 +488,7 @@ expand(struct token *t)
 		paren = 0;
 		depth = macrodepth;
 		tok = (struct array){0};
+		raw = (struct array){0};
 		arg = xreallocarray(NULL, m->nparam, sizeof(*arg));
 		t = rawnext();
 		for (i = 0; i < m->nparam; ++i) {
@@ -452,6 +498,7 @@ expand(struct token *t)
 				arrayaddbuf(&str, "\"", 1);
 			}
 			arg[i].ntoken = 0;
+			arg[i].nraw = 0;
 			for (;;) {
 				if (t->kind == TEOF)
 					error(&t->loc, "EOF when reading macro parameters");
@@ -466,6 +513,10 @@ expand(struct token *t)
 					}
 					if (p->flags & PARAMSTR)
 						stringize(&str, t);
+					if (m->param[i].flags & PARAMRAW) {
+						arrayaddbuf(&raw, t, sizeof(*t));
+						++arg[i].nraw;
+					}
 				}
 				if (p->flags & PARAMTOK && !expand(t)) {
 					arrayaddbuf(&tok, t, sizeof(*t));
@@ -491,6 +542,10 @@ expand(struct token *t)
 		for (i = 0, t = tok.val; i < m->nparam; ++i) {
 			arg[i].token = t;
 			t += arg[i].ntoken;
+		}
+		for (i = 0, t = raw.val; i < m->nparam; ++i) {
+			arg[i].raw = t;
+			t += arg[i].nraw;
 		}
 		m->arg = arg;
 	}

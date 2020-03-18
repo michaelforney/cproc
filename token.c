@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "util.h"
 #include "cc.h"
 
@@ -180,6 +181,27 @@ tokencheck(const struct token *t, enum tokenkind kind, const char *msg)
 		error(&t->loc, "expected %s %s, saw %s", want, msg, got);
 	}
 	return t->lit;
+}
+
+void
+tokenconcat(struct token *t, const struct location *loc, const struct token *t1, const struct token *t2)
+{
+	size_t n1, n2;
+
+	/* XXX: there are a lot of missing cases here, maybe we should just rescan the string? */
+	if (t1->kind != TIDENT && t1->kind != TNUMBER || t2->kind != TIDENT && t2->kind != TNUMBER)
+		error(loc, "invalid (or unsupported) token concatenation");
+	if (t1->kind == TIDENT && t2->kind == TNUMBER && strpbrk(t2->lit, ".+-"))
+		error(loc, "invalid token '%s%s'", t1->lit, t2->lit);
+	n1 = strlen(t1->lit);
+	n2 = strlen(t2->lit);
+	t->kind = t1->kind;
+	t->space = t1->space;
+	t->hide = false;
+	t->loc = *loc;
+	t->lit = xmalloc(n1 + n2 + 1);
+	memcpy(t->lit, t1->lit, n1);
+	memcpy(t->lit + n1, t2->lit, n2 + 1);
 }
 
 _Noreturn void error(const struct location *loc, const char *fmt, ...)
