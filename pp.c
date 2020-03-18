@@ -386,9 +386,18 @@ stringize(struct array *buf, struct token *t)
 {
 	const char *lit;
 
+	if ((t->space || t->kind == TNEWLINE) && ((char *)buf->val)[buf->len - 1] != ' ')
+		arrayaddbuf(buf, " ", 1);
 	lit = t->lit ? t->lit : tokstr[t->kind];
-	/* XXX: double escape string literal */
-	arrayaddbuf(buf, lit, strlen(lit));
+	if (t->kind == TSTRINGLIT || t->kind == TCHARCONST) {
+		for (; *lit; ++lit) {
+			if (*lit == '\\' || *lit == '"')
+				arrayaddbuf(buf, "\\", 1);
+			arrayaddbuf(buf, lit, 1);
+		}
+	} else if (lit) {
+		arrayaddbuf(buf, lit, strlen(lit));
+	}
 }
 
 static bool
