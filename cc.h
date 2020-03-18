@@ -7,6 +7,7 @@ enum tokenkind {
 
 	TEOF,
 	TNEWLINE,
+	TOTHER,
 
 	TIDENT,
 	TNUMBER,

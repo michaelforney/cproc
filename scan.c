@@ -407,9 +407,9 @@ again:
 			return number(s);
 		if (isalpha(s->chr) || s->chr == '_')
 			return ident(s);
-		if (isprint(s->chr))
-			error(&s->loc, "unexpected character '%c'", s->chr);
-		error(&s->loc, "unexpected character '\\x%02x'", s->chr);
+		s->usebuf = true;
+		nextchar(s);
+		return TOTHER;
 	}
 }
 
