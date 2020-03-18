@@ -428,16 +428,15 @@ expand(struct token *t)
 			arg = xreallocarray(NULL, m->nparam, sizeof(*arg));
 		} else {
 			arg = NULL;
-			t = rawnext();
 		}
-		for (i = 0; i < m->nparam && t->kind != TRPAREN; ++i) {
+		t = rawnext();
+		for (i = 0; i < m->nparam; ++i) {
 			if (m->param[i].flags & PARAMSTR) {
 				str = (struct array){0};
 				arrayaddbuf(&str, "\"", 1);
 			}
 			arg[i].ntoken = 0;
 			for (;;) {
-				t = rawnext();
 				if (t->kind == TEOF)
 					error(&t->loc, "EOF when reading macro parameters");
 				if (macrodepth <= depth) {
@@ -456,6 +455,7 @@ expand(struct token *t)
 					arrayaddbuf(&tok, t, sizeof(*t));
 					++arg[i].ntoken;
 				}
+				t = rawnext();
 			}
 			if (m->param[i].flags & PARAMSTR) {
 				arrayaddbuf(&str, "\"", 2);
@@ -464,10 +464,14 @@ expand(struct token *t)
 					.lit = str.val,
 				};
 			}
+			if (t->kind == TRPAREN)
+				break;
+			t = rawnext();
 		}
-		if (i < m->nparam)
+		if (i + 1 < m->nparam)
 			error(&t->loc, "not enough arguments for macro '%s'", m->name);
-		tokencheck(t, TRPAREN, "after macro arguments");
+		if (t->kind != TRPAREN)
+			error(&t->loc, "too many arguments for macro '%s'", m->name);
 		for (i = 0, t = tok.val; i < m->nparam; ++i) {
 			if (m->param[i].flags & PARAMTOK) {
 				arg[i].token = t;
