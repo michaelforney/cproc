@@ -65,16 +65,16 @@ ppinit(void)
 static bool
 macroequal(struct macro *m1, struct macro *m2)
 {
+	struct macroparam *p1, *p2;
 	struct token *t1, *t2;
-	size_t i;
 
 	if (m1->kind != m2->kind)
 		return false;
 	if (m1->kind == MACROFUNC) {
 		if (m1->nparam != m2->nparam)
 			return false;
-		for (i = 0; i < m1->nparam; ++i) {
-			if (strcmp(m1->param[i].name, m2->param[i].name) != 0)
+		for (p1 = m1->param, p2 = m2->param; p1 < m1->param + m1->nparam; ++p1, ++p2) {
+			if (strcmp(p1->name, p2->name) != 0)
 				return false;
 		}
 	}
@@ -404,6 +404,7 @@ static bool
 expand(struct token *t)
 {
 	struct macro *m;
+	struct macroparam *p;
 	struct macroarg *arg;
 	struct array str, tok;
 	size_t i, depth, paren;
@@ -427,7 +428,8 @@ expand(struct token *t)
 		arg = xreallocarray(NULL, m->nparam, sizeof(*arg));
 		t = rawnext();
 		for (i = 0; i < m->nparam; ++i) {
-			if (m->param[i].flags & PARAMSTR) {
+			p = &m->param[i];
+			if (p->flags & PARAMSTR) {
 				str = (struct array){0};
 				arrayaddbuf(&str, "\"", 1);
 			}
@@ -444,16 +446,16 @@ expand(struct token *t)
 					case TLPAREN: ++paren; break;
 					case TRPAREN: --paren; break;
 					}
-					if (m->param[i].flags & PARAMSTR)
+					if (p->flags & PARAMSTR)
 						stringize(&str, t);
 				}
-				if (m->param[i].flags & PARAMTOK && !expand(t)) {
+				if (p->flags & PARAMTOK && !expand(t)) {
 					arrayaddbuf(&tok, t, sizeof(*t));
 					++arg[i].ntoken;
 				}
 				t = rawnext();
 			}
-			if (m->param[i].flags & PARAMSTR) {
+			if (p->flags & PARAMSTR) {
 				arrayaddbuf(&str, "\"", 2);
 				arg[i].str = (struct token){
 					.kind = TSTRINGLIT,
