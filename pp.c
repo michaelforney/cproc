@@ -403,7 +403,7 @@ stringize(struct array *buf, struct token *t)
 {
 	const char *lit;
 
-	if ((t->space || t->kind == TNEWLINE) && ((char *)buf->val)[buf->len - 1] != ' ')
+	if ((t->space || t->kind == TNEWLINE) && buf->len > 1 && ((char *)buf->val)[buf->len - 1] != ' ')
 		arrayaddbuf(buf, " ", 1);
 	lit = t->lit ? t->lit : tokstr[t->kind];
 	if (t->kind == TSTRINGLIT || t->kind == TCHARCONST) {
