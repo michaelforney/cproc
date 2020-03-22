@@ -13,6 +13,7 @@ struct macroparam {
 	enum {
 		PARAMTOK = 1<<0,  /* the parameter is used normally */
 		PARAMSTR = 1<<1,  /* the parameter is used with the '#' operator */
+		PARAMVAR = 1<<2,  /* the parameter is __VA_ARGS__ */
 	} flags;
 };
 
@@ -74,7 +75,7 @@ macroequal(struct macro *m1, struct macro *m2)
 		if (m1->nparam != m2->nparam)
 			return false;
 		for (p1 = m1->param, p2 = m2->param; p1 < m1->param + m1->nparam; ++p1, ++p2) {
-			if (strcmp(p1->name, p2->name) != 0)
+			if (strcmp(p1->name, p2->name) != 0 || p1->flags != p2->flags)
 				return false;
 		}
 	}
@@ -123,6 +124,12 @@ macrodone(struct macro *m)
 		free(m->arg);
 	}
 	--macrodepth;
+}
+
+static bool
+macrovarargs(struct macro *m)
+{
+	return m->kind == MACROFUNC && m->nparam > 0 && m->param[m->nparam - 1].flags & PARAMVAR;
 }
 
 static struct token *
@@ -213,14 +220,22 @@ define(void)
 	if (t->kind == TLPAREN && !t->space) {
 		m->kind = MACROFUNC;
 		/* read macro parameter names */
-		while (scan(&tok), tok.kind == TIDENT) {
+		while (scan(&tok), tok.kind != TRPAREN) {
+			if (params.len) {
+				if (p->flags & PARAMVAR)
+					tokencheck(&tok, TRPAREN, "after '...'");
+				tokencheck(&tok, TCOMMA, "or ')' after macro parameter");
+				scan(&tok);
+			}
 			p = arrayadd(&params, sizeof(*p));
-			p->name = tok.lit;
 			p->flags = 0;
-			if (scan(&tok), tok.kind != TCOMMA)
-				break;
+			if (tok.kind == TELLIPSIS) {
+				p->name = "__VA_ARGS__";
+				p->flags |= PARAMVAR;
+			} else {
+				p->name = tokencheck(&tok, TIDENT, "of macro parameter name or '...'");
+			}
 		}
-		tokencheck(&tok, TRPAREN, "after macro parameter list");
 		scan(t);  /* first token in replacement list */
 	} else {
 		m->kind = MACROOBJ;
@@ -236,6 +251,8 @@ define(void)
 		prev = t->kind;
 		t = arrayadd(&repl, sizeof(*t));
 		scan(t);
+		if (t->kind == TIDENT && strcmp(t->lit, "__VA_ARGS__") == 0 && !macrovarargs(m))
+			error(&t->loc, "__VA_ARGS__ can only be used in variadic function-like macros");
 		if (m->kind != MACROFUNC)
 			continue;
 		if (i != -1)
@@ -440,7 +457,7 @@ expand(struct token *t)
 				if (macrodepth <= depth) {
 					/* adjust current macro depth, in case it got shallower */
 					depth = macrodepth;
-					if (paren == 0 && (t->kind == TCOMMA || t->kind == TRPAREN))
+					if (paren == 0 && (t->kind == TRPAREN || t->kind == TCOMMA && !(p->flags & PARAMVAR)))
 						break;
 					switch (t->kind) {
 					case TLPAREN: ++paren; break;
