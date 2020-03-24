@@ -427,7 +427,7 @@ main(int argc, char *argv[])
 			arrayaddptr(&stages[LINK].cmd, arg);
 		} else if (strcmp(arg, "-emit-qbe") == 0) {
 			last = COMPILE;
-		} else if (strcmp(arg, "-include") == 0 || strcmp(arg, "-idirafter") == 0) {
+		} else if (strcmp(arg, "-include") == 0 || strcmp(arg, "-idirafter") == 0 || strcmp(arg, "-isystem") == 0) {
 			if (!--argc)
 				usage(NULL);
 			arrayaddptr(&stages[PREPROCESS].cmd, arg);
