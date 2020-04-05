@@ -131,8 +131,6 @@ typecompatible(struct type *t1, struct type *t2)
 		       t1->basic.issigned == t2->basic.issigned;
 	}
 	switch (t1->kind) {
-	case TYPEVOID:
-		return true;
 	case TYPEPOINTER:
 		goto derived;
 	case TYPEARRAY:
