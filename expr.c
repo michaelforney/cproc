@@ -183,6 +183,16 @@ commonreal(struct expr **e1, struct expr **e2)
 	return t;
 }
 
+static bool
+nullpointer(struct expr *e)
+{
+	if (e->kind != EXPRCONST)
+		return false;
+	if (!(e->type->prop & PROPINT) && (e->type->kind != TYPEPOINTER || e->type->base != &typevoid))
+		return false;
+	return e->constant.i == 0;
+}
+
 static struct expr *
 mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct expr *r)
 {
@@ -205,16 +215,45 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 		break;
 	case TEQL:
 	case TNEQ:
+		t = &typeint;
+		if (lp & PROPARITH && rp & PROPARITH) {
+			commonreal(&l, &r);
+			break;
+		}
+		if (l->type->kind != TYPEPOINTER)
+			e = l, l = r, r = e;
+		if (l->type->kind != TYPEPOINTER)
+			error(loc, "invalid operands to '%s' operator", tokstr[op]);
+		if (nullpointer(eval(r, EVALARITH))) {
+			r = exprconvert(r, l->type);
+			break;
+		}
+		if (nullpointer(eval(l, EVALARITH))) {
+			l = exprconvert(l, r->type);
+			break;
+		}
+		if (r->type->kind != TYPEPOINTER)
+			error(loc, "invalid operands to '%s' operator", tokstr[op]);
+		if (l->type->base->kind == TYPEVOID)
+			e = l, l = r, r = e;
+		if (r->type->base->kind == TYPEVOID && l->type->base->kind != TYPEFUNC)
+			r = exprconvert(r, l->type);
+		else if (!typecompatible(l->type->base, r->type->base))
+			error(loc, "pointer operands to '%s' operator are to incompatible types", tokstr[op]);
+		break;
 	case TLESS:
 	case TGREATER:
 	case TLEQ:
 	case TGEQ:
-		if (lp & PROPARITH && rp & PROPARITH) {
-			commonreal(&l, &r);
-		} else {
-			// XXX: check pointer types
-		}
 		t = &typeint;
+		if (lp & PROPREAL && rp & PROPREAL) {
+			commonreal(&l, &r);
+		} else if (l->type->kind == TYPEPOINTER && r->type->kind == TYPEPOINTER) {
+			if (!typecompatible(l->type->base, r->type->base) || l->type->base->kind == TYPEFUNC)
+				error(loc, "pointer operands to '%s' operator must be to compatible object types", tokstr[op]);
+		} else {
+			error(loc, "invalid operands to '%s' operator", tokstr[op]);
+		}
 		break;
 	case TBOR:
 	case TXOR:
@@ -957,16 +996,6 @@ binaryexpr(struct scope *s, struct expr *l, int i)
 		l = mkbinaryexpr(&loc, op, l, r);
 	}
 	return l;
-}
-
-static bool
-nullpointer(struct expr *e)
-{
-	if (e->kind != EXPRCONST)
-		return false;
-	if (!(e->type->prop & PROPINT) && (e->type->kind != TYPEPOINTER || e->type->base != &typevoid))
-		return false;
-	return e->constant.i == 0;
 }
 
 static struct expr *
