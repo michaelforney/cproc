@@ -119,14 +119,9 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 	switch (op) {
 	case TBAND:
 		if (base->decayed) {
-			/*
-			An array gets decayed to a pointer to its first element,
-			but with an explicit '&' operator, it is a pointer to
-			the array.
-			*/
-			base->type = mkpointertype(base->base->type, base->base->qual);
-			base->decayed = false;
-			return base;
+			expr = base;
+			base = base->base;
+			free(expr);
 		}
 		/*
 		Allow struct and union types even if they are not lvalues,
