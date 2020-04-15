@@ -131,26 +131,10 @@ index 5828a3b..6e006cc 100644
 One of the main goals of cproc is to compile the entire oasis linux
 system (excluding kernel and libc). This is a work in progress, but many
 packages have patches to fix various ISO C conformance issues, enabling
-them to be built. See the patch directories in the [oasis package tree]
-for the patches used.
+them to be built.
 
-Currently the following build successfully:
+See the [oasis #13] for the current status of this effort, and the
+patch directories in the [oasis package tree] for any patches used.
 
-- awk bc bearssl blind byacc bzip2 cmark cproc curl dmenu dosfstools
-  e2fsprogs efibootmgr elftoolchain-libelf expat farbfeld file flex
-  fontconfig freetype fribidi fuse git ii iproute2 jbig2dec kbd less
-  libass libcbor libdrm libevdev libevent libffi libinput libjpeg-turbo
-  libpng libressl libtermkey libxkbcommon loksh lpeg lua make mandoc
-  myrddin monocypher msmtp mtdev nasm ncurses nsd openntpd openssh
-  perp pigz qbe rc samurai sbase sdhcp sinit sshfs st swc texi2mdoc
-  transmission ubase unzip utf8proc velox wayland wld wpa\_supplicant
-  xz zlib zstd
-- Various OpenBSD tools (acme-client diff doas fmt m4 patch rsync yacc)
-- Parts of util-linux (fdisk losetup)
-
-The following still need more work:
-
-- efivar ffmpeg libfido2 libnl libpciaccess libutp mpv netsurf nginx pcre
-  pixman python strace extlinux the\_silver\_searcher tinyemu vis
-
-[oasis package tree]: https://github.com/michaelforney/oasis/tree/master/pkg
+[oasis #13]: https://github.com/oasislinux/oasis/issues/13
+[oasis package tree]: https://github.com/oasislinux/oasis/tree/master/pkg
