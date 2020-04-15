@@ -3,13 +3,18 @@
 This document lists some software known to build successfully, and any
 special procedures necessary.
 
-## sbase
+## oasis
 
-Builds without issue.
+One of the main goals of cproc is to compile the entire oasis linux
+system (excluding kernel and libc). This is a work in progress, but many
+packages have patches to fix various ISO C conformance issues, enabling
+them to be built.
 
-## mcpp
+See the [oasis #13] for the current status of this effort, and the
+patch directories in the [oasis package tree] for any patches used.
 
-Builds without issue. Requires `CFLAGS=-D_POSIX_C_SOURCE=200112L`.
+[oasis #13]: https://github.com/oasislinux/oasis/issues/13
+[oasis package tree]: https://github.com/oasislinux/oasis/tree/master/pkg
 
 ## binutils
 
@@ -125,16 +130,3 @@ index 5828a3b..6e006cc 100644
  #include "arg.h"
  #include "st.h"
 ```
-
-## oasis
-
-One of the main goals of cproc is to compile the entire oasis linux
-system (excluding kernel and libc). This is a work in progress, but many
-packages have patches to fix various ISO C conformance issues, enabling
-them to be built.
-
-See the [oasis #13] for the current status of this effort, and the
-patch directories in the [oasis package tree] for any patches used.
-
-[oasis #13]: https://github.com/oasislinux/oasis/issues/13
-[oasis package tree]: https://github.com/oasislinux/oasis/tree/master/pkg
