@@ -5,12 +5,16 @@ fail() {
 	exit 1
 }
 
+prefix=/usr/local
+bindir='$(PREFIX)/bin'
 host=
 target=
 gcclibdir=
 
 for arg ; do
 	case "$arg" in
+	--prefix=*) prefix=${arg#*=} ;;
+	--bindir=*) bindir=${arg#*=} ;;
 	--host=*) host=${arg#*=} ;;
 	--target=*) target=${arg#*=} ;;
 	--with-cpp=*) DEFAULT_PREPROCESSOR=${arg#*=} ;;
@@ -152,6 +156,8 @@ echo done
 
 printf "creating config.mk... "
 cat >config.mk <<EOF
+PREFIX=$prefix
+BINDIR=$bindir
 CC=${CC:-cc}
 CFLAGS=${CFLAGS:--std=c11 -Wall -Wpedantic -Wno-parentheses -Wno-switch -g -pipe}
 LDFLAGS=$LDFLAGS

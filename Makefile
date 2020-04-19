@@ -1,5 +1,7 @@
 .POSIX:
 
+PREFIX=/usr/local
+BINDIR=$(PREFIX)/bin
 BACKEND=qbe
 
 objdir=.
@@ -83,6 +85,11 @@ bootstrap: stage2 stage3
 .PHONY: check
 check: all
 	@CCQBE=./cproc-qbe ./runtests
+
+.PHONY: install
+install: all
+	mkdir -p $(DESTDIR)$(BINDIR)
+	cp $(objdir)/cproc $(objdir)/cproc-qbe $(DESTDIR)$(BINDIR)
 
 .PHONY: qbe
 qbe:
