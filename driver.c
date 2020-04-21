@@ -547,7 +547,7 @@ main(int argc, char *argv[])
 					usage("unknown language '%s'", arg);
 				break;
 			default:
-				usage(NULL);
+				usage("unknown option '%s'", arg);
 			}
 		}
 	}
