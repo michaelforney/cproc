@@ -2,31 +2,29 @@ export
 function w $main() {
 @start.1
 	%.1 =l alloc4 4
-	%.3 =l alloc4 4
+	%.2 =l alloc4 4
 @body.2
-	%.2 =l add %.1, 0
-	storew 2, %.2
-	%.4 =l add %.3, 0
-	storew 0, %.4
+	storew 2, %.1
+	storew 0, %.2
 @do_body.3
-	%.5 =w loadsw %.1
-	%.6 =w ceqw %.5, 1
-	%.7 =w cnew %.6, 0
-	jnz %.7, @if_true.6, @if_false.7
+	%.3 =w loadsw %.1
+	%.4 =w ceqw %.3, 1
+	%.5 =w cnew %.4, 0
+	jnz %.5, @if_true.6, @if_false.7
 @if_true.6
 	jmp @do_cond.4
 @if_false.7
-	%.8 =w loadsw %.3
-	%.9 =w add %.8, 1
-	storew %.9, %.3
+	%.6 =w loadsw %.2
+	%.7 =w add %.6, 1
+	storew %.7, %.2
 @do_cond.4
-	%.10 =w loadsw %.1
-	%.11 =w sub %.10, 1
-	storew %.11, %.1
-	%.12 =w cnew %.10, 0
-	jnz %.12, @do_body.3, @do_join.5
+	%.8 =w loadsw %.1
+	%.9 =w sub %.8, 1
+	storew %.9, %.1
+	%.10 =w cnew %.8, 0
+	jnz %.10, @do_body.3, @do_join.5
 @do_join.5
-	%.13 =w loadsw %.3
-	%.14 =w cnew %.13, 2
-	ret %.14
+	%.11 =w loadsw %.2
+	%.12 =w cnew %.11, 2
+	ret %.12
 }

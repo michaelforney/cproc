@@ -3,10 +3,9 @@ function $f() {
 @start.1
 	%.1 =l alloc8 8
 @body.2
-	%.2 =l add %.1, 0
-	%.3 =l extsw 32
-	%.4 =l alloc16 %.3
-	%.5 =l copy %.4
-	storel %.5, %.2
+	%.2 =l extsw 32
+	%.3 =l alloc16 %.2
+	%.4 =l copy %.3
+	storel %.4, %.1
 	ret
 }

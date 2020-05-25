@@ -4,7 +4,6 @@ function :s.1 $f() {
 @start.1
 	%.1 =l alloc4 4
 @body.2
-	%.2 =l add %.1, 0
-	storew 2, %.2
+	storew 2, %.1
 	ret %.1
 }

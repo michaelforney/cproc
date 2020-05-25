@@ -2,17 +2,15 @@ export
 function $f() {
 @start.1
 	%.1 =l alloc4 4
-	%.3 =l alloc8 8
+	%.2 =l alloc8 8
 @body.2
-	%.2 =l add %.1, 0
-	storew 0, %.2
-	%.4 =l add %.3, 0
-	storel %.1, %.4
-	%.5 =l loadl %.3
-	%.6 =l add %.5, 4
-	storel %.6, %.3
-	%.7 =w loadsw %.5
-	%.8 =w add %.7, 1
-	storew %.8, %.5
+	storew 0, %.1
+	storel %.1, %.2
+	%.3 =l loadl %.2
+	%.4 =l add %.3, 4
+	storel %.4, %.2
+	%.5 =w loadsw %.3
+	%.6 =w add %.5, 1
+	storew %.6, %.3
 	ret
 }

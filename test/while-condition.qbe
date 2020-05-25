@@ -3,21 +3,20 @@ function w $main() {
 @start.1
 	%.1 =l alloc8 8
 @body.2
-	%.2 =l add %.1, 0
-	%.3 =d swtof 1
-	stored %.3, %.2
+	%.2 =d swtof 1
+	stored %.2, %.1
 @while_cond.3
-	%.4 =d loadd %.1
-	%.5 =w cned %.4, d_0
-	jnz %.5, @while_body.4, @while_join.5
+	%.3 =d loadd %.1
+	%.4 =w cned %.3, d_0
+	jnz %.4, @while_body.4, @while_join.5
 @while_body.4
-	%.6 =d loadd %.1
-	%.7 =d swtof 2
-	%.8 =d div %.6, %.7
-	stored %.8, %.1
+	%.5 =d loadd %.1
+	%.6 =d swtof 2
+	%.7 =d div %.5, %.6
+	stored %.7, %.1
 	jmp @while_cond.3
 @while_join.5
-	%.9 =d loadd %.1
-	%.10 =w dtosi %.9
-	ret %.10
+	%.8 =d loadd %.1
+	%.9 =w dtosi %.8
+	ret %.9
 }

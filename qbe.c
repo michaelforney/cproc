@@ -971,7 +971,13 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 		} else {
 			if (offset < init->end && (dst.bits.before || dst.bits.after))
 				zero(func, d->value, d->type->align, offset, init->end);
-			dst.addr = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start));
+			dst.addr = d->value;
+			/*
+			QBE's memopt does not eliminate the store for ptr + 0,
+			so only emit the add if the offset is non-zero
+			*/
+			if (init->start > 0)
+				dst.addr = funcinst(func, IADD, &iptr, dst.addr, mkintconst(&iptr, init->start));
 			src = funcexpr(func, init->expr);
 			funcstore(func, init->expr->type, QUALNONE, dst, src);
 			offset = init->end;
