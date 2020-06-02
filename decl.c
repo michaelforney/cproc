@@ -229,7 +229,7 @@ tagspec(struct scope *s)
 				}
 			} else if (i == 1ull << 32) {
 			invalid:
-				error(&tok.loc, "enumerator '%s' value cannot be represented as 'int'", name);
+				error(&tok.loc, "enumerator '%s' value cannot be represented as 'int' or 'unsigned int'", name);
 			}
 			d = mkdecl(DECLCONST, &typeint, QUALNONE, LINKNONE);
 			d->value = mkintconst(t->repr, i);
