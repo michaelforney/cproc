@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <limits.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -143,22 +144,35 @@ funcspec(enum funcspec *fs)
 
 static void structdecl(struct scope *, struct structbuilder *);
 
+static unsigned long long
+intmax(struct type *t)
+{
+	return -1ull >> sizeof(unsigned long long) * CHAR_BIT - t->size * 8 + t->basic.issigned;
+}
+
+static bool
+inrange(struct type *t, unsigned long long v, bool sign)
+{
+	if (sign && v >= 1ull << 63)
+		return t->basic.issigned && v >= -1ull << t->size * 8 - 1;
+	return v <= intmax(t);
+}
+
 static struct type *
 tagspec(struct scope *s)
 {
-	struct type *t;
+	struct type *t, *et, *ct;
 	char *tag, *name;
 	enum typekind kind;
 	struct decl *d;
 	struct expr *e;
 	struct structbuilder b;
 	uint64_t i;
-	bool large;
 
 	switch (tok.kind) {
 	case TSTRUCT: kind = TYPESTRUCT; break;
 	case TUNION:  kind = TYPEUNION;  break;
-	case TENUM:   kind = TYPEENUM;   break;
+	case TENUM:   kind = TYPEINT;    break;
 	default: fatal("internal error: unknown tag kind");
 	}
 	next();
@@ -168,30 +182,28 @@ tagspec(struct scope *s)
 	} else {
 		tag = expect(TIDENT, "or '{' after struct/union");
 		t = scopegettag(s, tag, false);
-		if (s->parent && !t && tok.kind != TLBRACE && (kind == TYPEENUM || tok.kind != TSEMICOLON))
+		if (s->parent && !t && tok.kind != TLBRACE && (kind == TYPEINT || tok.kind != TSEMICOLON))
 			t = scopegettag(s->parent, tag, true);
 	}
-	if (t) {
-		if (t->kind != kind)
-			error(&tok.loc, "redeclaration of tag '%s' with different kind", tag);
-	} else {
-		if (kind == TYPEENUM) {
-			t = xmalloc(sizeof(*t));
-			*t = typeuint;
-			t->kind = kind;
+	if (!t) {
+		t = mktype(kind, PROPOBJECT);
+		t->size = 0;
+		t->align = 0;
+		if (kind == TYPEINT) {
+			t->prop |= PROPENUM;
+			t->basic.issigned = false;
 		} else {
-			t = mktype(kind, PROPOBJECT);
 			if (kind == TYPESTRUCT)
 				t->prop |= PROPAGGR;
 			t->repr = &i64; // XXX
-			t->size = 0;
-			t->align = 0;
 			t->structunion.tag = tag;
 			t->structunion.members = NULL;
 		}
 		t->incomplete = true;
 		if (tag)
 			scopeputtag(s, tag, t);
+	} else if (t->kind != kind && (kind != TYPEINT || t->prop & PROPENUM)) {
+		error(&tok.loc, "redeclaration of tag '%s' with different kind", tag);
 	}
 	if (tok.kind != TLBRACE)
 		return t;
@@ -210,8 +222,9 @@ tagspec(struct scope *s)
 		t->size = ALIGNUP(t->size, t->align);
 		t->incomplete = false;
 		break;
-	case TYPEENUM:
-		large = false;
+	case TYPEINT:
+		et = NULL;
+		ct = &typeint;
 		for (i = 0; tok.kind == TIDENT; ++i) {
 			name = tok.lit;
 			next();
@@ -220,31 +233,31 @@ tagspec(struct scope *s)
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "expected integer constant expression");
 				i = e->constant.i;
-				if (e->type->basic.issigned && i >= 1ull << 63) {
-					if (i < -1ull << 31)
-						goto invalid;
-					t->basic.issigned = true;
-				} else if (i >= 1ull << 32) {
-					goto invalid;
-				}
-			} else if (i == 1ull << 32) {
-			invalid:
-				error(&tok.loc, "enumerator '%s' value cannot be represented as 'int' or 'unsigned int'", name);
+				t->basic.issigned |= e->type->basic.issigned && i >= 1ull << 63;
+				if (inrange(&typeint, i, e->type->basic.issigned))
+					ct = &typeint;
+				else if (et && !typecompatible(et, e->type))
+					error(&tok.loc, "enumerator '%s' value is outside the range of 'int'", name);
+				else
+					ct = et = e->type;
+			} else if (i - 1 == intmax(ct)) {
+				/* the constant is outside the range of the type of the previous enumerator */
+				error(&tok.loc, "enumerator '%s' value overflow", name);
 			}
-			d = mkdecl(DECLCONST, &typeint, QUALNONE, LINKNONE);
-			d->value = mkintconst(t->repr, i);
-			if (i >= 1ull << 31 && i < 1ull << 63) {
-				large = true;
-				d->type = &typeuint;
-			}
-			if (large && t->basic.issigned)
-				error(&tok.loc, "neither 'int' nor 'unsigned' can represent all enumerator values");
+			d = mkdecl(DECLCONST, ct, QUALNONE, LINKNONE);
+			d->value = mkintconst(ct->repr, i);
 			scopeputdecl(s, name, d);
 			if (!consume(TCOMMA))
 				break;
 		}
 		expect(TRBRACE, "to close enum specifier");
-		t->incomplete = false;
+		if (!et)
+			et = t->basic.issigned ? &typeint : &typeuint;
+		else if (t->basic.issigned && !et->basic.issigned)
+			error(&tok.loc, "enumerator with range outside of 'int' is not compatible with enum type");
+		*t = *et;
+		t->prop |= PROPENUM;
+		break;
 	}
 
 	return t;

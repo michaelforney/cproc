@@ -106,7 +106,6 @@ typerank(struct type *t)
 	case TYPEBOOL:  return 1;
 	case TYPECHAR:  return 2;
 	case TYPESHORT: return 3;
-	case TYPEENUM:
 	case TYPEINT:   return 4;
 	case TYPELONG:  return 5;
 	case TYPELLONG: return 6;
@@ -123,14 +122,16 @@ typecompatible(struct type *t1, struct type *t2)
 
 	if (t1 == t2)
 		return true;
-	if (t1->kind != t2->kind) {
-		/* enum types are compatible with 'int', but not with
-		   each other (unless they are the same type) */
-		return (t1->kind == TYPEENUM && t2->kind == TYPEINT ||
-		        t1->kind == TYPEINT && t2->kind == TYPEENUM) &&
-		       t1->basic.issigned == t2->basic.issigned;
-	}
+	if (t1->kind != t2->kind)
+		return false;
 	switch (t1->kind) {
+	case TYPEINT:
+	case TYPELONG:
+	case TYPELLONG:
+		/* enum types are compatible with some basic integer
+		   type, but not with other enum types */
+		return (t1->prop & PROPENUM) != (t2->prop & PROPENUM) &&
+		       t1->basic.issigned == t2->basic.issigned;
 	case TYPEPOINTER:
 		goto derived;
 	case TYPEARRAY:
