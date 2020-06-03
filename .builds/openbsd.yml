@@ -13,7 +13,8 @@ tasks:
     gmake -C qbe
     cd cproc
     ./configure
-    make all check bootstrap
+    make all check
+    # XXX: bootstrap is broken with OpenBSD 6.7 stdarg.h
 triggers:
 - action: email
   condition: failure
