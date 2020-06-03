@@ -147,6 +147,7 @@ enum typekind {
 	TYPECHAR,
 	TYPESHORT,
 	TYPEINT,
+	TYPEENUM,
 	TYPELONG,
 	TYPELLONG,
 	TYPEFLOAT,
@@ -171,7 +172,6 @@ enum typeprop {
 	PROPAGGR    = 1<<6,
 	PROPDERIVED = 1<<7,
 	PROPFLOAT   = 1<<8,
-	PROPENUM    = 1<<9,
 };
 
 struct param {
