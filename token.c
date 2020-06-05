@@ -143,7 +143,7 @@ static void
 tokendesc(char *buf, size_t len, enum tokenkind kind, const char *lit)
 {
 	const char *class;
-	bool quote;
+	bool quote = true;
 
 	switch (kind) {
 	case TEOF:       class = "EOF";                       break;

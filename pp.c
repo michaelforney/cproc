@@ -220,8 +220,9 @@ define(void)
 	if (t->kind == TLPAREN && !t->space) {
 		m->kind = MACROFUNC;
 		/* read macro parameter names */
+		p = NULL;
 		while (scan(&tok), tok.kind != TRPAREN) {
-			if (params.len) {
+			if (p) {
 				if (p->flags & PARAMVAR)
 					tokencheck(&tok, TRPAREN, "after '...'");
 				tokencheck(&tok, TCOMMA, "or ')' after macro parameter");

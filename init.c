@@ -163,6 +163,8 @@ focus(struct initparser *p)
 		p->sub->mem = p->sub->type->structunion.members;
 		t = p->sub->mem->type;
 		break;
+	default:
+		fatal("internal error: init cursor has unexpected type");
 	}
 	subobj(p, t, 0);
 }
