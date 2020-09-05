@@ -7,14 +7,13 @@ packages:
 tasks:
 - setup: |
     # avoid __asm__ on non __GNUC__ compilers
-    doas patch -d /usr/include/amd64 < cproc/.builds/openbsd.diff
+    doas patch -d /usr/include < cproc/.builds/openbsd.diff
 - build: |
     PATH=$HOME/qbe/obj:$PATH
     gmake -C qbe
     cd cproc
     ./configure
-    make all check
-    # XXX: bootstrap is broken with OpenBSD 6.7 stdarg.h
+    make all check bootstrap
 triggers:
 - action: email
   condition: failure

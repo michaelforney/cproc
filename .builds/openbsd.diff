@@ -1,7 +1,27 @@
-diff --git endian.h endian.h
-index 3b077cd9295..cb6948d3fec 100644
---- endian.h
-+++ endian.h
+--- stdarg.h.orig	Sat Sep  5 19:23:19 2020
++++ stdarg.h	Sat Sep  5 19:23:51 2020
+@@ -20,8 +20,6 @@
+ 
+ #include <sys/cdefs.h>
+ 
+-#if (defined(__GNUC__) && __GNUC__ >= 3) || defined(__PCC__)
+-
+ /* Define __gnuc_va_list.  */
+ 
+ #ifndef __GNUC_VA_LIST
+@@ -39,10 +37,6 @@
+ #define __va_copy(dst, src)	__builtin_va_copy((dst),(src))
+ 
+ typedef __gnuc_va_list va_list;
+-
+-#else
+-#error "unsupported compiler"
+-#endif
+ 
+ #if __ISO_C_VISIBLE >= 1999
+ #define	va_copy(dst, src)	__va_copy((dst), (src))
+--- machine/endian.h.orig	Sat Sep  5 19:21:50 2020
++++ machine/endian.h	Sat Sep  5 19:22:51 2020
 @@ -31,6 +31,8 @@
  #include <sys/_types.h>
  #endif
@@ -11,12 +31,12 @@ index 3b077cd9295..cb6948d3fec 100644
  static __inline __uint16_t
  __swap16md(__uint16_t _x)
  {
-@@ -55,6 +57,8 @@ __swap64md(__uint64_t _x)
+@@ -54,6 +56,8 @@
+ 
  /* Tell sys/endian.h we have MD variants of the swap macros.  */
  #define __HAVE_MD_SWAP
- 
-+#endif /* __GNUC__ */
 +
++#endif
+ 
  #define _BYTE_ORDER _LITTLE_ENDIAN
  
- #ifndef __FROM_SYS__ENDIAN
