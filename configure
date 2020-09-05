@@ -106,7 +106,7 @@ case "$target" in
 	test "$host" = "$target" && : ${DEFAULT_PREPROCESSOR:=/usr/libexec/cpp}
 	startfiles='"-l", ":crt0.o", "-l", ":crtbegin.o"'
 	endfiles='"-l", "c", "-l", ":crtend.o"'
-	linkflags='"-L", "/usr/lib",'
+	linkflags='"-L", "/usr/lib", "-nopie",'
 	defines='
 	/* required to prevent libc headers from declaring functions with conflicting linkage */
 	"-D", "_ANSI_LIBRARY",
