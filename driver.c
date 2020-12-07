@@ -440,6 +440,9 @@ main(int argc, char *argv[])
 			arrayaddptr(&stages[PREPROCESS].cmd, arg);
 		} else if (strcmp(arg, "-pedantic") == 0) {
 			/* ignore */
+		} else if (strcmp(arg, "-pthread") == 0) {
+			arrayaddptr(&stages[LINK].cmd, "-l");
+			arrayaddptr(&stages[LINK].cmd, "pthread");
 		} else {
 			if (arg[2] != '\0' && strchr("cESsv", arg[1]))
 				usage(NULL);
