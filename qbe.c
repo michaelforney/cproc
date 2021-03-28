@@ -23,11 +23,11 @@ struct repr {
 
 struct value {
 	enum {
-		VALNONE,
-		VALGLOBAL,
-		VALCONST,
-		VALLABEL,
-		VALTEMP,
+		VALUE_NONE,
+		VALUE_GLOBAL,
+		VALUE_CONST,
+		VALUE_LABEL,
+		VALUE_TEMP,
 	} kind;
 	struct repr *repr;
 	union {
@@ -105,7 +105,7 @@ mkblock(char *name)
 	struct block *b;
 
 	b = xmalloc(sizeof(*b));
-	b->label.kind = VALLABEL;
+	b->label.kind = VALUE_LABEL;
 	b->label.name.str = name;
 	b->label.name.id = ++id;
 	b->terminated = false;
@@ -122,7 +122,7 @@ mkglobal(char *name, bool private)
 	struct value *v;
 
 	v = xmalloc(sizeof(*v));
-	v->kind = VALGLOBAL;
+	v->kind = VALUE_GLOBAL;
 	v->repr = &iptr;
 	v->name.str = name;
 	v->name.id = private ? ++id : 0;
@@ -133,7 +133,7 @@ mkglobal(char *name, bool private)
 char *
 globalname(struct value *v)
 {
-	assert(v->kind == VALGLOBAL && !v->name.id);
+	assert(v->kind == VALUE_GLOBAL && !v->name.id);
 	return v->name.str;
 }
 
@@ -143,7 +143,7 @@ mkintconst(struct repr *r, uint64_t n)
 	struct value *v;
 
 	v = xmalloc(sizeof(*v));
-	v->kind = VALCONST;
+	v->kind = VALUE_CONST;
 	v->repr = r;
 	v->i = n;
 
@@ -153,7 +153,7 @@ mkintconst(struct repr *r, uint64_t n)
 uint64_t
 intconstvalue(struct value *v)
 {
-	assert(v->kind == VALCONST);
+	assert(v->kind == VALUE_CONST);
 	return v->i;
 }
 
@@ -163,7 +163,7 @@ mkfltconst(struct repr *r, double n)
 	struct value *v;
 
 	v = xmalloc(sizeof(*v));
-	v->kind = VALCONST;
+	v->kind = VALUE_CONST;
 	v->repr = r;
 	v->f = n;
 
@@ -187,7 +187,7 @@ functemp(struct func *f, struct value *v, struct repr *repr)
 {
 	if (!repr)
 		fatal("temp has no type");
-	v->kind = VALTEMP;
+	v->kind = VALUE_TEMP;
 	funcname(f, &v->name, NULL);
 	v->repr = repr;
 }
@@ -224,7 +224,7 @@ funcinstn(struct func *f, int op, struct repr *repr, struct value *args[])
 	if (repr)
 		functemp(f, &inst->res, repr);
 	else
-		inst->res.kind = VALNONE;
+		inst->res.kind = VALUE_NONE;
 	memcpy(inst->arg, args, n * sizeof(args[0]));
 	arrayaddptr(&f->end->insts, inst);
 
@@ -593,7 +593,7 @@ functype(struct func *f)
 void
 funclabel(struct func *f, struct value *v)
 {
-	assert(v->kind == VALLABEL);
+	assert(v->kind == VALUE_LABEL);
 	f->end->next = (struct block *)v;
 	f->end = f->end->next;
 }
@@ -934,7 +934,7 @@ zero(struct func *func, struct value *addr, int align, uint64_t offset, uint64_t
 		[8] = ISTOREL,
 	};
 	struct value *tmp;
-	static struct value z = {.kind = VALCONST, .repr = &i64};
+	static struct value z = {.kind = VALUE_CONST, .repr = &i64};
 	int a = 1;
 
 	while (offset < end) {
@@ -1035,13 +1035,13 @@ static void
 emitvalue(struct value *v)
 {
 	static char sigil[] = {
-		[VALLABEL] = '@',
-		[VALTEMP] = '%',
-		[VALGLOBAL] = '$',
+		[VALUE_LABEL] = '@',
+		[VALUE_TEMP] = '%',
+		[VALUE_GLOBAL] = '$',
 	};
 
 	switch (v->kind) {
-	case VALCONST:
+	case VALUE_CONST:
 		if (v->repr->base == 's' || v->repr->base == 'd')
 			printf("%c_%.*g", v->repr->base, DECIMAL_DIG, v->f);
 		else
@@ -1051,7 +1051,7 @@ emitvalue(struct value *v)
 		if (v->kind >= LEN(sigil) || !sigil[v->kind])
 			fatal("invalid value");
 		putchar(sigil[v->kind]);
-		if (v->kind == VALGLOBAL && v->name.id)
+		if (v->kind == VALUE_GLOBAL && v->name.id)
 			fputs(".L", stdout);
 		emitname(&v->name);
 	}
@@ -1238,7 +1238,7 @@ dataitem(struct expr *expr, uint64_t size)
 		if (expr->kind != EXPRIDENT)
 			error(&tok.loc, "initializer is not a constant expression");
 		decl = expr->ident.decl;
-		if (decl->value->kind != VALGLOBAL)
+		if (decl->value->kind != VALUE_GLOBAL)
 			fatal("not a global");
 		emitvalue(decl->value);
 		break;
