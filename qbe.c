@@ -26,7 +26,6 @@ struct value {
 		VALUE_NONE,
 		VALUE_GLOBAL,
 		VALUE_CONST,
-		VALUE_LABEL,
 		VALUE_TEMP,
 	} kind;
 	struct repr *repr;
@@ -65,14 +64,14 @@ struct jump {
 		JUMP_RET,
 	} kind;
 	struct value *arg;
-	struct value *blk[2];
+	struct block *blk[2];
 };
 
 struct block {
-	struct value label;
+	struct name label;
 	struct array insts;
 	struct {
-		struct value *blk[2];
+		struct block *blk[2];
 		struct value *val[2];
 		struct value res;
 	} phi;
@@ -83,7 +82,7 @@ struct block {
 
 struct switchcase {
 	struct treenode node;
-	struct value *body;
+	struct block *body;
 };
 
 struct func {
@@ -104,34 +103,33 @@ struct repr f64 = {'d', 'd'};
 struct repr iptr = {'l', 'l'};
 
 void
-switchcase(struct switchcases *cases, uint64_t i, struct value *v)
+switchcase(struct switchcases *cases, uint64_t i, struct block *b)
 {
 	struct switchcase *c;
 
 	c = treeinsert(&cases->root, i, sizeof(*c));
 	if (!c->node.new)
 		error(&tok.loc, "multiple 'case' labels with same value");
-	c->body = v;
+	c->body = b;
 }
 
 /* values */
 
-struct value *
+struct block *
 mkblock(char *name)
 {
 	static uint64_t id;
 	struct block *b;
 
 	b = xmalloc(sizeof(*b));
-	b->label.kind = VALUE_LABEL;
-	b->label.name.str = name;
-	b->label.name.id = ++id;
+	b->label.str = name;
+	b->label.id = ++id;
 	b->insts = (struct array){0};
 	b->jump.kind = JUMP_NONE;
 	b->phi.res.kind = VALUE_NONE;
 	b->next = NULL;
 
-	return &b->label;
+	return b;
 }
 
 struct value *
@@ -393,7 +391,7 @@ utof(struct func *f, struct repr *r, struct value *v)
 		return funcinst(f, ISLTOF, r, v, NULL);
 	}
 
-	join = (struct block *)mkblock("utof_join");
+	join = mkblock("utof_join");
 	join->phi.blk[0] = mkblock("utof_small");
 	join->phi.blk[1] = mkblock("utof_big");
 
@@ -402,7 +400,7 @@ utof(struct func *f, struct repr *r, struct value *v)
 
 	funclabel(f, join->phi.blk[0]);
 	join->phi.val[0] = funcinst(f, ISLTOF, r, v, NULL);
-	funcjmp(f, &join->label);
+	funcjmp(f, join);
 
 	funclabel(f, join->phi.blk[1]);
 	odd = funcinst(f, IAND, &i64, v, mkintconst(&i64, 1));
@@ -411,7 +409,7 @@ utof(struct func *f, struct repr *r, struct value *v)
 	v = funcinst(f, ISLTOF, r, v, NULL);
 	join->phi.val[1] = funcinst(f, IADD, r, v, v);
 
-	funclabel(f, &join->label);
+	funclabel(f, join);
 	functemp(f, &join->phi.res, r);
 	return &join->phi.res;
 }
@@ -428,7 +426,7 @@ ftou(struct func *f, struct repr *r, struct value *v)
 		return funcinst(f, ICOPY, r, v, NULL);
 	}
 
-	join = (struct block *)mkblock("ftou_join");
+	join = mkblock("ftou_join");
 	join->phi.blk[0] = mkblock("ftou_small");
 	join->phi.blk[1] = mkblock("ftou_big");
 
@@ -440,14 +438,14 @@ ftou(struct func *f, struct repr *r, struct value *v)
 
 	funclabel(f, join->phi.blk[0]);
 	join->phi.val[0] = funcinst(f, op, r, v, NULL);
-	funcjmp(f, &join->label);
+	funcjmp(f, join);
 
 	funclabel(f, join->phi.blk[1]);
 	v = funcinst(f, ISUB, v->repr, v, maxflt);
 	v = funcinst(f, op, r, v, NULL);
 	join->phi.val[1] = funcinst(f, IXOR, r, v, maxint);
 
-	funclabel(f, &join->label);
+	funclabel(f, join);
 	functemp(f, &join->phi.res, r);
 	return &join->phi.res;
 }
@@ -534,7 +532,7 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 	f->decl = decl;
 	f->name = name;
 	f->type = t;
-	f->start = f->end = (struct block *)mkblock("start");
+	f->start = f->end = mkblock("start");
 	f->gotos = mkmap(8);
 	f->lastid = 0;
 	emittype(t->base);
@@ -600,15 +598,14 @@ functype(struct func *f)
 }
 
 void
-funclabel(struct func *f, struct value *v)
+funclabel(struct func *f, struct block *b)
 {
-	assert(v->kind == VALUE_LABEL);
-	f->end->next = (struct block *)v;
-	f->end = f->end->next;
+	f->end->next = b;
+	f->end = b;
 }
 
 void
-funcjmp(struct func *f, struct value *l)
+funcjmp(struct func *f, struct block *l)
 {
 	struct block *b = f->end;
 
@@ -619,7 +616,7 @@ funcjmp(struct func *f, struct value *l)
 }
 
 void
-funcjnz(struct func *f, struct value *v, struct value *l1, struct value *l2)
+funcjnz(struct func *f, struct value *v, struct block *l1, struct block *l2)
 {
 	struct block *b = f->end;
 
@@ -714,7 +711,7 @@ funcexpr(struct func *f, struct expr *e)
 	struct value *l, *r, *v, **argvals;
 	struct lvalue lval;
 	struct expr *arg;
-	struct block *join;
+	struct block *b[3];
 	struct type *t;
 	size_t i;
 
@@ -779,23 +776,24 @@ funcexpr(struct func *f, struct expr *e)
 		l = funcexpr(f, e->base);
 		return convert(f, e->type, e->base->type, l);
 	case EXPRBINARY:
-		if (e->op == TLOR || e->op == TLAND) {
-			r = mkblock("logic_right");
-			join = (struct block *)mkblock("logic_join");
-			join->phi.val[0] = funcexpr(f, e->binary.l);
-			join->phi.blk[0] = &f->end->label;
-			if (e->op == TLOR)
-				funcjnz(f, join->phi.val[0], &join->label, r);
-			else
-				funcjnz(f, join->phi.val[0], r, &join->label);
-			funclabel(f, r);
-			join->phi.val[1] = funcexpr(f, e->binary.r);
-			join->phi.blk[1] = &f->end->label;
-			funclabel(f, &join->label);
-			functemp(f, &join->phi.res, e->type->repr);
-			return &join->phi.res;
-		}
 		l = funcexpr(f, e->binary.l);
+		if (e->op == TLOR || e->op == TLAND) {
+			b[0] = mkblock("logic_right");
+			b[1] = mkblock("logic_join");
+			if (e->op == TLOR)
+				funcjnz(f, l, b[1], b[0]);
+			else
+				funcjnz(f, l, b[0], b[1]);
+			b[1]->phi.val[0] = l;
+			b[1]->phi.blk[0] = f->end;
+			funclabel(f, b[0]);
+			r = funcexpr(f, e->binary.r);
+			b[1]->phi.val[1] = r;
+			b[1]->phi.blk[1] = f->end;
+			funclabel(f, b[1]);
+			functemp(f, &b[1]->phi.res, e->type->repr);
+			return &b[1]->phi.res;
+		}
 		r = funcexpr(f, e->binary.r);
 		t = e->binary.l->type;
 		if (t->kind == TYPEPOINTER)
@@ -884,27 +882,27 @@ funcexpr(struct func *f, struct expr *e)
 			fatal("internal error; unimplemented binary expression");
 		return funcinst(f, op, e->type->repr, l, r);
 	case EXPRCOND:
-		l = mkblock("cond_true");
-		r = mkblock("cond_false");
-		join = (struct block *)mkblock("cond_join");
+		b[0] = mkblock("cond_true");
+		b[1] = mkblock("cond_false");
+		b[2] = mkblock("cond_join");
 
 		v = funcexpr(f, e->base);
-		funcjnz(f, v, l, r);
+		funcjnz(f, v, b[0], b[1]);
 
-		funclabel(f, l);
-		join->phi.val[0] = funcexpr(f, e->cond.t);
-		join->phi.blk[0] = &f->end->label;
-		funcjmp(f, &join->label);
+		funclabel(f, b[0]);
+		b[2]->phi.val[0] = funcexpr(f, e->cond.t);
+		b[2]->phi.blk[0] = f->end;
+		funcjmp(f, b[2]);
 
-		funclabel(f, r);
-		join->phi.val[1] = funcexpr(f, e->cond.f);
-		join->phi.blk[1] = &f->end->label;
+		funclabel(f, b[1]);
+		b[2]->phi.val[1] = funcexpr(f, e->cond.f);
+		b[2]->phi.blk[1] = f->end;
 
-		funclabel(f, &join->label);
+		funclabel(f, b[2]);
 		if (e->type == &typevoid)
 			return NULL;
-		functemp(f, &join->phi.res, e->type->repr);
-		return &join->phi.res;
+		functemp(f, &b[2]->phi.res, e->type->repr);
+		return &b[2]->phi.res;
 	case EXPRASSIGN:
 		r = funcexpr(f, e->assign.r);
 		if (e->assign.l->kind == EXPRTEMP) {
@@ -1013,9 +1011,10 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 }
 
 static void
-casesearch(struct func *f, struct value *v, struct switchcase *c, struct value *defaultlabel)
+casesearch(struct func *f, struct value *v, struct switchcase *c, struct block *defaultlabel)
 {
-	struct value *res, *label[3], *key;
+	struct value *res, *key;
+	struct block *label[3];
 
 	if (!c) {
 		funcjmp(f, defaultlabel);
@@ -1039,7 +1038,7 @@ casesearch(struct func *f, struct value *v, struct switchcase *c, struct value *
 }
 
 void
-funcswitch(struct func *f, struct value *v, struct switchcases *c, struct value *defaultlabel)
+funcswitch(struct func *f, struct value *v, struct switchcases *c, struct block *defaultlabel)
 {
 	casesearch(f, v, c->root, defaultlabel);
 }
@@ -1059,7 +1058,6 @@ static void
 emitvalue(struct value *v)
 {
 	static char sigil[] = {
-		[VALUE_LABEL] = '@',
 		[VALUE_TEMP] = '%',
 		[VALUE_GLOBAL] = '$',
 	};
@@ -1208,17 +1206,17 @@ emitjump(struct jump *j)
 		putchar('\n');
 		break;
 	case JUMP_JMP:
-		fputs("\tjmp ", stdout);
-		emitvalue(j->blk[0]);
+		fputs("\tjmp @", stdout);
+		emitname(&j->blk[0]->label);
 		putchar('\n');
 		break;
 	case JUMP_JNZ:
 		fputs("\tjnz ", stdout);
 		emitvalue(j->arg);
-		fputs(", ", stdout);
-		emitvalue(j->blk[0]);
-		fputs(", ", stdout);
-		emitvalue(j->blk[1]);
+		fputs(", @", stdout);
+		emitname(&j->blk[0]->label);
+		fputs(", @", stdout);
+		emitname(&j->blk[1]->label);
 		putchar('\n');
 		break;
 	}
@@ -1253,17 +1251,18 @@ emitfunc(struct func *f, bool global)
 		fputs(", ...", stdout);
 	puts(") {");
 	for (b = f->start; b; b = b->next) {
-		emitvalue(&b->label);
+		putchar('@');
+		emitname(&b->label);
 		putchar('\n');
 		if (b->phi.res.kind) {
 			putchar('\t');
 			emitvalue(&b->phi.res);
-			printf(" =%c phi ", b->phi.res.repr->base);
-			emitvalue(b->phi.blk[0]);
+			printf(" =%c phi @", b->phi.res.repr->base);
+			emitname(&b->phi.blk[0]->label);
 			putchar(' ');
 			emitvalue(b->phi.val[0]);
-			fputs(", ", stdout);
-			emitvalue(b->phi.blk[1]);
+			fputs(", @", stdout);
+			emitname(&b->phi.blk[1]->label);
 			putchar(' ');
 			emitvalue(b->phi.val[1]);
 			putchar('\n');

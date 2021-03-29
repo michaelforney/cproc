@@ -31,7 +31,8 @@ stmt(struct func *f, struct scope *s)
 	char *name;
 	struct expr *e;
 	struct type *t;
-	struct value *v, *label[4];
+	struct value *v;
+	struct block *label[4];
 	struct switchcases swtch = {0};
 	uint64_t i;
 

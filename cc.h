@@ -278,8 +278,8 @@ struct decl {
 struct scope {
 	struct map *tags;
 	struct map *decls;
-	struct value *breaklabel;
-	struct value *continuelabel;
+	struct block *breaklabel;
+	struct block *continuelabel;
 	struct switchcases *switchcases;
 	struct scope *parent;
 };
@@ -493,21 +493,21 @@ void stmt(struct func *, struct scope *);
 /* backend */
 
 struct gotolabel {
-	struct value *label;
+	struct block *label;
 	_Bool defined;
 };
 
 struct switchcases {
 	void *root;
-	struct value *defaultlabel;
+	struct block *defaultlabel;
 };
 
 struct repr;
 
 struct switchcases *mkswitch(void);
-void switchcase(struct switchcases *, uint64_t, struct value *);
+void switchcase(struct switchcases *, uint64_t, struct block *);
 
-struct value *mkblock(char *);
+struct block *mkblock(char *);
 
 struct value *mkglobal(char *, _Bool);
 char *globalname(struct value *);
@@ -518,13 +518,13 @@ uint64_t intconstvalue(struct value *);
 struct func *mkfunc(struct decl *, char *, struct type *, struct scope *);
 void delfunc(struct func *);
 struct type *functype(struct func *);
-void funclabel(struct func *, struct value *);
+void funclabel(struct func *, struct block *);
 struct value *funcexpr(struct func *, struct expr *);
-void funcjmp(struct func *, struct value *);
-void funcjnz(struct func *, struct value *, struct value *, struct value *);
+void funcjmp(struct func *, struct block *);
+void funcjnz(struct func *, struct value *, struct block *, struct block *);
 void funcret(struct func *, struct value *);
 struct gotolabel *funcgoto(struct func *, char *);
-void funcswitch(struct func *, struct value *, struct switchcases *, struct value *);
+void funcswitch(struct func *, struct value *, struct switchcases *, struct block *);
 void funcinit(struct func *, struct decl *, struct init *);
 
 void emitfunc(struct func *, _Bool);
