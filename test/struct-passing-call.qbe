@@ -1,0 +1,9 @@
+type :s.1 = { w, }
+export
+function $g() {
+@start.1
+@body.2
+	call $f(:s.1 $s)
+	ret
+}
+export data $s = align 4 { z 4 }
