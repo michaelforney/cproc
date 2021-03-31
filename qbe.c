@@ -18,7 +18,6 @@ struct name {
 struct repr {
 	char base;
 	char ext;
-	struct name abi;
 };
 
 struct value {
@@ -27,6 +26,7 @@ struct value {
 		VALUE_GLOBAL,
 		VALUE_CONST,
 		VALUE_TEMP,
+		VALUE_TYPE,
 	} kind;
 	struct repr *repr;
 	union {
@@ -546,10 +546,8 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 		p->value = xmalloc(sizeof(*p->value));
 		functemp(f, p->value, pt->repr);
 		d = mkdecl(DECLOBJECT, p->type, p->qual, LINKNONE);
-		if (p->type->repr->abi.id) {
-			d->value = xmalloc(sizeof(*d->value));
-			*d->value = *p->value;
-			d->value->repr = &iptr;
+		if (p->type->value) {
+			d->value = p->value;
 		} else {
 			v = typecompatible(p->type, pt) ? p->value : convert(f, pt, p->type, p->value);
 			funcinit(f, d, NULL);
@@ -755,9 +753,9 @@ funcexpr(struct func *f, struct expr *e)
 			argvals[i] = funcexpr(f, arg);
 		}
 		emittype(e->type);
-		v = funcinst(f, op, e->type->repr, funcexpr(f, e->base), NULL);
+		v = funcinst(f, op, e->type->repr, funcexpr(f, e->base), e->type->value);
 		for (arg = e->call.args, i = 0; arg; arg = arg->next, ++i)
-			funcinst(f, IARG, NULL, argvals[i], NULL);
+			funcinst(f, IARG, NULL, argvals[i], arg->type->value);
 		//if (e->base->type->base->func.isnoreturn)
 		//	funcret(f, NULL);
 		return v;
@@ -1060,6 +1058,7 @@ emitvalue(struct value *v)
 	static char sigil[] = {
 		[VALUE_TEMP] = '%',
 		[VALUE_GLOBAL] = '$',
+		[VALUE_TYPE] = ':',
 	};
 
 	switch (v->kind) {
@@ -1080,18 +1079,14 @@ emitvalue(struct value *v)
 }
 
 static void
-emitrepr(struct repr *r, bool abi, bool ext)
+emitrepr(struct repr *r, struct value *v, bool ext)
 {
 	if (!r)
 		fatal("type has no QBE representation");
-	if (abi && r->abi.id) {
-		putchar(':');
-		emitname(&r->abi);
-	} else if (ext) {
-		putchar(r->ext);
-	} else {
-		putchar(r->base);
-	}
+	if (v)
+		emitvalue(v);
+	else
+		putchar(ext ? r->ext : r->base);
 }
 
 /* XXX: need to consider _Alignas on struct members */
@@ -1103,19 +1098,19 @@ emittype(struct type *t)
 	struct type *sub;
 	uint64_t i, off;
 
-	if (!t->repr || t->repr->abi.id || t->kind != TYPESTRUCT && t->kind != TYPEUNION)
+	if (t->value || !t->repr || t->kind != TYPESTRUCT && t->kind != TYPEUNION)
 		return;
-	t->repr = xmalloc(sizeof(*t->repr));
-	t->repr->base = 'l';
-	t->repr->abi.str = t->structunion.tag;
-	t->repr->abi.id = ++id;
+	t->value = xmalloc(sizeof(*t->value));
+	t->value->kind = VALUE_TYPE;
+	t->value->name.str = t->structunion.tag;
+	t->value->name.id = ++id;
 	for (m = t->structunion.members; m; m = m->next) {
 		for (sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
 			;
 		emittype(sub);
 	}
-	fputs("type :", stdout);
-	emitname(&t->repr->abi);
+	fputs("type ", stdout);
+	emitvalue(t->value);
 	fputs(" = { ", stdout);
 	for (m = t->structunion.members, off = 0; m;) {
 		if (t->kind == TYPESTRUCT) {
@@ -1130,7 +1125,7 @@ emittype(struct type *t)
 		}
 		for (i = 1, sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
 			i *= sub->array.length;
-		emitrepr(sub->repr, true, true);
+		emitrepr(sub->repr, sub->value, true);
 		if (i > 1)
 			printf(" %" PRIu64, i);
 		if (t->kind == TYPESTRUCT) {
@@ -1157,7 +1152,7 @@ emitinst(struct inst **instp, struct inst **instend)
 	if (inst->res.kind) {
 		emitvalue(&inst->res);
 		fputs(" =", stdout);
-		emitrepr(inst->res.repr, inst->kind == ICALL || inst->kind == IVACALL, false);
+		emitrepr(inst->res.repr, inst->arg[1] && inst->arg[1]->kind == VALUE_TYPE ? inst->arg[1] : NULL, false);
 		putchar(' ');
 	}
 	fputs(instname[inst->kind], stdout);
@@ -1175,7 +1170,7 @@ emitinst(struct inst **instp, struct inst **instend)
 			else
 				fputs(", ", stdout);
 			inst = *instp;
-			emitrepr(inst->arg[0]->repr, true, false);
+			emitrepr(inst->arg[0]->repr, inst->arg[1], false);
 			putchar(' ');
 			emitvalue(inst->arg[0]);
 		}
@@ -1235,7 +1230,7 @@ emitfunc(struct func *f, bool global)
 		puts("export");
 	fputs("function ", stdout);
 	if (f->type->base != &typevoid) {
-		emitrepr(f->type->base->repr, true, false);
+		emitrepr(f->type->base->repr, f->type->base->value, false);
 		putchar(' ');
 	}
 	emitvalue(f->decl->value);
@@ -1243,7 +1238,7 @@ emitfunc(struct func *f, bool global)
 	for (p = f->type->func.params; p; p = p->next) {
 		if (p != f->type->func.params)
 			fputs(", ", stdout);
-		emitrepr(p->value->repr, true, false);
+		emitrepr(p->value->repr, p->type->value, false);
 		putchar(' ');
 		emitvalue(p->value);
 	}

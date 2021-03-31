@@ -60,6 +60,7 @@ mktype(enum typekind kind, enum typeprop prop)
 	t = xmalloc(sizeof(*t));
 	t->kind = kind;
 	t->prop = prop;
+	t->value = NULL;
 	t->incomplete = 0;
 
 	return t;

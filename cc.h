@@ -202,6 +202,7 @@ struct type {
 	int align;
 	uint64_t size;
 	struct repr *repr;
+	struct value *value;  /* used by the backend */
 	union {
 		struct type *base;
 		struct list link;  /* used only during construction of type */
