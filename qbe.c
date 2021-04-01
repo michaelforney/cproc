@@ -1083,7 +1083,7 @@ emitrepr(struct repr *r, struct value *v, bool ext)
 {
 	if (!r)
 		fatal("type has no QBE representation");
-	if (v)
+	if (v && v->kind == VALUE_TYPE)
 		emitvalue(v);
 	else
 		putchar(ext ? r->ext : r->base);
@@ -1152,7 +1152,7 @@ emitinst(struct inst **instp, struct inst **instend)
 	if (inst->res.kind) {
 		emitvalue(&inst->res);
 		fputs(" =", stdout);
-		emitrepr(inst->res.repr, inst->arg[1] && inst->arg[1]->kind == VALUE_TYPE ? inst->arg[1] : NULL, false);
+		emitrepr(inst->res.repr, inst->arg[1], false);
 		putchar(' ');
 	}
 	fputs(instname[inst->kind], stdout);
@@ -1340,7 +1340,7 @@ emitdata(struct decl *d, struct init *init)
 
 	while (init) {
 		cur = init;
-		while (init = init->next, init && init->start * 8 + init->bits.before < cur->end * 8 - cur->bits.after) {
+		while ((init = init->next) && init->start * 8 + init->bits.before < cur->end * 8 - cur->bits.after) {
 			/*
 			XXX: Currently, if multiple union members are
 			initialized, these assertions may not hold.
