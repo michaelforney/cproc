@@ -972,7 +972,7 @@ void
 funcinit(struct func *func, struct decl *d, struct init *init)
 {
 	struct lvalue dst;
-	struct value *src;
+	struct value *src, *v;
 	uint64_t offset = 0, max = 0;
 	size_t i;
 
@@ -984,8 +984,10 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 		dst.bits = init->bits;
 		if (init->expr->kind == EXPRSTRING) {
 			for (i = 0; i < init->expr->string.size && i < init->end - init->start; ++i) {
-				dst.addr = funcinst(func, IADD, &iptr, d->value, mkintconst(&iptr, init->start + i));
-				funcstore(func, &typechar, QUALNONE, dst, mkintconst(&i8, init->expr->string.data[i]));
+				v = mkintconst(&iptr, init->start + i);
+				dst.addr = funcinst(func, IADD, &iptr, d->value, v);
+				v = mkintconst(&i8, init->expr->string.data[i]);
+				funcstore(func, &typechar, QUALNONE, dst, v);
 			}
 			offset = init->start + i;
 		} else {
@@ -996,8 +998,10 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 			QBE's memopt does not eliminate the store for ptr + 0,
 			so only emit the add if the offset is non-zero
 			*/
-			if (init->start > 0)
-				dst.addr = funcinst(func, IADD, &iptr, dst.addr, mkintconst(&iptr, init->start));
+			if (init->start > 0) {
+				v = mkintconst(&iptr, init->start);
+				dst.addr = funcinst(func, IADD, &iptr, dst.addr, v);
+			}
 			src = funcexpr(func, init->expr);
 			funcstore(func, init->expr->type, QUALNONE, dst, src);
 			offset = init->end;
@@ -1115,7 +1119,9 @@ emittype(struct type *t)
 	for (m = t->structunion.members, off = 0; m;) {
 		if (t->kind == TYPESTRUCT) {
 			/* look for a subsequent member with a larger storage unit */
-			for (other = m->next; other && other->offset < ALIGNUP(m->offset + 1, 8); other = other->next) {
+			for (other = m->next; other; other = other->next) {
+				if (other->offset >= ALIGNUP(m->offset + 1, 8))
+					break;
 				if (other->offset <= m->offset)
 					m = other;
 			}
@@ -1324,6 +1330,7 @@ void
 emitdata(struct decl *d, struct init *init)
 {
 	struct init *cur;
+	struct type *t;
 	uint64_t offset = 0, start, end, bits = 0;
 
 	if (!d->align)
@@ -1373,7 +1380,10 @@ emitdata(struct decl *d, struct init *init)
 			*/
 			bits &= 0x7f >> (cur->bits.after + 7) % 8;
 		} else {
-			printf("%c ", cur->expr->type->kind == TYPEARRAY ? cur->expr->type->base->repr->ext : cur->expr->type->repr->ext);
+			t = cur->expr->type;
+			if (t->kind == TYPEARRAY)
+				t = t->base;
+			printf("%c ", t->repr->ext);
 			dataitem(cur->expr, cur->end - cur->start);
 			fputs(", ", stdout);
 		}
