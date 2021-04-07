@@ -451,19 +451,6 @@ ftou(struct func *f, struct repr *r, struct value *v)
 }
 
 static struct value *
-extend(struct func *f, struct type *t, struct value *v)
-{
-	enum instkind op;
-
-	switch (t->size) {
-	case 1: op = t->basic.issigned ? IEXTSB : IEXTUB; break;
-	case 2: op = t->basic.issigned ? IEXTSH : IEXTUH; break;
-	default: return v;
-	}
-	return funcinst(f, op, &i32, v, NULL);
-}
-
-static struct value *
 convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 {
 	enum instkind op;
@@ -478,12 +465,16 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 	if (!(src->prop & PROPREAL) || !(dst->prop & PROPREAL))
 		fatal("internal error; unsupported conversion");
 	if (dst->kind == TYPEBOOL) {
-		l = extend(f, src, l);
 		r = mkintconst(src->repr, 0);
-		if (src->prop & PROPINT)
+		if (src->prop & PROPINT) {
+			switch (src->size) {
+			case 1: l = funcinst(f, IEXTUB, &i32, l, NULL); break;
+			case 2: l = funcinst(f, IEXTUH, &i32, l, NULL); break;
+			}
 			op = src->size == 8 ? ICNEL : ICNEW;
-		else
+		} else {
 			op = src->size == 8 ? ICNED : ICNES;
+		}
 	} else if (dst->prop & PROPINT) {
 		if (src->prop & PROPINT) {
 			if (dst->size <= src->size) {
@@ -823,48 +814,36 @@ funcexpr(struct func *f, struct expr *e)
 			op = IXOR;
 			break;
 		case TLESS:
-			l = extend(f, t, l);
-			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = t->prop & PROPFLOAT ? ICLTS : t->basic.issigned ? ICSLTW : ICULTW;
 			else
 				op = t->prop & PROPFLOAT ? ICLTD : t->basic.issigned ? ICSLTL : ICULTL;
 			break;
 		case TGREATER:
-			l = extend(f, t, l);
-			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = t->prop & PROPFLOAT ? ICGTS : t->basic.issigned ? ICSGTW : ICUGTW;
 			else
 				op = t->prop & PROPFLOAT ? ICGTD : t->basic.issigned ? ICSGTL : ICUGTL;
 			break;
 		case TLEQ:
-			l = extend(f, t, l);
-			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = t->prop & PROPFLOAT ? ICLES : t->basic.issigned ? ICSLEW : ICULEW;
 			else
 				op = t->prop & PROPFLOAT ? ICLED : t->basic.issigned ? ICSLEL : ICULEL;
 			break;
 		case TGEQ:
-			l = extend(f, t, l);
-			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = t->prop & PROPFLOAT ? ICGES : t->basic.issigned ? ICSGEW : ICUGEW;
 			else
 				op = t->prop & PROPFLOAT ? ICGED : t->basic.issigned ? ICSGEL : ICUGEL;
 			break;
 		case TEQL:
-			l = extend(f, t, l);
-			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = t->prop & PROPFLOAT ? ICEQS : ICEQW;
 			else
 				op = t->prop & PROPFLOAT ? ICEQD : ICEQL;
 			break;
 		case TNEQ:
-			l = extend(f, t, l);
-			r = extend(f, t, r);
 			if (t->size <= 4)
 				op = t->prop & PROPFLOAT ? ICNES : ICNEW;
 			else
