@@ -505,7 +505,6 @@ struct switchcases {
 
 struct repr;
 
-struct switchcases *mkswitch(void);
 void switchcase(struct switchcases *, uint64_t, struct block *);
 
 struct block *mkblock(char *);
