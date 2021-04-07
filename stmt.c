@@ -54,7 +54,7 @@ stmt(struct func *f, struct scope *s)
 	struct type *t;
 	struct value *v;
 	struct block *label[4];
-	struct switchcases swtch = {0};
+	struct switchcases swtch;
 	uint64_t i;
 
 	while (gotolabel(f))
@@ -150,6 +150,10 @@ stmt(struct func *f, struct scope *s)
 		if (!(e->type->prop & PROPINT))
 			error(&tok.loc, "controlling expression of switch statement must have integer type");
 		e = exprpromote(e);
+
+		swtch.root = NULL;
+		swtch.type = e->type;
+		swtch.defaultlabel = NULL;
 
 		label[0] = mkblock("switch_cond");
 		label[1] = mkblock("switch_join");

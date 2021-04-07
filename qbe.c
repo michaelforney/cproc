@@ -10,22 +10,18 @@
 #include "util.h"
 #include "cc.h"
 
-struct repr {
-	char base;
-	char ext;
-};
-
 struct value {
 	enum {
 		VALUE_NONE,
 		VALUE_GLOBAL,
-		VALUE_CONST,
+		VALUE_INTCONST,
+		VALUE_FLTCONST,
+		VALUE_DBLCONST,
 		VALUE_TEMP,
 		VALUE_TYPE,
 		VALUE_LABEL,
 	} kind;
 	unsigned id;
-	struct repr *repr;
 	union {
 		char *name;
 		uint64_t i;
@@ -48,8 +44,14 @@ enum instkind {
 	IARG,
 };
 
+struct qbetype {
+	char base, data;
+	enum instkind load, store;
+};
+
 struct inst {
 	enum instkind kind;
+	int class;
 	struct value res, *arg[2];
 };
 
@@ -68,6 +70,7 @@ struct block {
 	struct value label;
 	struct array insts;
 	struct {
+		int class;
 		struct block *blk[2];
 		struct value *val[2];
 		struct value res;
@@ -91,13 +94,7 @@ struct func {
 	unsigned lastid;
 };
 
-struct repr i8 = {'w', 'b'};
-struct repr i16 = {'w', 'h'};
-struct repr i32 = {'w', 'w'};
-struct repr i64 = {'l', 'l'};
-struct repr f32 = {'s', 's'};
-struct repr f64 = {'d', 'd'};
-struct repr iptr = {'l', 'l'};
+static const int ptrclass = 'l';
 
 void
 switchcase(struct switchcases *cases, uint64_t i, struct block *b)
@@ -138,7 +135,6 @@ mkglobal(char *name, bool private)
 
 	v = xmalloc(sizeof(*v));
 	v->kind = VALUE_GLOBAL;
-	v->repr = &iptr;
 	v->name = name;
 	v->id = private ? ++id : 0;
 
@@ -153,13 +149,12 @@ globalname(struct value *v)
 }
 
 struct value *
-mkintconst(struct repr *r, uint64_t n)
+mkintconst(uint64_t n)
 {
 	struct value *v;
 
 	v = xmalloc(sizeof(*v));
-	v->kind = VALUE_CONST;
-	v->repr = r;
+	v->kind = VALUE_INTCONST;
 	v->i = n;
 
 	return v;
@@ -168,21 +163,47 @@ mkintconst(struct repr *r, uint64_t n)
 uint64_t
 intconstvalue(struct value *v)
 {
-	assert(v->kind == VALUE_CONST);
+	assert(v->kind == VALUE_INTCONST);
 	return v->i;
 }
 
 static struct value *
-mkfltconst(struct repr *r, double n)
+mkfltconst(int kind, double n)
 {
 	struct value *v;
 
 	v = xmalloc(sizeof(*v));
-	v->kind = VALUE_CONST;
-	v->repr = r;
+	v->kind = kind;
 	v->f = n;
 
 	return v;
+}
+
+static struct qbetype
+qbetype(struct type *t)
+{
+	static const struct qbetype
+		ub = {'w', 'b', ILOADUB, ISTOREB},
+		sb = {'w', 'b', ILOADSB, ISTOREB},
+		uh = {'w', 'h', ILOADUH, ISTOREH},
+		sh = {'w', 'h', ILOADSH, ISTOREH},
+		w = {'w', 'w', ILOADW, ISTOREW},
+		l = {'l', 'l', ILOADL, ISTOREL},
+		s = {'s', 's', ILOADS, ISTORES},
+		d = {'d', 'd', ILOADD, ISTORED},
+		v = {0};
+
+	if (t == &typevoid)
+		return v;
+	if (!(t->prop & PROPSCALAR))
+		return l;
+	switch (t->size) {
+	case 1: return t->basic.issigned ? sb : ub;
+	case 2: return t->basic.issigned ? sh : uh;
+	case 4: return t->prop & PROPFLOAT ? s : w;
+	case 8: return t->prop & PROPFLOAT ? d : l;
+	}
+	assert(0);
 }
 
 /* functions */
@@ -191,12 +212,9 @@ static void emittype(struct type *);
 static void emitvalue(struct value *);
 
 static void
-functemp(struct func *f, struct value *v, struct repr *repr)
+functemp(struct func *f, struct value *v)
 {
-	if (!repr)
-		fatal("temp has no type");
 	v->kind = VALUE_TEMP;
-	v->repr = repr;
 	v->name = NULL;
 	v->id = ++f->lastid;
 }
@@ -208,7 +226,7 @@ static const char *const instname[] = {
 };
 
 static struct value *
-funcinst(struct func *f, int op, struct repr *repr, struct value *arg0, struct value *arg1)
+funcinst(struct func *f, int op, int class, struct value *arg0, struct value *arg1)
 {
 	struct inst *inst;
 
@@ -216,10 +234,11 @@ funcinst(struct func *f, int op, struct repr *repr, struct value *arg0, struct v
 		return NULL;
 	inst = xmalloc(sizeof(*inst));
 	inst->kind = op;
+	inst->class = class;
 	inst->arg[0] = arg0;
 	inst->arg[1] = arg1;
-	if (repr)
-		functemp(f, &inst->res, repr);
+	if (class && op != IARG)
+		functemp(f, &inst->res);
 	else
 		inst->res.kind = VALUE_NONE;
 	arrayaddptr(&f->end->insts, inst);
@@ -250,8 +269,9 @@ funcalloc(struct func *f, struct decl *d)
 	}
 	inst = xmalloc(sizeof(*inst));
 	inst->kind = op;
-	functemp(f, &inst->res, &iptr);
-	inst->arg[0] = mkintconst(&i64, d->type->size);
+	functemp(f, &inst->res);
+	inst->class = ptrclass;
+	inst->arg[0] = mkintconst(d->type->size);
 	inst->arg[1] = NULL;
 	d->value = &inst->res;
 	arrayaddptr(&f->start->insts, inst);
@@ -260,10 +280,13 @@ funcalloc(struct func *f, struct decl *d)
 static struct value *
 funcbits(struct func *f, struct type *t, struct value *v, struct bitfield b)
 {
+	int class;
+
+	class = t->size <= 4 ? 'w' : 'l';
 	if (b.after)
-		v = funcinst(f, ISHL, t->repr, v, mkintconst(&i32, b.after));
+		v = funcinst(f, ISHL, class, v, mkintconst(b.after));
 	if (b.before + b.after)
-		v = funcinst(f, t->basic.issigned ? ISAR : ISHR, t->repr, v, mkintconst(&i32, b.before + b.after));
+		v = funcinst(f, t->basic.issigned ? ISAR : ISHR, class, v, mkintconst(b.before + b.after));
 	return v;
 }
 
@@ -282,16 +305,16 @@ funccopy(struct func *f, struct value *dst, struct value *src, uint64_t size, in
 	default:
 		fatal("internal error; invalid alignment %d", align);
 	}
-	inc = mkintconst(&iptr, align);
+	inc = mkintconst(align);
 	off = 0;
 	for (;;) {
-		tmp = funcinst(f, load, &iptr, src, NULL);
+		tmp = funcinst(f, load, ptrclass, src, NULL);
 		funcinst(f, store, 0, tmp, dst);
 		off += align;
 		if (off >= size)
 			break;
-		src = funcinst(f, IADD, &iptr, src, inc);
-		dst = funcinst(f, IADD, &iptr, dst, inc);
+		src = funcinst(f, IADD, ptrclass, src, inc);
+		dst = funcinst(f, IADD, ptrclass, dst, inc);
 	}
 }
 
@@ -299,9 +322,9 @@ static struct value *
 funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, struct value *v)
 {
 	struct value *r;
-	enum instkind loadop, storeop;
 	enum typeprop tp;
 	unsigned long long mask;
+	struct qbetype qt;
 
 	if (tq & QUALVOLATILE)
 		error(&tok.loc, "volatile store is not yet supported");
@@ -321,27 +344,20 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 		/* fallthrough */
 	default:
 		assert(tp & PROPSCALAR);
-		switch (t->size) {
-		case 1: loadop = ILOADUB; storeop = ISTOREB; break;
-		case 2: loadop = ILOADUH; storeop = ISTOREH; break;
-		case 4: loadop = ILOADW; storeop = tp & PROPFLOAT ? ISTORES : ISTOREW; break;
-		case 8: loadop = ILOADL; storeop = tp & PROPFLOAT ? ISTORED : ISTOREL; break;
-		default:
-			fatal("internal error; unimplemented store");
-		}
+		qt = qbetype(t);
 		if (lval.bits.before || lval.bits.after) {
 			mask = 0xffffffffffffffffu >> lval.bits.after + 64 - t->size * 8 ^ (1 << lval.bits.before) - 1;
-			v = funcinst(f, ISHL, t->repr, v, mkintconst(&i32, lval.bits.before));
+			v = funcinst(f, ISHL, qt.base, v, mkintconst(lval.bits.before));
 			r = funcbits(f, t, v, lval.bits);
-			v = funcinst(f, IAND, t->repr, v, mkintconst(t->repr, mask));
-			v = funcinst(f, IOR, t->repr, v,
-				funcinst(f, IAND, t->repr,
-					funcinst(f, loadop, t->repr, lval.addr, NULL),
-					mkintconst(t->repr, ~mask)
+			v = funcinst(f, IAND, qt.base, v, mkintconst(mask));
+			v = funcinst(f, IOR, qt.base, v,
+				funcinst(f, IAND, qt.base,
+					funcinst(f, qt.load, qt.base, lval.addr, NULL),
+					mkintconst(~mask)
 				)
 			);
 		}
-		funcinst(f, storeop, NULL, v, lval.addr);
+		funcinst(f, qt.store, 0, v, lval.addr);
 		break;
 	}
 	return r;
@@ -351,99 +367,89 @@ static struct value *
 funcload(struct func *f, struct type *t, struct lvalue lval)
 {
 	struct value *v;
-	enum instkind op;
+	struct qbetype qt;
 
 	switch (t->kind) {
-	case TYPEPOINTER:
-		op = ILOADL;
-		break;
 	case TYPESTRUCT:
 	case TYPEUNION:
 	case TYPEARRAY:
 		return lval.addr;
-	default:
-		assert(t->prop & PROPREAL);
-		switch (t->size) {
-		case 1: op = t->basic.issigned ? ILOADSB : ILOADUB; break;
-		case 2: op = t->basic.issigned ? ILOADSH : ILOADUH; break;
-		case 4: op = t->prop & PROPFLOAT ? ILOADS : ILOADW; break;
-		case 8: op = t->prop & PROPFLOAT ? ILOADD : ILOADL; break;
-		default:
-			fatal("internal error; unimplemented load");
-		}
 	}
-	v = funcinst(f, op, t->repr, lval.addr, NULL);
+	qt = qbetype(t);
+	v = funcinst(f, qt.load, qt.base, lval.addr, NULL);
 	return funcbits(f, t, v, lval.bits);
 }
 
 /* TODO: move these conversions to QBE */
 static struct value *
-utof(struct func *f, struct repr *r, struct value *v)
+utof(struct func *f, int dst, int src, struct value *v)
 {
 	struct value *odd, *big;
 	struct block *join;
 
-	if (v->repr->base == 'w') {
-		v = funcinst(f, IEXTUW, &i64, v, NULL);
-		return funcinst(f, ISLTOF, r, v, NULL);
+	if (src == 'w') {
+		v = funcinst(f, IEXTUW, 'l', v, NULL);
+		return funcinst(f, ISLTOF, dst, v, NULL);
 	}
 
 	join = mkblock("utof_join");
 	join->phi.blk[0] = mkblock("utof_small");
 	join->phi.blk[1] = mkblock("utof_big");
 
-	big = funcinst(f, ICSLTL, &i32, v, mkintconst(&i64, 0));
+	big = funcinst(f, ICSLTL, 'w', v, mkintconst(0));
 	funcjnz(f, big, join->phi.blk[1], join->phi.blk[0]);
 
 	funclabel(f, join->phi.blk[0]);
-	join->phi.val[0] = funcinst(f, ISLTOF, r, v, NULL);
+	join->phi.val[0] = funcinst(f, ISLTOF, dst, v, NULL);
 	funcjmp(f, join);
 
 	funclabel(f, join->phi.blk[1]);
-	odd = funcinst(f, IAND, &i64, v, mkintconst(&i64, 1));
-	v = funcinst(f, ISHR, &i64, v, mkintconst(&i64, 1));
-	v = funcinst(f, IOR, &i64, v, odd);  /* round to odd */
-	v = funcinst(f, ISLTOF, r, v, NULL);
-	join->phi.val[1] = funcinst(f, IADD, r, v, v);
+	odd = funcinst(f, IAND, 'l', v, mkintconst(1));
+	v = funcinst(f, ISHR, 'l', v, mkintconst(1));
+	v = funcinst(f, IOR, 'l', v, odd);  /* round to odd */
+	v = funcinst(f, ISLTOF, dst, v, NULL);
+	join->phi.val[1] = funcinst(f, IADD, dst, v, v);
 
 	funclabel(f, join);
-	functemp(f, &join->phi.res, r);
+	functemp(f, &join->phi.res);
+	join->phi.class = dst;
 	return &join->phi.res;
 }
 
 static struct value *
-ftou(struct func *f, struct repr *r, struct value *v)
+ftou(struct func *f, int dst, int src, struct value *v)
 {
 	struct value *big, *maxflt, *maxint;
 	struct block *join;
-	enum instkind op = v->repr->base == 's' ? ISTOSI : IDTOSI;
+	enum instkind op = src == 's' ? ISTOSI : IDTOSI;
 
-	if (r->base == 'w') {
-		v = funcinst(f, op, &i64, v, NULL);
-		return funcinst(f, ICOPY, r, v, NULL);
+	if (dst == 'w') {
+		v = funcinst(f, op, 'l', v, NULL);
+		return funcinst(f, ICOPY, 'w', v, NULL);
 	}
 
 	join = mkblock("ftou_join");
 	join->phi.blk[0] = mkblock("ftou_small");
 	join->phi.blk[1] = mkblock("ftou_big");
 
-	maxflt = mkfltconst(v->repr, 0x1p63);
-	maxint = mkintconst(&i64, 1ull<<63);
+	maxflt = mkfltconst(src == 's' ? VALUE_FLTCONST : VALUE_DBLCONST, 0x1p63);
+	maxint = mkintconst(1ull<<63);
 
-	big = funcinst(f, v->repr->base == 's' ? ICGES : ICGED, &i32, v, maxflt);
+	big = funcinst(f, src == 's' ? ICGES : ICGED, 'w', v, maxflt);
 	funcjnz(f, big, join->phi.blk[1], join->phi.blk[0]);
 
 	funclabel(f, join->phi.blk[0]);
-	join->phi.val[0] = funcinst(f, op, r, v, NULL);
+	join->phi.val[0] = funcinst(f, op, dst, v, NULL);
 	funcjmp(f, join);
 
 	funclabel(f, join->phi.blk[1]);
-	v = funcinst(f, ISUB, v->repr, v, maxflt);
-	v = funcinst(f, op, r, v, NULL);
-	join->phi.val[1] = funcinst(f, IXOR, r, v, maxint);
+	v = funcinst(f, ISUB, src, v, maxflt);
+	v = funcinst(f, op, dst, v, NULL);
+	join->phi.val[1] = funcinst(f, IXOR, dst, v, maxint);
 
 	funclabel(f, join);
-	functemp(f, &join->phi.res, r);
+	functemp(f, &join->phi.res);
+	join->phi.class = dst;
 	return &join->phi.res;
 }
 
@@ -452,6 +458,7 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 {
 	enum instkind op;
 	struct value *r = NULL;
+	int class;
 
 	if (src->kind == TYPEPOINTER)
 		src = &typeulong;
@@ -462,17 +469,24 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 	if (!(src->prop & PROPREAL) || !(dst->prop & PROPREAL))
 		fatal("internal error; unsupported conversion");
 	if (dst->kind == TYPEBOOL) {
-		r = mkintconst(src->repr, 0);
+		class = 'w';
 		if (src->prop & PROPINT) {
+			r = mkintconst(0);
 			switch (src->size) {
-			case 1: l = funcinst(f, IEXTUB, &i32, l, NULL); break;
-			case 2: l = funcinst(f, IEXTUH, &i32, l, NULL); break;
+			case 1: op = ICNEW, l = funcinst(f, IEXTUB, 'w', l, NULL); break;
+			case 2: op = ICNEW, l = funcinst(f, IEXTUH, 'w', l, NULL); break;
+			case 4: op = ICNEW; break;
+			case 8: op = ICNEL; break;
 			}
-			op = src->size == 8 ? ICNEL : ICNEW;
 		} else {
-			op = src->size == 8 ? ICNED : ICNES;
+			assert(src->prop & PROPFLOAT);
+			switch (src->size) {
+			case 4: op = ICNES, r = mkfltconst(VALUE_FLTCONST, 0); break;
+			case 8: op = ICNED, r = mkfltconst(VALUE_DBLCONST, 0); break;
+			}
 		}
 	} else if (dst->prop & PROPINT) {
+		class = dst->size == 8 ? 'l' : 'w';
 		if (src->prop & PROPINT) {
 			if (dst->size <= src->size) {
 				op = ICOPY;
@@ -486,13 +500,14 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 			}
 		} else {
 			if (!dst->basic.issigned)
-				return ftou(f, dst->repr, l);
+				return ftou(f, class, src->size == 8 ? 'd' : 's', l);
 			op = src->size == 8 ? IDTOSI : ISTOSI;
 		}
 	} else {
+		class = dst->size == 8 ? 'd' : 's';
 		if (src->prop & PROPINT) {
 			if (!src->basic.issigned)
-				return utof(f, dst->repr, l);
+				return utof(f, class, src->size == 8 ? 'l' : 'w', l);
 			op = src->size == 8 ? ISLTOF : ISWTOF;
 		} else {
 			if (src->size < dst->size)
@@ -504,7 +519,7 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 		}
 	}
 
-	return funcinst(f, op, dst->repr, l, r);
+	return funcinst(f, op, class, l, r);
 }
 
 struct func *
@@ -532,7 +547,7 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 		pt = t->func.isprototype ? p->type : typepromote(p->type, -1);
 		emittype(pt);
 		p->value = xmalloc(sizeof(*p->value));
-		functemp(f, p->value, pt->repr);
+		functemp(f, p->value);
 		d = mkdecl(DECLOBJECT, p->type, p->qual, LINKNONE);
 		if (p->type->value) {
 			d->value = p->value;
@@ -707,9 +722,11 @@ funcexpr(struct func *f, struct expr *e)
 		}
 		break;
 	case EXPRCONST:
-		if (e->type->prop & PROPINT || e->type->kind == TYPEPOINTER)
-			return mkintconst(e->type->repr, e->constant.i);
-		return mkfltconst(e->type->repr, e->constant.f);
+		t = e->type;
+		if (t->prop & PROPINT || t->kind == TYPEPOINTER)
+			return mkintconst(e->constant.i);
+		assert(t->prop & PROPFLOAT);
+		return mkfltconst(t->size == 4 ? VALUE_FLTCONST : VALUE_DBLCONST, e->constant.f);
 	case EXPRBITFIELD:
 	case EXPRCOMPOUND:
 		lval = funclval(f, e);
@@ -717,15 +734,16 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRINCDEC:
 		lval = funclval(f, e->base);
 		l = funcload(f, e->base->type, lval);
-		if (e->type->kind == TYPEPOINTER)
-			r = mkintconst(e->type->repr, e->type->base->size);
-		else if (e->type->prop & PROPINT)
-			r = mkintconst(e->type->repr, 1);
-		else if (e->type->prop & PROPFLOAT)
-			r = mkfltconst(e->type->repr, 1);
+		t = e->type;
+		if (t->kind == TYPEPOINTER)
+			r = mkintconst(t->base->size);
+		else if (t->prop & PROPINT)
+			r = mkintconst(1);
+		else if (t->prop & PROPFLOAT)
+			r = mkfltconst(t->size == 4 ? VALUE_FLTCONST : VALUE_DBLCONST, 1);
 		else
 			fatal("not a scalar");
-		v = funcinst(f, e->op == TINC ? IADD : ISUB, e->type->repr, l, r);
+		v = funcinst(f, e->op == TINC ? IADD : ISUB, qbetype(t).base, l, r);
 		v = funcstore(f, e->type, e->qual, lval, v);
 		return e->incdec.post ? l : v;
 	case EXPRCALL:
@@ -735,10 +753,13 @@ funcexpr(struct func *f, struct expr *e)
 			emittype(arg->type);
 			argvals[i] = funcexpr(f, arg);
 		}
-		emittype(e->type);
-		v = funcinst(f, op, e->type->repr, funcexpr(f, e->base), e->type->value);
-		for (arg = e->call.args, i = 0; arg; arg = arg->next, ++i)
-			funcinst(f, IARG, NULL, argvals[i], arg->type->value);
+		t = e->type;
+		emittype(t);
+		v = funcinst(f, op, qbetype(t).base, funcexpr(f, e->base), t->value);
+		for (arg = e->call.args, i = 0; arg; arg = arg->next, ++i) {
+			t = arg->type;
+			funcinst(f, IARG, qbetype(t).base, argvals[i], t->value);
+		}
 		//if (e->base->type->base->func.isnoreturn)
 		//	funcret(f, NULL);
 		return v;
@@ -772,7 +793,8 @@ funcexpr(struct func *f, struct expr *e)
 			b[1]->phi.val[1] = r;
 			b[1]->phi.blk[1] = f->end;
 			funclabel(f, b[1]);
-			functemp(f, &b[1]->phi.res, e->type->repr);
+			functemp(f, &b[1]->phi.res);
+			b[1]->phi.class = 'w';
 			return &b[1]->phi.res;
 		}
 		r = funcexpr(f, e->binary.r);
@@ -784,10 +806,10 @@ funcexpr(struct func *f, struct expr *e)
 			op = IMUL;
 			break;
 		case TDIV:
-			op = !(e->type->prop & PROPINT) || e->type->basic.issigned ? IDIV : IUDIV;
+			op = !(t->prop & PROPINT) || t->basic.issigned ? IDIV : IUDIV;
 			break;
 		case TMOD:
-			op = e->type->basic.issigned ? IREM : IUREM;
+			op = t->basic.issigned ? IREM : IUREM;
 			break;
 		case TADD:
 			op = IADD;
@@ -849,7 +871,7 @@ funcexpr(struct func *f, struct expr *e)
 		}
 		if (op == INONE)
 			fatal("internal error; unimplemented binary expression");
-		return funcinst(f, op, e->type->repr, l, r);
+		return funcinst(f, op, qbetype(e->type).base, l, r);
 	case EXPRCOND:
 		b[0] = mkblock("cond_true");
 		b[1] = mkblock("cond_false");
@@ -870,7 +892,8 @@ funcexpr(struct func *f, struct expr *e)
 		funclabel(f, b[2]);
 		if (e->type == &typevoid)
 			return NULL;
-		functemp(f, &b[2]->phi.res, e->type->repr);
+		functemp(f, &b[2]->phi.res);
+		b[2]->phi.class = qbetype(e->type).base;
 		return &b[2]->phi.res;
 	case EXPRASSIGN:
 		r = funcexpr(f, e->assign.r);
@@ -889,20 +912,20 @@ funcexpr(struct func *f, struct expr *e)
 		switch (e->builtin.kind) {
 		case BUILTINVASTART:
 			l = funcexpr(f, e->base);
-			funcinst(f, IVASTART, NULL, l, NULL);
+			funcinst(f, IVASTART, 0, l, NULL);
 			break;
 		case BUILTINVAARG:
 			/* https://todo.sr.ht/~mcf/cproc/52 */
 			if (!(e->type->prop & PROPSCALAR))
 				error(&tok.loc, "va_arg with non-scalar type is not yet supported");
 			l = funcexpr(f, e->base);
-			return funcinst(f, IVAARG, e->type->repr, l, NULL);
+			return funcinst(f, IVAARG, qbetype(e->type).base, l, NULL);
 		case BUILTINVAEND:
 			/* no-op */
 			break;
 		case BUILTINALLOCA:
 			l = funcexpr(f, e->base);
-			return funcinst(f, IALLOC16, &iptr, l, NULL);
+			return funcinst(f, IALLOC16, ptrclass, l, NULL);
 		default:
 			fatal("internal error: unimplemented builtin");
 		}
@@ -925,13 +948,13 @@ zero(struct func *func, struct value *addr, int align, uint64_t offset, uint64_t
 		[8] = ISTOREL,
 	};
 	struct value *tmp;
-	static struct value z = {.kind = VALUE_CONST, .repr = &i64};
+	static struct value z = {.kind = VALUE_INTCONST};
 	int a = 1;
 
 	while (offset < end) {
 		if ((align - (offset & align - 1)) & a) {
-			tmp = offset ? funcinst(func, IADD, &iptr, addr, mkintconst(&iptr, offset)) : addr;
-			funcinst(func, store[a], NULL, &z, tmp);
+			tmp = offset ? funcinst(func, IADD, ptrclass, addr, mkintconst(offset)) : addr;
+			funcinst(func, store[a], 0, &z, tmp);
 			offset += a;
 		}
 		if (a < align)
@@ -943,7 +966,7 @@ void
 funcinit(struct func *func, struct decl *d, struct init *init)
 {
 	struct lvalue dst;
-	struct value *src, *v;
+	struct value *src;
 	uint64_t offset = 0, max = 0;
 	size_t i;
 
@@ -955,10 +978,8 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 		dst.bits = init->bits;
 		if (init->expr->kind == EXPRSTRING) {
 			for (i = 0; i < init->expr->string.size && i < init->end - init->start; ++i) {
-				v = mkintconst(&iptr, init->start + i);
-				dst.addr = funcinst(func, IADD, &iptr, d->value, v);
-				v = mkintconst(&i8, init->expr->string.data[i]);
-				funcstore(func, &typechar, QUALNONE, dst, v);
+				dst.addr = funcinst(func, IADD, ptrclass, d->value, mkintconst(init->start + i));
+				funcstore(func, &typechar, QUALNONE, dst, mkintconst(init->expr->string.data[i]));
 			}
 			offset = init->start + i;
 		} else {
@@ -969,10 +990,8 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 			QBE's memopt does not eliminate the store for ptr + 0,
 			so only emit the add if the offset is non-zero
 			*/
-			if (init->start > 0) {
-				v = mkintconst(&iptr, init->start);
-				dst.addr = funcinst(func, IADD, &iptr, dst.addr, v);
-			}
+			if (init->start > 0)
+				dst.addr = funcinst(func, IADD, ptrclass, dst.addr, mkintconst(init->start));
 			src = funcexpr(func, init->expr);
 			funcstore(func, init->expr->type, QUALNONE, dst, src);
 			offset = init->end;
@@ -984,7 +1003,7 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 }
 
 static void
-casesearch(struct func *f, struct value *v, struct switchcase *c, struct block *defaultlabel)
+casesearch(struct func *f, int class, struct value *v, struct switchcase *c, struct block *defaultlabel)
 {
 	struct value *res, *key;
 	struct block *label[3];
@@ -998,22 +1017,22 @@ casesearch(struct func *f, struct value *v, struct switchcase *c, struct block *
 	label[2] = mkblock("switch_gt");
 
 	// XXX: linear search if c->node.height < 4
-	key = mkintconst(v->repr, c->node.key);
-	res = funcinst(f, v->repr->base == 'w' ? ICEQW : ICEQL, &i32, v, key);
+	key = mkintconst(c->node.key);
+	res = funcinst(f, class == 'w' ? ICEQW : ICEQL, 'w', v, key);
 	funcjnz(f, res, c->body, label[0]);
 	funclabel(f, label[0]);
-	res = funcinst(f, v->repr->base == 'w' ? ICULTW : ICULTL, &i32, v, key);
+	res = funcinst(f, class == 'w' ? ICULTW : ICULTL, 'w', v, key);
 	funcjnz(f, res, label[1], label[2]);
 	funclabel(f, label[1]);
-	casesearch(f, v, c->node.child[0], defaultlabel);
+	casesearch(f, class, v, c->node.child[0], defaultlabel);
 	funclabel(f, label[2]);
-	casesearch(f, v, c->node.child[1], defaultlabel);
+	casesearch(f, class, v, c->node.child[1], defaultlabel);
 }
 
 void
 funcswitch(struct func *f, struct value *v, struct switchcases *c, struct block *defaultlabel)
 {
-	casesearch(f, v, c->root, defaultlabel);
+	casesearch(f, qbetype(c->type).base, v, c->root, defaultlabel);
 }
 
 /* emit */
@@ -1029,11 +1048,14 @@ emitvalue(struct value *v)
 	};
 
 	switch (v->kind) {
-	case VALUE_CONST:
-		if (v->repr->base == 's' || v->repr->base == 'd')
-			printf("%c_%.17g", v->repr->base, v->f);
-		else
-			printf("%" PRIu64, v->i);
+	case VALUE_INTCONST:
+		printf("%" PRIu64, v->i);
+		break;
+	case VALUE_FLTCONST:
+		printf("s_%.17g", v->f);
+		break;
+	case VALUE_DBLCONST:
+		printf("d_%.17g", v->f);
 		break;
 	default:
 		if (v->kind >= LEN(sigil) || !sigil[v->kind])
@@ -1049,14 +1071,14 @@ emitvalue(struct value *v)
 }
 
 static void
-emitrepr(struct repr *r, struct value *v, bool ext)
+emitclass(int class, struct value *v)
 {
-	if (!r)
-		fatal("type has no QBE representation");
 	if (v && v->kind == VALUE_TYPE)
 		emitvalue(v);
+	else if (class)
+		putchar(class);
 	else
-		putchar(ext ? r->ext : r->base);
+		fatal("type has no QBE representation");
 }
 
 /* XXX: need to consider _Alignas on struct members */
@@ -1068,7 +1090,7 @@ emittype(struct type *t)
 	struct type *sub;
 	uint64_t i, off;
 
-	if (t->value || !t->repr || t->kind != TYPESTRUCT && t->kind != TYPEUNION)
+	if (t->value || t->kind != TYPESTRUCT && t->kind != TYPEUNION)
 		return;
 	t->value = xmalloc(sizeof(*t->value));
 	t->value->kind = VALUE_TYPE;
@@ -1097,7 +1119,7 @@ emittype(struct type *t)
 		}
 		for (i = 1, sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
 			i *= sub->array.length;
-		emitrepr(sub->repr, sub->value, true);
+		emitclass(qbetype(sub).data, sub->value);
 		if (i > 1)
 			printf(" %" PRIu64, i);
 		if (t->kind == TYPESTRUCT) {
@@ -1124,7 +1146,7 @@ emitinst(struct inst **instp, struct inst **instend)
 	if (inst->res.kind) {
 		emitvalue(&inst->res);
 		fputs(" =", stdout);
-		emitrepr(inst->res.repr, inst->arg[1], false);
+		emitclass(inst->class, inst->arg[1]);
 		putchar(' ');
 	}
 	fputs(instname[inst->kind], stdout);
@@ -1142,7 +1164,7 @@ emitinst(struct inst **instp, struct inst **instend)
 			else
 				fputs(", ", stdout);
 			inst = *instp;
-			emitrepr(inst->arg[0]->repr, inst->arg[1], false);
+			emitclass(inst->class, inst->arg[1]);
 			putchar(' ');
 			emitvalue(inst->arg[0]);
 		}
@@ -1197,12 +1219,12 @@ emitfunc(struct func *f, bool global)
 	struct param *p;
 
 	if (f->end->jump.kind == JUMP_NONE)
-		funcret(f, strcmp(f->name, "main") == 0 ? mkintconst(&i32, 0) : NULL);
+		funcret(f, strcmp(f->name, "main") == 0 ? mkintconst(0) : NULL);
 	if (global)
 		puts("export");
 	fputs("function ", stdout);
 	if (f->type->base != &typevoid) {
-		emitrepr(f->type->base->repr, f->type->base->value, false);
+		emitclass(qbetype(f->type->base).base, f->type->base->value);
 		putchar(' ');
 	}
 	emitvalue(f->decl->value);
@@ -1210,7 +1232,7 @@ emitfunc(struct func *f, bool global)
 	for (p = f->type->func.params; p; p = p->next) {
 		if (p != f->type->func.params)
 			fputs(", ", stdout);
-		emitrepr(p->value->repr, p->type->value, false);
+		emitclass(qbetype(p->type).base, p->type->value);
 		putchar(' ');
 		emitvalue(p->value);
 	}
@@ -1223,7 +1245,7 @@ emitfunc(struct func *f, bool global)
 		if (b->phi.res.kind) {
 			putchar('\t');
 			emitvalue(&b->phi.res);
-			printf(" =%c phi ", b->phi.res.repr->base);
+			printf(" =%c phi ", b->phi.class);
 			emitvalue(&b->phi.blk[0]->label);
 			putchar(' ');
 			emitvalue(b->phi.val[0]);
@@ -1348,7 +1370,7 @@ emitdata(struct decl *d, struct init *init)
 			t = cur->expr->type;
 			if (t->kind == TYPEARRAY)
 				t = t->base;
-			printf("%c ", t->repr->ext);
+			printf("%c ", qbetype(t).data);
 			dataitem(cur->expr, cur->end - cur->start);
 			fputs(", ", stdout);
 		}

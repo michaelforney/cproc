@@ -183,7 +183,6 @@ tagspec(struct scope *s)
 			t = mktype(kind, PROPOBJECT);
 			if (kind == TYPESTRUCT)
 				t->prop |= PROPAGGR;
-			t->repr = &i64; // XXX
 			t->size = 0;
 			t->align = 0;
 			t->structunion.tag = tag;
@@ -234,7 +233,7 @@ tagspec(struct scope *s)
 				error(&tok.loc, "enumerator '%s' value cannot be represented as 'int' or 'unsigned int'", name);
 			}
 			d = mkdecl(DECLCONST, &typeint, QUALNONE, LINKNONE);
-			d->value = mkintconst(t->repr, i);
+			d->value = mkintconst(i);
 			if (i >= 1ull << 31 && i < 1ull << 63) {
 				large = true;
 				d->type = &typeuint;

@@ -6,38 +6,38 @@
 #include "util.h"
 #include "cc.h"
 
-#define INTTYPE(k, n, r, s, p) { \
-	.kind = k, .size = n, .align = n, .repr = r, .basic.issigned = s, \
+#define INTTYPE(k, n, s, p) { \
+	.kind = k, .size = n, .align = n, .basic.issigned = s, \
 	.prop = PROPOBJECT|PROPSCALAR|PROPARITH|PROPREAL|PROPINT|p, \
 }
-#define FLTTYPE(k, n, r) { \
-	.kind = k, .size = n, .align = n, .repr = r, \
+#define FLTTYPE(k, n) { \
+	.kind = k, .size = n, .align = n, \
 	.prop = PROPOBJECT|PROPSCALAR|PROPARITH|PROPREAL|PROPFLOAT, \
 }
 
 struct type typevoid    = {.kind = TYPEVOID, .prop = PROPOBJECT, .incomplete = true};
 
-struct type typebool    = INTTYPE(TYPEBOOL, 1, &i8, false, 0);
+struct type typebool    = INTTYPE(TYPEBOOL, 1, false, 0);
 
-struct type typechar    = INTTYPE(TYPECHAR, 1, &i8, true, PROPCHAR);
-struct type typeschar   = INTTYPE(TYPECHAR, 1, &i8, true, PROPCHAR);
-struct type typeuchar   = INTTYPE(TYPECHAR, 1, &i8, false, PROPCHAR);
+struct type typechar    = INTTYPE(TYPECHAR, 1, true, PROPCHAR);
+struct type typeschar   = INTTYPE(TYPECHAR, 1, true, PROPCHAR);
+struct type typeuchar   = INTTYPE(TYPECHAR, 1, false, PROPCHAR);
 
-struct type typeshort   = INTTYPE(TYPESHORT, 2, &i16, true, 0);
-struct type typeushort  = INTTYPE(TYPESHORT, 2, &i16, false, 0);
+struct type typeshort   = INTTYPE(TYPESHORT, 2, true, 0);
+struct type typeushort  = INTTYPE(TYPESHORT, 2, false, 0);
 
-struct type typeint     = INTTYPE(TYPEINT, 4, &i32, true, 0);
-struct type typeuint    = INTTYPE(TYPEINT, 4, &i32, false, 0);
+struct type typeint     = INTTYPE(TYPEINT, 4, true, 0);
+struct type typeuint    = INTTYPE(TYPEINT, 4, false, 0);
 
-struct type typelong    = INTTYPE(TYPELONG, 8, &i64, true, 0);
-struct type typeulong   = INTTYPE(TYPELONG, 8, &i64, false, 0);
+struct type typelong    = INTTYPE(TYPELONG, 8, true, 0);
+struct type typeulong   = INTTYPE(TYPELONG, 8, false, 0);
 
-struct type typellong   = INTTYPE(TYPELLONG, 8, &i64, true, 0);
-struct type typeullong  = INTTYPE(TYPELLONG, 8, &i64, false, 0);
+struct type typellong   = INTTYPE(TYPELLONG, 8, true, 0);
+struct type typeullong  = INTTYPE(TYPELLONG, 8, false, 0);
 
-struct type typefloat   = FLTTYPE(TYPEFLOAT, 4, &f32);
-struct type typedouble  = FLTTYPE(TYPEDOUBLE, 8, &f64);
-struct type typeldouble = FLTTYPE(TYPELDOUBLE, 16, NULL);  // XXX: not supported by qbe
+struct type typefloat   = FLTTYPE(TYPEFLOAT, 4);
+struct type typedouble  = FLTTYPE(TYPEDOUBLE, 8);
+struct type typeldouble = FLTTYPE(TYPELDOUBLE, 16);
 
 static struct type typevaliststruct = {
 	.kind = TYPESTRUCT, .size = 32, .align = 8,
@@ -48,7 +48,7 @@ struct type typevalist = {
 	.prop = PROPOBJECT|PROPDERIVED|PROPAGGR,
 };
 struct type typevalistptr = {
-	.kind = TYPEPOINTER, .size = 8, .align = 8, .repr = &i64, .base = &typevaliststruct,
+	.kind = TYPEPOINTER, .size = 8, .align = 8, .base = &typevaliststruct,
 	.prop = PROPOBJECT|PROPDERIVED|PROPSCALAR,
 };
 
@@ -77,7 +77,6 @@ mkpointertype(struct type *base, enum typequal qual)
 	t->qual = qual;
 	t->size = 8;
 	t->align = 8;
-	t->repr = &i64;
 
 	return t;
 }

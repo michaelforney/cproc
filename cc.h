@@ -201,7 +201,6 @@ struct type {
 	enum typeprop prop;
 	int align;
 	uint64_t size;
-	struct repr *repr;
 	struct value *value;  /* used by the backend */
 	union {
 		struct type *base;
@@ -502,10 +501,9 @@ struct gotolabel {
 
 struct switchcases {
 	void *root;
+	struct type *type;
 	struct block *defaultlabel;
 };
-
-struct repr;
 
 void switchcase(struct switchcases *, uint64_t, struct block *);
 
@@ -514,7 +512,7 @@ struct block *mkblock(char *);
 struct value *mkglobal(char *, _Bool);
 char *globalname(struct value *);
 
-struct value *mkintconst(struct repr *, uint64_t);
+struct value *mkintconst(uint64_t);
 uint64_t intconstvalue(struct value *);
 
 struct func *mkfunc(struct decl *, char *, struct type *, struct scope *);
@@ -531,5 +529,3 @@ void funcinit(struct func *, struct decl *, struct init *);
 
 void emitfunc(struct func *, _Bool);
 void emitdata(struct decl *,  struct init *);
-
-extern struct repr i8, i16, i32, i64, f32, f64;
