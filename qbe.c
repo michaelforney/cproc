@@ -360,10 +360,7 @@ funcload(struct func *f, struct type *t, struct lvalue lval)
 	case TYPESTRUCT:
 	case TYPEUNION:
 	case TYPEARRAY:
-		v = xmalloc(sizeof(*v));
-		*v = *lval.addr;
-		v->repr = t->repr;
-		return v;
+		return lval.addr;
 	default:
 		assert(t->prop & PROPREAL);
 		switch (t->size) {
@@ -682,7 +679,7 @@ funclval(struct func *f, struct expr *e)
 	default:
 		if (e->type->kind != TYPESTRUCT && e->type->kind != TYPEUNION)
 			error(&tok.loc, "expression is not an object");
-		lval.addr = funcinst(f, ICOPY, &iptr, funcexpr(f, e), NULL);
+		lval.addr = funcexpr(f, e);
 	}
 	return lval;
 }
