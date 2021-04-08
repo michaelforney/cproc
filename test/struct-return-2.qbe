@@ -4,10 +4,8 @@ function w $f() {
 @start.1
 @body.2
 	%.1 =:.1 call $g()
-	%.2 =l copy %.1
-	%.3 =l mul 4, 1
-	%.4 =l add %.2, %.3
-	%.5 =l copy %.4
-	%.6 =w loadw %.5
-	ret %.6
+	%.2 =l mul 4, 1
+	%.3 =l add %.1, %.2
+	%.4 =w loadw %.3
+	ret %.4
 }

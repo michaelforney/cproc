@@ -2,7 +2,6 @@ export
 function w $f() {
 @start.1
 @body.2
-	%.1 =w copy 4
-	ret %.1
+	ret 4
 }
 export data $x = align 4 { z 4 }

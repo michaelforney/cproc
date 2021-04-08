@@ -7,10 +7,8 @@ function $f(l %.1, l %.3) {
 	storel %.3, %.4
 @body.2
 	%.5 =l loadl %.2
-	%.6 =l copy %.5
-	%.7 =l loadl %.4
-	%.8 =l copy %.7
-	%.9 =l sub %.6, %.8
-	%.10 =l div %.9, 4
+	%.6 =l loadl %.4
+	%.7 =l sub %.5, %.6
+	%.8 =l div %.7, 4
 	ret
 }

@@ -423,10 +423,8 @@ ftou(struct func *f, int dst, int src, struct value *v)
 	struct block *join;
 	enum instkind op = src == 's' ? ISTOSI : IDTOSI;
 
-	if (dst == 'w') {
-		v = funcinst(f, op, 'l', v, NULL);
-		return funcinst(f, ICOPY, 'w', v, NULL);
-	}
+	if (dst == 'w')
+		return funcinst(f, op, 'l', v, NULL);
 
 	join = mkblock("ftou_join");
 	join->phi.blk[0] = mkblock("ftou_small");
@@ -488,15 +486,13 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 	} else if (dst->prop & PROPINT) {
 		class = dst->size == 8 ? 'l' : 'w';
 		if (src->prop & PROPINT) {
-			if (dst->size <= src->size) {
-				op = ICOPY;
-			} else {
-				switch (src->size) {
-				case 4: op = src->basic.issigned ? IEXTSW : IEXTUW; break;
-				case 2: op = src->basic.issigned ? IEXTSH : IEXTUH; break;
-				case 1: op = src->basic.issigned ? IEXTSB : IEXTUB; break;
-				default: fatal("internal error; unknown int conversion");
-				}
+			if (dst->size <= src->size)
+				return l;
+			switch (src->size) {
+			case 4: op = src->basic.issigned ? IEXTSW : IEXTUW; break;
+			case 2: op = src->basic.issigned ? IEXTSH : IEXTUH; break;
+			case 1: op = src->basic.issigned ? IEXTSB : IEXTUB; break;
+			default: fatal("internal error; unknown int conversion");
 			}
 		} else {
 			if (!dst->basic.issigned)
@@ -510,12 +506,10 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 				return utof(f, class, src->size == 8 ? 'l' : 'w', l);
 			op = src->size == 8 ? ISLTOF : ISWTOF;
 		} else {
-			if (src->size < dst->size)
-				op = IEXTS;
-			else if (src->size > dst->size)
-				op = ITRUNCD;
-			else
-				op = ICOPY;
+			assert(src->prop & PROPFLOAT);
+			if (src->size == dst->size)
+				return l;
+			op = src->size < dst->size ? IEXTS : ITRUNCD;
 		}
 	}
 

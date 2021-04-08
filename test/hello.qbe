@@ -3,7 +3,6 @@ export
 function w $main() {
 @start.1
 @body.2
-	%.1 =l copy $.Lstring.2
-	%.2 =w call $puts(l %.1)
+	%.1 =w call $puts(l $.Lstring.2)
 	ret 0
 }

@@ -5,7 +5,6 @@ function $f() {
 @body.2
 	%.2 =l extsw 32
 	%.3 =l alloc16 %.2
-	%.4 =l copy %.3
-	storel %.4, %.1
+	storel %.3, %.1
 	ret
 }
