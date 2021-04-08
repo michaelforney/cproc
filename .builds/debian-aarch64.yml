@@ -1,7 +1,9 @@
 image: debian/sid
 packages:
 - gcc-aarch64-linux-gnu
+- libc-dev-arm64-cross
 - qemu-user
+- qemu-user-binfmt
 sources:
 - https://git.sr.ht/~mcf/cproc
 - https://git.sr.ht/~mcf/qbe
@@ -22,7 +24,7 @@ tasks:
       --with-gcc-libdir="${crtbegin%/*}"
     make all check
     make bootstrap LDFLAGS='-Wl,-rpath,/usr/aarch64-linux-gnu/lib'
-    file stage2/cproc stage2/cproc-qbe
+    aarch64-linux-gnu-readelf -h stage2/cproc stage2/cproc-qbe
 triggers:
 - action: email
   condition: failure
