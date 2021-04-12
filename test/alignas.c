@@ -1,1 +1,1 @@
-_Alignas(int) char x[4];
+_Alignas(8) int x;

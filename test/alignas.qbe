@@ -1,1 +1,1 @@
-export data $x = align 4 { z 4 }
+export data $x = align 8 { z 4 }
