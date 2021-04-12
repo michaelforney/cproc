@@ -750,6 +750,30 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 		t->align = align;
 }
 
+static bool
+staticassert(struct scope *s)
+{
+	struct expr *e;
+	uint64_t c;
+
+	if (!consume(T_STATIC_ASSERT))
+		return false;
+	expect(TLPAREN, "after _Static_assert");
+	c = intconstexpr(s, true);
+	if (consume(TCOMMA)) {
+		e = assignexpr(s);
+		if (!e->decayed || e->base->kind != EXPRSTRING)
+			error(&tok.loc, "expected string literal after static assertion expression");
+		if (!c)
+			error(&tok.loc, "static assertion failed: %.*s", (int)e->base->string.size, e->base->string.data);
+	} else if (!c) {
+		error(&tok.loc, "static assertion failed");
+	}
+	expect(TRPAREN, "after static assertion");
+	expect(TSEMICOLON, "after static assertion");
+	return true;
+}
+
 static void
 structdecl(struct scope *s, struct structbuilder *b)
 {
@@ -758,6 +782,8 @@ structdecl(struct scope *s, struct structbuilder *b)
 	uint64_t width;
 	int align;
 
+	if (staticassert(s))
+		return;
 	base = declspecs(s, NULL, NULL, &align);
 	if (!base.type)
 		error(&tok.loc, "no type in struct member declaration");
@@ -857,30 +883,6 @@ declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struc
 	if (kind == DECLFUNC || linkage != LINKNONE || sc & SCSTATIC)
 		d->value = mkglobal(asmname ? asmname : name, linkage == LINKNONE && !asmname);
 	return d;
-}
-
-static bool
-staticassert(struct scope *s)
-{
-	struct expr *e;
-	uint64_t c;
-
-	if (!consume(T_STATIC_ASSERT))
-		return false;
-	expect(TLPAREN, "after _Static_assert");
-	c = intconstexpr(s, true);
-	if (consume(TCOMMA)) {
-		e = assignexpr(s);
-		if (!e->decayed || e->base->kind != EXPRSTRING)
-			error(&tok.loc, "expected string literal after static assertion expression");
-		if (!c)
-			error(&tok.loc, "static assertion failed: %.*s", (int)e->base->string.size, e->base->string.data);
-	} else if (!c) {
-		error(&tok.loc, "static assertion failed");
-	}
-	expect(TRPAREN, "after static assertion");
-	expect(TSEMICOLON, "after static assertion");
-	return true;
 }
 
 bool
