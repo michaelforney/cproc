@@ -15,7 +15,7 @@ static uint64_t
 hash(const void *ptr, size_t len)
 {
 	extern int siphash(const uint8_t *, const size_t, const uint8_t *, uint8_t *, const size_t);
-	static const uint8_t k[16] = {0};  // XXX: we don't have a way to get entropy in standard C
+	static const uint8_t k[16] = {0};  /* XXX: we don't have a way to get entropy in standard C */
 	uint64_t r;
 
 	siphash(ptr, len, k, (uint8_t *)&r, sizeof(r));

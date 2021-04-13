@@ -16,8 +16,8 @@ It was inspired by several other small C compilers including [8cc],
 
 ## Requirements
 
-The compiler itself is written in standard C11 and can be built with
-any conforming C11 compiler.
+The compiler itself is written in standard C99 and can be built with
+any conforming C99 compiler.
 
 The POSIX driver depends on POSIX.1-2008 interfaces, and the `Makefile`
 requires a POSIX-compatible make(1).

@@ -7,7 +7,7 @@
 #include "cc.h"
 
 #define INTTYPE(k, n, s, p) { \
-	.kind = k, .size = n, .align = n, .basic.issigned = s, \
+	.kind = k, .size = n, .align = n, .u.basic.issigned = s, \
 	.prop = PROPOBJECT|PROPSCALAR|PROPARITH|PROPREAL|PROPINT|p, \
 }
 #define FLTTYPE(k, n) { \
@@ -78,11 +78,11 @@ mkarraytype(struct type *base, enum typequal qual, unsigned long long len)
 	t = mktype(TYPEARRAY, PROPOBJECT|PROPDERIVED|PROPAGGR);
 	t->base = base;
 	t->qual = qual;
-	t->array.length = len;
+	t->u.array.length = len;
 	t->incomplete = !len;
 	if (t->base) {
 		t->align = t->base->align;
-		t->size = t->base->size * len;  // XXX: overflow?
+		t->size = t->base->size * len;  /* XXX: overflow? */
 	}
 
 	return t;
@@ -100,9 +100,9 @@ typerank(struct type *t)
 	case TYPEINT:   return 4;
 	case TYPELONG:  return 5;
 	case TYPELLONG: return 6;
-	default:
-		fatal("internal error; unhandled integer type");
 	}
+	fatal("internal error; unhandled integer type");
+	return 0;
 }
 
 bool
@@ -118,32 +118,32 @@ typecompatible(struct type *t1, struct type *t2)
 		   each other (unless they are the same type) */
 		return (t1->kind == TYPEENUM && t2->kind == TYPEINT ||
 		        t1->kind == TYPEINT && t2->kind == TYPEENUM) &&
-		       t1->basic.issigned == t2->basic.issigned;
+		       t1->u.basic.issigned == t2->u.basic.issigned;
 	}
 	switch (t1->kind) {
 	case TYPEPOINTER:
 		goto derived;
 	case TYPEARRAY:
-		if (t1->array.length && t2->array.length && t1->array.length != t2->array.length)
+		if (t1->u.array.length && t2->u.array.length && t1->u.array.length != t2->u.array.length)
 			return false;
 		goto derived;
 	case TYPEFUNC:
-		if (!t1->func.isprototype) {
-			if (!t2->func.isprototype)
+		if (!t1->u.func.isprototype) {
+			if (!t2->u.func.isprototype)
 				return true;
 			tmp = t1, t1 = t2, t2 = tmp;
 		}
-		if (t1->func.isvararg != t2->func.isvararg)
+		if (t1->u.func.isvararg != t2->u.func.isvararg)
 			return false;
-		if (!t2->func.paraminfo) {
-			for (p1 = t1->func.params; p1; p1 = p1->next) {
+		if (!t2->u.func.paraminfo) {
+			for (p1 = t1->u.func.params; p1; p1 = p1->next) {
 				if (!typecompatible(p1->type, typepromote(p1->type, -1)))
 					return false;
 			}
 			return true;
 		}
-		for (p1 = t1->func.params, p2 = t2->func.params; p1 && p2; p1 = p1->next, p2 = p2->next) {
-			tmp = t2->func.isprototype ? p2->type : typepromote(p2->type, -1);
+		for (p1 = t1->u.func.params, p2 = t2->u.func.params; p1 && p2; p1 = p1->next, p2 = p2->next) {
+			tmp = t2->u.func.isprototype ? p2->type : typepromote(p2->type, -1);
 			if (!typecompatible(p1->type, tmp))
 				return false;
 		}
@@ -159,15 +159,15 @@ typecompatible(struct type *t1, struct type *t2)
 bool
 typesame(struct type *t1, struct type *t2)
 {
-	// XXX: implement
+	/* XXX: implement */
 	return typecompatible(t1, t2);
 }
 
 struct type *
 typecomposite(struct type *t1, struct type *t2)
 {
-	// XXX: implement 6.2.7
-	// XXX: merge with typecompatible?
+	/* XXX: implement 6.2.7 */
+	/* XXX: merge with typecompatible? */
 	return t1;
 }
 
@@ -179,7 +179,7 @@ typepromote(struct type *t, unsigned width)
 	if (t->prop & PROPINT && (typerank(t) <= typerank(&typeint) || width <= typeint.size * 8)) {
 		if (width == -1)
 			width = t->size * 8;
-		return width - t->basic.issigned < typeint.size * 8 ? &typeint : &typeuint;
+		return width - t->u.basic.issigned < typeint.size * 8 ? &typeint : &typeuint;
 	}
 	return t;
 }
@@ -200,9 +200,9 @@ typecommonreal(struct type *t1, unsigned w1, struct type *t2, unsigned w2)
 	t2 = typepromote(t2, w2);
 	if (t1 == t2)
 		return t1;
-	if (t1->basic.issigned == t2->basic.issigned)
+	if (t1->u.basic.issigned == t2->u.basic.issigned)
 		return typerank(t1) > typerank(t2) ? t1 : t2;
-	if (t1->basic.issigned) {
+	if (t1->u.basic.issigned) {
 		tmp = t1;
 		t1 = t2;
 		t2 = tmp;
@@ -216,6 +216,7 @@ typecommonreal(struct type *t1, unsigned w1, struct type *t2, unsigned w2)
 	if (t2 == &typellong)
 		return &typeullong;
 	fatal("internal error; could not find common real type");
+	return NULL;
 }
 
 /* function parameter type adjustment (C11 6.7.6.3p7) */
@@ -240,7 +241,7 @@ typemember(struct type *t, const char *name, unsigned long long *offset)
 	struct member *m, *sub;
 
 	assert(t->kind == TYPESTRUCT || t->kind == TYPEUNION);
-	for (m = t->structunion.members; m; m = m->next) {
+	for (m = t->u.structunion.members; m; m = m->next) {
 		if (m->name) {
 			if (strcmp(m->name, name) == 0) {
 				*offset += m->offset;

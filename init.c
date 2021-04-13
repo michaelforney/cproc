@@ -12,7 +12,7 @@ struct object {
 	union {
 		struct member *mem;
 		size_t idx;
-	};
+	} u;
 	bool iscur;
 };
 
@@ -68,8 +68,8 @@ updatearray(struct type *t, unsigned long long i)
 {
 	if (!t->incomplete)
 		return;
-	if (++i > t->array.length) {
-		t->array.length = i;
+	if (++i > t->u.array.length) {
+		t->u.array.length = i;
 		t->size = i * t->base->size;
 	}
 }
@@ -90,10 +90,10 @@ findmember(struct initparser *p, char *name)
 {
 	struct member *m;
 
-	for (m = p->sub->type->structunion.members; m; m = m->next) {
+	for (m = p->sub->type->u.structunion.members; m; m = m->next) {
 		if (m->name) {
 			if (strcmp(m->name, name) == 0) {
-				p->sub->mem = m;
+				p->sub->u.mem = m;
 				subobj(p, m->type, m->offset);
 				return true;
 			}
@@ -122,13 +122,13 @@ designator(struct scope *s, struct initparser *p)
 			if (t->kind != TYPEARRAY)
 				error(&tok.loc, "index designator is only valid for array types");
 			next();
-			p->sub->idx = intconstexpr(s, false);
+			p->sub->u.idx = intconstexpr(s, false);
 			if (t->incomplete)
-				updatearray(t, p->sub->idx);
-			else if (p->sub->idx >= t->array.length)
+				updatearray(t, p->sub->u.idx);
+			else if (p->sub->u.idx >= t->u.array.length)
 				error(&tok.loc, "index designator is larger than array length");
 			expect(TRBRACK, "for index designator");
-			subobj(p, t->base, p->sub->idx * t->base->size);
+			subobj(p, t->base, p->sub->u.idx * t->base->size);
 			break;
 		case TPERIOD:
 			if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
@@ -153,15 +153,15 @@ focus(struct initparser *p)
 
 	switch (p->sub->type->kind) {
 	case TYPEARRAY:
-		p->sub->idx = 0;
+		p->sub->u.idx = 0;
 		if (p->sub->type->incomplete)
-			updatearray(p->sub->type, p->sub->idx);
+			updatearray(p->sub->type, 0);
 		t = p->sub->type->base;
 		break;
 	case TYPESTRUCT:
 	case TYPEUNION:
-		p->sub->mem = p->sub->type->structunion.members;
-		t = p->sub->mem->type;
+		p->sub->u.mem = p->sub->type->u.structunion.members;
+		t = p->sub->u.mem->type;
 		break;
 	default:
 		fatal("internal error: init cursor has unexpected type");
@@ -179,18 +179,18 @@ advance(struct initparser *p)
 		t = p->sub->type;
 		switch (t->kind) {
 		case TYPEARRAY:
-			++p->sub->idx;
+			++p->sub->u.idx;
 			if (t->incomplete)
-				updatearray(t, p->sub->idx);
-			if (p->sub->idx < t->array.length) {
-				subobj(p, t->base, t->base->size * p->sub->idx);
+				updatearray(t, p->sub->u.idx);
+			if (p->sub->u.idx < t->u.array.length) {
+				subobj(p, t->base, t->base->size * p->sub->u.idx);
 				return;
 			}
 			break;
 		case TYPESTRUCT:
-			p->sub->mem = p->sub->mem->next;
-			if (p->sub->mem) {
-				subobj(p, p->sub->mem->type, p->sub->mem->offset);
+			p->sub->u.mem = p->sub->u.mem->next;
+			if (p->sub->u.mem) {
+				subobj(p, p->sub->u.mem->type, p->sub->u.mem->offset);
 				return;
 			}
 			break;
@@ -216,7 +216,7 @@ parseinit(struct scope *s, struct type *t)
 	p.sub->iscur = false;
 	p.init = NULL;
 	p.last = &p.init;
-	if (t->incomplete && !(t->kind == TYPEARRAY && t->array.length == 0))
+	if (t->incomplete && !(t->kind == TYPEARRAY && t->u.array.length == 0))
 		error(&tok.loc, "initializer specified for incomplete type");
 	for (;;) {
 		if (p.cur) {
@@ -250,7 +250,7 @@ parseinit(struct scope *s, struct type *t)
 				if (!(base->prop & PROPCHAR && expr->type->base->prop & PROPCHAR) && !typecompatible(base, expr->type->base))
 					error(&tok.loc, "cannot initialize array with string literal of different width");
 				if (t->incomplete)
-					updatearray(t, expr->string.size - 1);
+					updatearray(t, expr->u.string.size - 1);
 				goto add;
 			case TYPESTRUCT:
 			case TYPEUNION:
@@ -266,7 +266,7 @@ parseinit(struct scope *s, struct type *t)
 		}
 	add:
 		if (p.sub > p.obj && (p.sub[-1].type->kind == TYPESTRUCT || p.sub[-1].type->kind == TYPEUNION))
-			bits = p.sub[-1].mem->bits;
+			bits = p.sub[-1].u.mem->bits;
 		else
 			bits = (struct bitfield){0};
 		initadd(&p, mkinit(p.sub->offset, p.sub->offset + p.sub->type->size, bits, expr));

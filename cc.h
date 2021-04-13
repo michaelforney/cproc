@@ -112,7 +112,7 @@ enum tokenkind {
 	TBORASSIGN,
 	TCOMMA,
 	THASH,
-	THASHHASH,
+	THASHHASH
 };
 
 struct location {
@@ -136,7 +136,7 @@ enum typequal {
 	QUALCONST    = 1<<1,
 	QUALRESTRICT = 1<<2,
 	QUALVOLATILE = 1<<3,
-	QUALATOMIC   = 1<<4,
+	QUALATOMIC   = 1<<4
 };
 
 enum typekind {
@@ -157,7 +157,7 @@ enum typekind {
 	TYPEARRAY,
 	TYPEFUNC,
 	TYPESTRUCT,
-	TYPEUNION,
+	TYPEUNION
 };
 
 enum typeprop {
@@ -171,7 +171,7 @@ enum typeprop {
 	PROPSCALAR  = 1<<5,
 	PROPAGGR    = 1<<6,
 	PROPDERIVED = 1<<7,
-	PROPFLOAT   = 1<<8,
+	PROPFLOAT   = 1<<8
 };
 
 struct param {
@@ -202,10 +202,8 @@ struct type {
 	int align;
 	unsigned long long size;
 	struct value *value;  /* used by the backend */
-	union {
-		struct type *base;
-		struct list link;  /* used only during construction of type */
-	};
+	struct type *base;
+	struct list link;  /* used only during construction of type */
 	/* qualifiers of the base type */
 	enum typequal qual;
 	_Bool incomplete, flexible;
@@ -225,7 +223,7 @@ struct type {
 			char *tag;
 			struct member *members;
 		} structunion;
-	};
+	} u;
 };
 
 enum declkind {
@@ -313,11 +311,7 @@ enum exprkind {
 
 struct stringlit {
 	size_t size;
-	union {
-		unsigned char *data;
-		uint_least16_t *data16;
-		uint_least32_t *data32;
-	};
+	void *data;
 };
 
 struct expr {
@@ -369,7 +363,7 @@ struct expr {
 			enum builtinkind kind;
 		} builtin;
 		struct value *temp;
-	};
+	} u;
 };
 
 struct init {

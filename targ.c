@@ -12,7 +12,7 @@ static const struct target alltargs[] = {
 		.typevalist = &(struct type){
 			.kind = TYPEARRAY, .prop = PROPOBJECT|PROPDERIVED|PROPAGGR,
 			.align = 8, .size = 24,
-			.array = {1}, .base = &(struct type){
+			.u.array = {1}, .base = &(struct type){
 				.kind = TYPESTRUCT, .prop = PROPOBJECT|PROPAGGR,
 				.align = 8, .size = 24,
 			},
@@ -24,7 +24,7 @@ static const struct target alltargs[] = {
 		.typevalist = &(struct type){
 			.kind = TYPESTRUCT, .prop = PROPOBJECT|PROPAGGR,
 			.align = 8, .size = 32,
-			.structunion.tag = "va_list",
+			.u.structunion.tag = "va_list",
 		},
 		.typewchar = &typeuint,
 	},
@@ -54,6 +54,6 @@ targinit(const char *name)
 	}
 	if (!targ)
 		fatal("unknown target '%s'", name);
-	typechar.basic.issigned = targ->signedchar;
+	typechar.u.basic.issigned = targ->signedchar;
 	typeadjvalist = typeadjust(targ->typevalist);
 }

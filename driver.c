@@ -585,4 +585,5 @@ main(int argc, char *argv[])
 			output = "a.out";
 		buildexe(inputs.val, inputs.len / sizeof(*input), output);
 	}
+	return 0;
 }

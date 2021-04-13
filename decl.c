@@ -184,8 +184,8 @@ tagspec(struct scope *s)
 				t->prop |= PROPAGGR;
 			t->size = 0;
 			t->align = 0;
-			t->structunion.tag = tag;
-			t->structunion.members = NULL;
+			t->u.structunion.tag = tag;
+			t->u.structunion.members = NULL;
 		}
 		t->incomplete = true;
 		if (tag)
@@ -200,11 +200,11 @@ tagspec(struct scope *s)
 	case TYPESTRUCT:
 	case TYPEUNION:
 		b.type = t;
-		b.last = &t->structunion.members;
+		b.last = &t->u.structunion.members;
 		b.bits = 0;
 		do structdecl(s, &b);
 		while (tok.kind != TRBRACE);
-		if (!t->structunion.members)
+		if (!t->u.structunion.members)
 			error(&tok.loc, "struct/union has no members");
 		next();
 		t->size = ALIGNUP(t->size, t->align);
@@ -219,11 +219,11 @@ tagspec(struct scope *s)
 				e = constexpr(s);
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "expected integer constant expression");
-				i = e->constant.u;
-				if (e->type->basic.issigned && i >= 1ull << 63) {
+				i = e->u.constant.u;
+				if (e->type->u.basic.issigned && i >= 1ull << 63) {
 					if (i < -1ull << 31)
 						goto invalid;
-					t->basic.issigned = true;
+					t->u.basic.issigned = true;
 				} else if (i >= 1ull << 32) {
 					goto invalid;
 				}
@@ -237,7 +237,7 @@ tagspec(struct scope *s)
 				large = true;
 				d->type = &typeuint;
 			}
-			if (large && t->basic.issigned)
+			if (large && t->u.basic.issigned)
 				error(&tok.loc, "neither 'int' nor 'unsigned' can represent all enumerator values");
 			scopeputdecl(s, name, d);
 			if (!consume(TCOMMA))
@@ -428,7 +428,7 @@ done:
 	if (!t && (tq || sc && *sc || fs && *fs))
 		error(&tok.loc, "declaration has no type specifier");
 	if (t && tq && t->kind == TYPEARRAY) {
-		t = mkarraytype(t->base, t->qual | tq, t->array.length);
+		t = mkarraytype(t->base, t->qual | tq, t->u.array.length);
 		tq = QUALNONE;
 	}
 
@@ -509,12 +509,12 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 		func:
 			t = mktype(TYPEFUNC, PROPDERIVED);
 			t->qual = QUALNONE;
-			t->func.isprototype = false;
-			t->func.isvararg = false;
-			t->func.isnoreturn = false;
-			t->func.params = NULL;
-			t->func.nparam = 0;
-			p = &t->func.params;
+			t->u.func.isprototype = false;
+			t->u.func.isvararg = false;
+			t->u.func.isnoreturn = false;
+			t->u.func.params = NULL;
+			t->u.func.nparam = 0;
+			p = &t->u.func.params;
 			switch (tok.kind) {
 			case TIDENT:
 				if (!istypename(s, tok.lit)) {
@@ -528,26 +528,26 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				}
 				/* fallthrough */
 			default:
-				t->func.isprototype = true;
+				t->u.func.isprototype = true;
 				for (;;) {
 					*p = parameter(s);
 					p = &(*p)->next;
-					++t->func.nparam;
+					++t->u.func.nparam;
 					if (!consume(TCOMMA))
 						break;
 					if (consume(TELLIPSIS)) {
-						t->func.isvararg = true;
+						t->u.func.isvararg = true;
 						break;
 					}
 				}
-				if (t->func.params->type->kind == TYPEVOID && !t->func.params->next)
-					t->func.params = NULL;
+				if (t->u.func.params->type->kind == TYPEVOID && !t->u.func.params->next)
+					t->u.func.params = NULL;
 				break;
 			case TRPAREN:
 				break;
 			}
 			expect(TRPAREN, "to close function declarator");
-			t->func.paraminfo = t->func.isprototype || t->func.params || tok.kind == TLBRACE;
+			t->u.func.paraminfo = t->u.func.isprototype || t->u.func.params || tok.kind == TLBRACE;
 			listinsert(ptr->prev, &t->link);
 			break;
 		case TLBRACK:  /* array declarator */
@@ -562,11 +562,11 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				e = eval(assignexpr(s), EVALARITH);
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "VLAs are not yet supported");
-				i = e->constant.u;
-				if (e->type->basic.issigned && i > INT64_MAX)
+				i = e->u.constant.u;
+				if (e->type->u.basic.issigned && i > INT64_MAX)
 					error(&tok.loc, "array length must be non-negative");
 				delexpr(e);
-				t->array.length = i;
+				t->u.array.length = i;
 				t->incomplete = false;
 			}
 			expect(TRBRACK, "after array length");
@@ -605,7 +605,7 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 			if (base.type->kind == TYPEFUNC)
 				error(&tok.loc, "array element has function type");
 			t->align = base.type->align;
-			t->size = base.type->size * t->array.length;  // XXX: overflow?
+			t->size = base.type->size * t->u.array.length;  /* XXX: overflow? */
 			break;
 		}
 		base.type = t;
@@ -782,7 +782,7 @@ structdecl(struct scope *s, struct structbuilder *b)
 	if (!base.type)
 		error(&tok.loc, "no type in struct member declaration");
 	if (tok.kind == TSEMICOLON) {
-		if ((base.type->kind != TYPESTRUCT && base.type->kind != TYPEUNION) || base.type->structunion.tag)
+		if ((base.type->kind != TYPESTRUCT && base.type->kind != TYPEUNION) || base.type->u.structunion.tag)
 			error(&tok.loc, "struct declaration must declare at least one member");
 		next();
 		addmember(b, base, NULL, align, -1);
@@ -973,18 +973,18 @@ decl(struct scope *s, struct func *f)
 		case DECLFUNC:
 			if (align)
 				error(&tok.loc, "function '%s' declared with alignment specifier", name);
-			t->func.isnoreturn |= fs & FUNCNORETURN;
+			t->u.func.isnoreturn |= fs & FUNCNORETURN;
 			if (f && sc && sc != SCEXTERN)  /* 6.7.1p7 */
 				error(&tok.loc, "function '%s' with block scope may only have storage class 'extern'", name);
-			if (!t->func.isprototype && t->func.params) {
+			if (!t->u.func.isprototype && t->u.func.params) {
 				if (!allowfunc)
 					error(&tok.loc, "function definition not allowed");
 				/* collect type information for parameters before we check compatibility */
-				while (paramdecl(s, t->func.params))
+				while (paramdecl(s, t->u.func.params))
 					;
 				if (tok.kind != TLBRACE)
 					error(&tok.loc, "function declaration with identifier list is not part of definition");
-				for (p = t->func.params; p; p = p->next) {
+				for (p = t->u.func.params; p; p = p->next) {
 					if (!p->type)
 						error(&tok.loc, "old-style function definition does not declare '%s'", p->name);
 				}
@@ -1026,7 +1026,7 @@ struct decl *stringdecl(struct expr *expr)
 	if (!strings)
 		strings = mkmap(64);
 	assert(expr->kind == EXPRSTRING);
-	mapkey(&key, expr->string.data, expr->string.size);
+	mapkey(&key, expr->u.string.data, expr->u.string.size);
 	entry = mapput(strings, &key);
 	d = *entry;
 	if (!d) {

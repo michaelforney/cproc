@@ -24,7 +24,7 @@ struct value {
 		char *name;
 		uint64_t i;
 		double f;
-	};
+	} u;
 };
 
 struct lvalue {
@@ -116,7 +116,7 @@ mkblock(char *name)
 
 	b = xmalloc(sizeof(*b));
 	b->label.kind = VALUE_LABEL;
-	b->label.name = name;
+	b->label.u.name = name;
 	b->label.id = ++id;
 	b->insts = (struct array){0};
 	b->jump.kind = JUMP_NONE;
@@ -134,7 +134,7 @@ mkglobal(char *name, bool private)
 
 	v = xmalloc(sizeof(*v));
 	v->kind = VALUE_GLOBAL;
-	v->name = name;
+	v->u.name = name;
 	v->id = private ? ++id : 0;
 
 	return v;
@@ -144,7 +144,7 @@ char *
 globalname(struct value *v)
 {
 	assert(v->kind == VALUE_GLOBAL && !v->id);
-	return v->name;
+	return v->u.name;
 }
 
 struct value *
@@ -154,7 +154,7 @@ mkintconst(uint64_t n)
 
 	v = xmalloc(sizeof(*v));
 	v->kind = VALUE_INTCONST;
-	v->i = n;
+	v->u.i = n;
 
 	return v;
 }
@@ -163,7 +163,7 @@ uint64_t
 intconstvalue(struct value *v)
 {
 	assert(v->kind == VALUE_INTCONST);
-	return v->i;
+	return v->u.i;
 }
 
 static struct value *
@@ -173,7 +173,7 @@ mkfltconst(int kind, double n)
 
 	v = xmalloc(sizeof(*v));
 	v->kind = kind;
-	v->f = n;
+	v->u.f = n;
 
 	return v;
 }
@@ -197,8 +197,8 @@ qbetype(struct type *t)
 	if (!(t->prop & PROPSCALAR))
 		return l;
 	switch (t->size) {
-	case 1: return t->basic.issigned ? sb : ub;
-	case 2: return t->basic.issigned ? sh : uh;
+	case 1: return t->u.basic.issigned ? sb : ub;
+	case 2: return t->u.basic.issigned ? sh : uh;
 	case 4: return t->prop & PROPFLOAT ? s : w;
 	case 8: return t->prop & PROPFLOAT ? d : l;
 	case 16: fatal("long double is not yet supported");
@@ -215,7 +215,7 @@ static void
 functemp(struct func *f, struct value *v)
 {
 	v->kind = VALUE_TEMP;
-	v->name = NULL;
+	v->u.name = NULL;
 	v->id = ++f->lastid;
 }
 
@@ -301,7 +301,7 @@ funcbits(struct func *f, struct type *t, struct value *v, struct bitfield b)
 	}
 	bits += b.before;
 	if (bits)
-		v = funcinst(f, t->basic.issigned ? ISAR : ISHR, class, v, mkintconst(bits));
+		v = funcinst(f, t->u.basic.issigned ? ISAR : ISHR, class, v, mkintconst(bits));
 	return v;
 }
 
@@ -509,20 +509,20 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 			if (dst->size <= src->size)
 				return l;
 			switch (src->size) {
-			case 4: op = src->basic.issigned ? IEXTSW : IEXTUW; break;
-			case 2: op = src->basic.issigned ? IEXTSH : IEXTUH; break;
-			case 1: op = src->basic.issigned ? IEXTSB : IEXTUB; break;
+			case 4: op = src->u.basic.issigned ? IEXTSW : IEXTUW; break;
+			case 2: op = src->u.basic.issigned ? IEXTSH : IEXTUH; break;
+			case 1: op = src->u.basic.issigned ? IEXTSB : IEXTUB; break;
 			default: fatal("internal error; unknown integer conversion");
 			}
 		} else {
-			if (!dst->basic.issigned)
+			if (!dst->u.basic.issigned)
 				return ftou(f, class, src->size == 8 ? 'd' : 's', l);
 			op = src->size == 8 ? IDTOSI : ISTOSI;
 		}
 	} else {
 		class = dst->size == 8 ? 'd' : 's';
 		if (src->prop & PROPINT) {
-			if (!src->basic.issigned)
+			if (!src->u.basic.issigned)
 				return utof(f, class, src->size == 8 ? 'l' : 'w', l);
 			op = src->size == 8 ? ISLTOF : ISWTOF;
 		} else {
@@ -555,10 +555,10 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 	emittype(t->base);
 
 	/* allocate space for parameters */
-	for (p = t->func.params; p; p = p->next) {
+	for (p = t->u.func.params; p; p = p->next) {
 		if (!p->name)
 			error(&tok.loc, "parameter name omitted in definition of function '%s'", name);
-		pt = t->func.isprototype ? p->type : typepromote(p->type, -1);
+		pt = t->u.func.isprototype ? p->type : typepromote(p->type, -1);
 		emittype(pt);
 		p->value = xmalloc(sizeof(*p->value));
 		functemp(f, p->value);
@@ -687,14 +687,14 @@ funclval(struct func *f, struct expr *e)
 	struct decl *d;
 
 	if (e->kind == EXPRBITFIELD) {
-		lval.bits = e->bitfield.bits;
+		lval.bits = e->u.bitfield.bits;
 		e = e->base;
 	}
 	switch (e->kind) {
 	case EXPRIDENT:
-		d = e->ident.decl;
+		d = e->u.ident.decl;
 		if (d->kind != DECLOBJECT && d->kind != DECLFUNC)
-			error(&tok.loc, "identifier is not an object or function");  // XXX: fix location, var name
+			error(&tok.loc, "identifier is not an object or function");  /* XXX: fix location, var name */
 		if (d == f->namedecl) {
 			fputs("data ", stdout);
 			emitvalue(d->value);
@@ -709,7 +709,7 @@ funclval(struct func *f, struct expr *e)
 		break;
 	case EXPRCOMPOUND:
 		d = mkdecl(DECLOBJECT, e->type, e->qual, LINKNONE);
-		funcinit(f, d, e->compound.init);
+		funcinit(f, d, e->u.compound.init);
 		lval.addr = d->value;
 		break;
 	case EXPRUNARY:
@@ -739,7 +739,7 @@ funcexpr(struct func *f, struct expr *e)
 
 	switch (e->kind) {
 	case EXPRIDENT:
-		d = e->ident.decl;
+		d = e->u.ident.decl;
 		switch (d->kind) {
 		case DECLOBJECT: return funcload(f, d->type, (struct lvalue){d->value});
 		case DECLCONST:  return d->value;
@@ -750,9 +750,9 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRCONST:
 		t = e->type;
 		if (t->prop & PROPINT || t->kind == TYPEPOINTER)
-			return mkintconst(e->constant.u);
+			return mkintconst(e->u.constant.u);
 		assert(t->prop & PROPFLOAT);
-		return mkfltconst(t->size == 4 ? VALUE_FLTCONST : VALUE_DBLCONST, e->constant.f);
+		return mkfltconst(t->size == 4 ? VALUE_FLTCONST : VALUE_DBLCONST, e->u.constant.f);
 	case EXPRBITFIELD:
 	case EXPRCOMPOUND:
 		lval = funclval(f, e);
@@ -771,10 +771,10 @@ funcexpr(struct func *f, struct expr *e)
 			fatal("not a scalar");
 		v = funcinst(f, e->op == TINC ? IADD : ISUB, qbetype(t).base, l, r);
 		v = funcstore(f, e->type, e->qual, lval, v);
-		return e->incdec.post ? l : v;
+		return e->u.incdec.post ? l : v;
 	case EXPRCALL:
-		argvals = xreallocarray(NULL, e->call.nargs, sizeof(argvals[0]));
-		for (arg = e->call.args, i = 0; arg; arg = arg->next, ++i) {
+		argvals = xreallocarray(NULL, e->u.call.nargs, sizeof(argvals[0]));
+		for (arg = e->u.call.args, i = 0; arg; arg = arg->next, ++i) {
 			emittype(arg->type);
 			argvals[i] = funcexpr(f, arg);
 		}
@@ -782,14 +782,16 @@ funcexpr(struct func *f, struct expr *e)
 		emittype(t);
 		v = funcinst(f, ICALL, qbetype(t).base, funcexpr(f, e->base), t->value);
 		functype = e->base->type->base;
-		for (arg = e->call.args, i = 0; arg; arg = arg->next, ++i) {
-			if (functype->func.isvararg && i == functype->func.nparam)
+		for (arg = e->u.call.args, i = 0; arg; arg = arg->next, ++i) {
+			if (functype->u.func.isvararg && i == functype->u.func.nparam)
 				funcinst(f, IVARARG, 0, NULL, NULL);
 			t = arg->type;
 			funcinst(f, IARG, qbetype(t).base, argvals[i], t->value);
 		}
-		//if (functype->func.isnoreturn)
-		//	funcret(f, NULL);
+		/*
+		if (functype->func.isnoreturn)
+			funcret(f, NULL);
+		*/
 		return v;
 	case EXPRUNARY:
 		switch (e->op) {
@@ -806,11 +808,11 @@ funcexpr(struct func *f, struct expr *e)
 		l = funcexpr(f, e->base);
 		return convert(f, e->type, e->base->type, l);
 	case EXPRBINARY:
-		l = funcexpr(f, e->binary.l);
+		l = funcexpr(f, e->u.binary.l);
 		if (e->op == TLOR || e->op == TLAND) {
 			b[0] = mkblock("logic_right");
 			b[1] = mkblock("logic_join");
-			t = e->binary.l->type;
+			t = e->u.binary.l->type;
 			if (e->op == TLOR) {
 				funcjnz(f, l, t, b[1], b[0]);
 				b[1]->phi.val[0] = mkintconst(1);
@@ -820,16 +822,16 @@ funcexpr(struct func *f, struct expr *e)
 			}
 			b[1]->phi.blk[0] = f->end;
 			funclabel(f, b[0]);
-			r = funcexpr(f, e->binary.r);
-			b[1]->phi.val[1] = convert(f, &typebool, e->binary.r->type, r);
+			r = funcexpr(f, e->u.binary.r);
+			b[1]->phi.val[1] = convert(f, &typebool, e->u.binary.r->type, r);
 			b[1]->phi.blk[1] = f->end;
 			funclabel(f, b[1]);
 			functemp(f, &b[1]->phi.res);
 			b[1]->phi.class = 'w';
 			return &b[1]->phi.res;
 		}
-		r = funcexpr(f, e->binary.r);
-		t = e->binary.l->type;
+		r = funcexpr(f, e->u.binary.r);
+		t = e->u.binary.l->type;
 		if (t->kind == TYPEPOINTER)
 			t = &typeulong;
 		switch (e->op) {
@@ -837,10 +839,10 @@ funcexpr(struct func *f, struct expr *e)
 			op = IMUL;
 			break;
 		case TDIV:
-			op = !(t->prop & PROPINT) || t->basic.issigned ? IDIV : IUDIV;
+			op = !(t->prop & PROPINT) || t->u.basic.issigned ? IDIV : IUDIV;
 			break;
 		case TMOD:
-			op = t->basic.issigned ? IREM : IUREM;
+			op = t->u.basic.issigned ? IREM : IUREM;
 			break;
 		case TADD:
 			op = IADD;
@@ -852,7 +854,7 @@ funcexpr(struct func *f, struct expr *e)
 			op = ISHL;
 			break;
 		case TSHR:
-			op = t->basic.issigned ? ISAR : ISHR;
+			op = t->u.basic.issigned ? ISAR : ISHR;
 			break;
 		case TBOR:
 			op = IOR;
@@ -865,27 +867,27 @@ funcexpr(struct func *f, struct expr *e)
 			break;
 		case TLESS:
 			if (t->size <= 4)
-				op = t->prop & PROPFLOAT ? ICLTS : t->basic.issigned ? ICSLTW : ICULTW;
+				op = t->prop & PROPFLOAT ? ICLTS : t->u.basic.issigned ? ICSLTW : ICULTW;
 			else
-				op = t->prop & PROPFLOAT ? ICLTD : t->basic.issigned ? ICSLTL : ICULTL;
+				op = t->prop & PROPFLOAT ? ICLTD : t->u.basic.issigned ? ICSLTL : ICULTL;
 			break;
 		case TGREATER:
 			if (t->size <= 4)
-				op = t->prop & PROPFLOAT ? ICGTS : t->basic.issigned ? ICSGTW : ICUGTW;
+				op = t->prop & PROPFLOAT ? ICGTS : t->u.basic.issigned ? ICSGTW : ICUGTW;
 			else
-				op = t->prop & PROPFLOAT ? ICGTD : t->basic.issigned ? ICSGTL : ICUGTL;
+				op = t->prop & PROPFLOAT ? ICGTD : t->u.basic.issigned ? ICSGTL : ICUGTL;
 			break;
 		case TLEQ:
 			if (t->size <= 4)
-				op = t->prop & PROPFLOAT ? ICLES : t->basic.issigned ? ICSLEW : ICULEW;
+				op = t->prop & PROPFLOAT ? ICLES : t->u.basic.issigned ? ICSLEW : ICULEW;
 			else
-				op = t->prop & PROPFLOAT ? ICLED : t->basic.issigned ? ICSLEL : ICULEL;
+				op = t->prop & PROPFLOAT ? ICLED : t->u.basic.issigned ? ICSLEL : ICULEL;
 			break;
 		case TGEQ:
 			if (t->size <= 4)
-				op = t->prop & PROPFLOAT ? ICGES : t->basic.issigned ? ICSGEW : ICUGEW;
+				op = t->prop & PROPFLOAT ? ICGES : t->u.basic.issigned ? ICSGEW : ICUGEW;
 			else
-				op = t->prop & PROPFLOAT ? ICGED : t->basic.issigned ? ICSGEL : ICUGEL;
+				op = t->prop & PROPFLOAT ? ICGED : t->u.basic.issigned ? ICSGEL : ICUGEL;
 			break;
 		case TEQL:
 			if (t->size <= 4)
@@ -912,12 +914,12 @@ funcexpr(struct func *f, struct expr *e)
 		funcjnz(f, v, e->base->type, b[0], b[1]);
 
 		funclabel(f, b[0]);
-		b[2]->phi.val[0] = funcexpr(f, e->cond.t);
+		b[2]->phi.val[0] = funcexpr(f, e->u.cond.t);
 		b[2]->phi.blk[0] = f->end;
 		funcjmp(f, b[2]);
 
 		funclabel(f, b[1]);
-		b[2]->phi.val[1] = funcexpr(f, e->cond.f);
+		b[2]->phi.val[1] = funcexpr(f, e->u.cond.f);
 		b[2]->phi.blk[1] = f->end;
 
 		funclabel(f, b[2]);
@@ -927,12 +929,12 @@ funcexpr(struct func *f, struct expr *e)
 		b[2]->phi.class = qbetype(e->type).base;
 		return &b[2]->phi.res;
 	case EXPRASSIGN:
-		r = funcexpr(f, e->assign.r);
-		if (e->assign.l->kind == EXPRTEMP) {
-			e->assign.l->temp = r;
+		r = funcexpr(f, e->u.assign.r);
+		if (e->u.assign.l->kind == EXPRTEMP) {
+			e->u.assign.l->u.temp = r;
 		} else {
-			lval = funclval(f, e->assign.l);
-			r = funcstore(f, e->assign.l->type, e->assign.l->qual, lval, r);
+			lval = funclval(f, e->u.assign.l);
+			r = funcstore(f, e->u.assign.l->type, e->u.assign.l->qual, lval, r);
 		}
 		return r;
 	case EXPRCOMMA:
@@ -940,7 +942,7 @@ funcexpr(struct func *f, struct expr *e)
 			funcexpr(f, e);
 		return funcexpr(f, e);
 	case EXPRBUILTIN:
-		switch (e->builtin.kind) {
+		switch (e->u.builtin.kind) {
 		case BUILTINVASTART:
 			l = funcexpr(f, e->base);
 			funcinst(f, IVASTART, 0, l, NULL);
@@ -961,11 +963,11 @@ funcexpr(struct func *f, struct expr *e)
 		}
 		return NULL;
 	case EXPRTEMP:
-		assert(e->temp);
-		return e->temp;
-	default:
-		fatal("unimplemented expression %d", e->kind);
+		assert(e->u.temp);
+		return e->u.temp;
 	}
+	fatal("unimplemented expression %d", e->kind);
+	return NULL;
 }
 
 static void
@@ -1008,13 +1010,13 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 		dst.bits = init->bits;
 		if (init->expr->kind == EXPRSTRING) {
 			w = init->expr->type->base->size;
-			for (i = 0; i < init->expr->string.size && i * w < init->end - init->start; ++i) {
+			for (i = 0; i < init->expr->u.string.size && i * w < init->end - init->start; ++i) {
 				v = mkintconst(init->start + i * w);
 				dst.addr = funcinst(func, IADD, ptrclass, d->value, v);
 				switch (w) {
-				case 1: v = mkintconst(init->expr->string.data[i]); break;
-				case 2: v = mkintconst(init->expr->string.data16[i]); break;
-				case 4: v = mkintconst(init->expr->string.data32[i]); break;
+				case 1: v = mkintconst(((unsigned char *)init->expr->u.string.data)[i]); break;
+				case 2: v = mkintconst(((uint_least16_t *)init->expr->u.string.data)[i]); break;
+				case 4: v = mkintconst(((uint_least32_t *)init->expr->u.string.data)[i]); break;
 				}
 				funcstore(func, init->expr->type->base, QUALNONE, dst, v);
 			}
@@ -1053,7 +1055,7 @@ casesearch(struct func *f, int class, struct value *v, struct switchcase *c, str
 	label[1] = mkblock("switch_lt");
 	label[2] = mkblock("switch_gt");
 
-	// XXX: linear search if c->node.height < 4
+	/* XXX: linear search if c->node.height < 4 */
 	key = mkintconst(c->node.key);
 	res = funcinst(f, class == 'w' ? ICEQW : ICEQL, 'w', v, key);
 	funcjnz(f, res, NULL, c->body, label[0]);
@@ -1086,13 +1088,13 @@ emitvalue(struct value *v)
 
 	switch (v->kind) {
 	case VALUE_INTCONST:
-		printf("%" PRIu64, v->i);
+		printf("%" PRIu64, v->u.i);
 		break;
 	case VALUE_FLTCONST:
-		printf("s_%.17g", v->f);
+		printf("s_%.17g", v->u.f);
 		break;
 	case VALUE_DBLCONST:
-		printf("d_%.17g", v->f);
+		printf("d_%.17g", v->u.f);
 		break;
 	default:
 		if (v->kind >= LEN(sigil) || !sigil[v->kind])
@@ -1100,8 +1102,8 @@ emitvalue(struct value *v)
 		putchar(sigil[v->kind]);
 		if (v->kind == VALUE_GLOBAL && v->id)
 			fputs(".L", stdout);
-		if (v->name)
-			fputs(v->name, stdout);
+		if (v->u.name)
+			fputs(v->u.name, stdout);
 		if (v->id)
 			printf(".%u", v->id);
 	}
@@ -1131,9 +1133,9 @@ emittype(struct type *t)
 		return;
 	t->value = xmalloc(sizeof(*t->value));
 	t->value->kind = VALUE_TYPE;
-	t->value->name = t->structunion.tag;
+	t->value->u.name = t->u.structunion.tag;
 	t->value->id = ++id;
-	for (m = t->structunion.members; m; m = m->next) {
+	for (m = t->u.structunion.members; m; m = m->next) {
 		for (sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
 			;
 		emittype(sub);
@@ -1145,7 +1147,7 @@ emittype(struct type *t)
 		return;
 	}
 	fputs(" = { ", stdout);
-	for (m = t->structunion.members, off = 0; m;) {
+	for (m = t->u.structunion.members, off = 0; m;) {
 		if (t->kind == TYPESTRUCT) {
 			/* look for a subsequent member with a larger storage unit */
 			for (other = m->next; other; other = other->next) {
@@ -1159,7 +1161,7 @@ emittype(struct type *t)
 			fputs("{ ", stdout);
 		}
 		for (i = 1, sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
-			i *= sub->array.length;
+			i *= sub->u.array.length;
 		emitclass(qbetype(sub).data, sub->value);
 		if (i > 1)
 			printf(" %" PRIu64, i);
@@ -1273,14 +1275,14 @@ emitfunc(struct func *f, bool global)
 	}
 	emitvalue(f->decl->value);
 	putchar('(');
-	for (p = f->type->func.params; p; p = p->next) {
-		if (p != f->type->func.params)
+	for (p = f->type->u.func.params; p; p = p->next) {
+		if (p != f->type->u.func.params)
 			fputs(", ", stdout);
 		emitclass(qbetype(p->type).base, p->type->value);
 		putchar(' ');
 		emitvalue(p->value);
 	}
-	if (f->type->func.isvararg)
+	if (f->type->u.func.isvararg)
 		fputs(", ...", stdout);
 	puts(") {");
 	for (b = f->start; b; b = b->next) {
@@ -1321,30 +1323,30 @@ dataitem(struct expr *expr, uint64_t size)
 		expr = expr->base;
 		if (expr->kind != EXPRIDENT)
 			error(&tok.loc, "initializer is not a constant expression");
-		decl = expr->ident.decl;
+		decl = expr->u.ident.decl;
 		if (decl->value->kind != VALUE_GLOBAL)
 			fatal("not a global");
 		emitvalue(decl->value);
 		break;
 	case EXPRBINARY:
-		if (expr->op != TADD || expr->binary.l->kind != EXPRUNARY || expr->binary.r->kind != EXPRCONST)
+		if (expr->op != TADD || expr->u.binary.l->kind != EXPRUNARY || expr->u.binary.r->kind != EXPRCONST)
 			error(&tok.loc, "initializer is not a constant expression");
-		dataitem(expr->binary.l, 0);
+		dataitem(expr->u.binary.l, 0);
 		fputs(" + ", stdout);
-		dataitem(expr->binary.r, 0);
+		dataitem(expr->u.binary.r, 0);
 		break;
 	case EXPRCONST:
 		if (expr->type->prop & PROPFLOAT)
-			printf("%c_%.17g", expr->type->size == 4 ? 's' : 'd', expr->constant.f);
+			printf("%c_%.17g", expr->type->size == 4 ? 's' : 'd', expr->u.constant.f);
 		else
-			printf("%" PRIu64, expr->constant.u);
+			printf("%" PRIu64, expr->u.constant.u);
 		break;
 	case EXPRSTRING:
 		w = expr->type->base->size;
 		if (w == 1) {
 			fputc('"', stdout);
-			for (i = 0; i < expr->string.size && i < size; ++i) {
-				c = expr->string.data[i];
+			for (i = 0; i < expr->u.string.size && i < size; ++i) {
+				c = ((unsigned char *)expr->u.string.data)[i];
 				if (isprint(c) && c != '"' && c != '\\')
 					putchar(c);
 				else
@@ -1352,10 +1354,10 @@ dataitem(struct expr *expr, uint64_t size)
 			}
 			fputc('"', stdout);
 		} else {
-			for (i = 0; i < expr->string.size && i * w < size; ++i) {
+			for (i = 0; i < expr->u.string.size && i * w < size; ++i) {
 				switch (w) {
-				case 2: printf("%hu ", expr->string.data16[i]); break;
-				case 4: printf("%u ", expr->string.data32[i]);  break;
+				case 2: printf("%" PRIuLEAST16 " ", ((uint_least16_t *)expr->u.string.data)[i]); break;
+				case 4: printf("%" PRIuLEAST32 " ", ((uint_least32_t *)expr->u.string.data)[i]); break;
 				default: assert(0);
 				}
 			}
@@ -1400,9 +1402,9 @@ emitdata(struct decl *d, struct init *init)
 			assert(init->expr->kind == EXPRCONST);
 			i = (init->start - cur->start) / cur->expr->type->base->size;
 			switch (cur->expr->type->base->size) {
-			case 1: cur->expr->string.data[i]   = init->expr->constant.u; break;
-			case 2: cur->expr->string.data16[i] = init->expr->constant.u; break;
-			case 4: cur->expr->string.data32[i] = init->expr->constant.u; break;
+			case 1: ((unsigned char *)cur->expr->u.string.data)[i]  = init->expr->u.constant.u; break;
+			case 2: ((uint_least16_t *)cur->expr->u.string.data)[i] = init->expr->u.constant.u; break;
+			case 4: ((uint_least32_t *)cur->expr->u.string.data)[i] = init->expr->u.constant.u; break;
 			}
 		}
 		start = cur->start + cur->bits.before / 8;
@@ -1418,7 +1420,7 @@ emitdata(struct decl *d, struct init *init)
 			/* XXX: little-endian specific */
 			assert(cur->expr->type->prop & PROPINT);
 			assert(cur->expr->kind == EXPRCONST);
-			bits |= cur->expr->constant.u << cur->bits.before % 8;
+			bits |= cur->expr->u.constant.u << cur->bits.before % 8;
 			for (offset = start; offset < end; ++offset, bits >>= 8)
 				printf("b %u, ", (unsigned)bits & 0xff);
 			/*

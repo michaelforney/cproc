@@ -27,7 +27,7 @@ extern char *argv0;
 #define ALIGNUP(x, n) ALIGNDOWN((x) + (n) - 1, n)
 
 void warn(const char *, ...);
-_Noreturn void fatal(const char *fmt, ...);
+void fatal(const char *fmt, ...);
 
 void *reallocarray(void *, size_t, size_t);
 void *xreallocarray(void *, size_t, size_t);
