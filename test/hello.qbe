@@ -1,4 +1,4 @@
-data $.Lstring.2 = align 1 { b "hello", z 1, }
+data $.Lstring.2 = align 1 { b "hello\000", }
 export
 function w $main() {
 @start.1

@@ -13,10 +13,10 @@ function $f() {
 	storeb 108, %.5
 	%.6 =l add %.1, 4
 	storeb 111, %.6
-	%.7 =l add %.1, 1
-	%.8 =w copy 97
-	storeb %.8, %.7
-	%.9 =l add %.1, 5
-	storeb 0, %.9
+	%.7 =l add %.1, 5
+	storeb 0, %.7
+	%.8 =l add %.1, 1
+	%.9 =w copy 97
+	storeb %.9, %.8
 	ret
 }

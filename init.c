@@ -251,7 +251,7 @@ parseinit(struct scope *s, struct type *t)
 					break;
 				expr = expr->base;
 				if (t->incomplete)
-					updatearray(t, expr->string.size);
+					updatearray(t, expr->string.size - 1);
 				goto add;
 			case TYPESTRUCT:
 			case TYPEUNION:

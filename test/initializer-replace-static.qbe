@@ -1,1 +1,1 @@
-export data $x = align 1 { b "hallo", z 1, }
+export data $x = align 1 { b "hallo\000", }

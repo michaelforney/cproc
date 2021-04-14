@@ -1,4 +1,4 @@
-export data $x = align 1 { b "hello", z 1, }
+export data $x = align 1 { b "hello\000", }
 export
 function $f() {
 @start.1

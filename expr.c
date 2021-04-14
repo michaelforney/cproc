@@ -478,7 +478,7 @@ primaryexpr(struct scope *s)
 		e->string.size = 0;
 		e->string.data = NULL;
 		do {
-			e->string.data = xreallocarray(e->string.data, e->string.size + strlen(tok.lit), 1);
+			e->string.data = xreallocarray(e->string.data, e->string.size + strlen(tok.lit) + 1, 1);
 			dst = e->string.data + e->string.size;
 			src = tok.lit;
 			if (*src != '"')
@@ -488,7 +488,8 @@ primaryexpr(struct scope *s)
 			e->string.size = dst - e->string.data;
 			next();
 		} while (tok.kind == TSTRINGLIT);
-		e->type->array.length = e->string.size + 1;
+		*dst = '\0';
+		e->type->array.length = ++e->string.size;
 		e->type->size = e->type->array.length * e->type->base->size;
 		e->type->incomplete = false;
 		e = decay(e);
@@ -620,7 +621,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		break;
 	case BUILTINNANF:
 		e = assignexpr(s);
-		if (!e->decayed || e->base->kind != EXPRSTRING || e->base->string.size > 0)
+		if (!e->decayed || e->base->kind != EXPRSTRING || e->base->string.size > 1)
 			error(&tok.loc, "__builtin_nanf currently only supports empty string literals");
 		e = mkexpr(EXPRCONST, &typefloat);
 		/* TODO: use NAN here when we can handle musl's math.h */
