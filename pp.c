@@ -110,6 +110,15 @@ macroparam(struct macro *m, struct token *t)
 	return -1;
 }
 
+static struct macroarg *
+macroarg(struct macro *m, struct token *t)
+{
+	size_t i;
+
+	i = macroparam(m, t);
+	return i == -1 ? NULL : &m->arg[i];
+}
+
 /* lookup a macro by name */
 static struct macro *
 macroget(char *name)
@@ -149,18 +158,65 @@ ctxpush(struct token *t, size_t n, struct macro *m, bool space)
 {
 	struct frame *f;
 
+	if (n == 0)
+		return NULL;
 	f = arrayadd(&ctx, sizeof(*f));
 	f->token = t;
 	f->ntoken = n;
 	f->macro = m;
-	if (n > 0)
-		t[0].space = space;
+	t[0].space = space;
 	return f;
 }
 
 static void
-macroconcat(struct macro *m, const struct location *loc, struct token *t1, struct token *t2)
+macroconcat(struct macro *m, struct token *t, size_t n)
 {
+	static struct token concat;
+	struct token *start = t;
+	struct frame *next = NULL;
+	struct macroarg *arg;
+	size_t i, n;
+
+	/* find the end of a token concatenation chain (a ## ... ## z) */
+	while (n > 1 && t[1].kind == THASHHASH)
+		t += 2, n -= 2;
+
+	f = NULL;
+	if ((arg = macroarg(m, t)) && arg->nraw)
+		f = ctxpush(arg->raw, arg->nraw, NULL, t->space);
+	while (t > start) {
+		t -= 2;
+		arg = macroarg(m, t);
+		concat.kind = TNONE;
+		if (f && arg->nraw) {
+			n1 = arg->nraw - 1;
+			t1 = arg->raw + n1;
+			t2 = framenext(f);
+			tokenconcat(&concat, loc, t1, t2);
+			f = ctxpush(&concat, 1, NULL, t1->space);
+			if (n1)
+				f = ctxpush(&concat, n1, arg->raw, arg->raw[0].space);
+		}
+			--n1;
+			tokenconcat(&concat, loc, t1 + n1, t2);
+			--n2, ++t2;
+		}
+		f = NULL;
+		if (n2)
+			f = ctxpush(t2, n2, NULL, s2);
+		if (concat.kind)
+			ctxpush(&concat, 1, NULL, n1 ? t1[n1].space : s1);
+		if (n1)
+			f = ctxpush(t1, n1, NULL, s1);
+		if (f) {
+			t2 = framenext(f);
+			n2 = 1;
+		}
+		t2
+	}
+		
+}
+
 	static struct token t;
 	size_t i, n1 = 1, n2 = 1;
 	bool s1 = t1->space, s2 = t2->space;
@@ -183,6 +239,65 @@ macroconcat(struct macro *m, const struct location *loc, struct token *t1, struc
 		ctxpush(t1, n1, NULL, s1);
 }
 
+static int
+macronext(struct macro *m, struct frame *f)
+{
+	static struct token concat;
+	struct token *start, *t, *t1, *t2;
+	size_t n, n1, n2;
+	int i;
+
+	/* find the end of a token concatenation chain (a ## ... ## z) */
+	t = f->token;
+	n = f->ntoken;
+	start = t;
+	while (n > 0) {
+		i = 1 + (m->kind == MACROFUNC && t->kind == THASH);
+		t += i, n -= i;
+		if (n == 0 || t->kind != THASHHASH)
+			break;
+		++t, --n;
+	}
+	f->token = t;
+	f->ntoken = n;
+
+	n2 = 0;
+	concat.kind = TNONE;
+	while (t > start) {
+		--t;
+		t1 = t;
+		n1 = 1;
+		if (m->kind == MACROFUNC && t->kind == TIDENT && (i = macroparam(m, t)) != -1) {
+			if (t > start && t[-1].kind == THASH) {
+				t1 = &m->arg[i].str;
+				n1 = 1;
+			} else {
+				t1 = m->arg[i]->raw;
+				n1 = m->arg[i]->nraw;
+			}
+		}
+		if (n1 && n2) {
+			--n1;
+			tokenconcat(&concat, loc, t1 + n1, t2);
+			--n2, ++t2;
+			ctxpush(t2, n2, NULL, true);
+			ctxpush(&concat, n1 > 0, NULL, n1 ? t1[n1].space : true);
+			t2 = &concat;
+			n2 = 1;
+		}
+		if (n1) {
+			t2 = t1;
+			n2 = n1;
+		}
+	}
+	t = t2;
+	if (t2 != start) {
+		++t2, --n2;
+		ctxpush(t2, n2, NULL, true);
+	}
+	return t;
+}
+
 /* get the next token from the context */
 static struct token *
 ctxnext(void)
@@ -203,35 +318,7 @@ again:
 	if (ctx.len == 0)
 		return NULL;
 	m = f->macro;
-	if (m) {
-		t = f->token;
-		if (f->ntoken > 1 && t[1].kind == THASHHASH) {
-			f->token += 3, f->ntoken -= 3;
-			macroconcat(m, &t[1].loc, t, t + 2);
-			goto again;
-		}
-		if (m->kind == MACROFUNC) {
-			space = t->space;
-			switch (t->kind) {
-			case THASH:
-				framenext(f);
-				t = framenext(f);
-				assert(t);
-				i = macroparam(m, t);
-				assert(i != -1);
-				f = ctxpush(&m->arg[i].str, 1, NULL, space);
-				break;
-			case TIDENT:
-				i = macroparam(m, f->token);
-				if (i == -1)
-					break;
-				framenext(f);
-				if (m->arg[i].ntoken == 0)
-					goto again;
-				f = ctxpush(m->arg[i].token, m->arg[i].ntoken, NULL, space);
-				break;
-			}
-		}
+	if (m)
 	}
 	return framenext(f);
 }
@@ -549,9 +636,10 @@ expand(struct token *t)
 		}
 		m->arg = arg;
 	}
-	ctxpush(m->token, m->ntoken, m, space);
-	m->hide = true;
-	++macrodepth;
+	if (ctxpush(m->token, m->ntoken, m, space)) {
+		m->hide = true;
+		++macrodepth;
+	}
 	return true;
 }
 

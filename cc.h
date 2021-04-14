@@ -126,6 +126,7 @@ struct token {
 	_Bool hide;
 	/* whether or not the token was preceeded by a space */
 	_Bool space;
+	unsigned short idx;
 	struct location loc;
 	char *lit;
 };
