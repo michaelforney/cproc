@@ -390,6 +390,9 @@ main(int argc, char *argv[])
 	} else if (hasprefix(target, "aarch64-")) {
 		arch = "aarch64";
 		qbearch = "arm64";
+	} else if (hasprefix(target, "riscv64-")) {
+		arch = "riscv64";
+		qbearch = "rv64";
 	} else {
 		fatal("unsupported target '%s'", target);
 	}

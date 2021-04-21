@@ -14,6 +14,10 @@ static struct target alltargs[] = {
 		.name = "aarch64",
 		.typewchar = &typeuint,
 	},
+	{
+		.name = "riscv64",
+		.typewchar = &typeint,
+	},
 };
 
 void
