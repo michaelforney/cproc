@@ -9,6 +9,7 @@ static struct target alltargs[] = {
 	{
 		.name = "x86_64",
 		.typewchar = &typeint,
+		.signedchar = 1,
 	},
 	{
 		.name = "aarch64",
@@ -28,13 +29,12 @@ targinit(const char *name)
 	if (!name) {
 		/* TODO: provide a way to set this default */
 		targ = &alltargs[0];
-		return;
 	}
-	for (i = 0; i < LEN(alltargs); ++i) {
-		if (strcmp(alltargs[i].name, name) == 0) {
+	for (i = 0; i < LEN(alltargs) && !targ; ++i) {
+		if (strcmp(alltargs[i].name, name) == 0)
 			targ = &alltargs[i];
-			return;
-		}
 	}
-	fatal("unknown target '%s'", name);
+	if (!targ)
+		fatal("unknown target '%s'", name);
+	typechar.basic.issigned = targ->signedchar;
 }
