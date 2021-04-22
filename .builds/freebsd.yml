@@ -1,4 +1,4 @@
-image: freebsd/latest
+image: freebsd/12.x
 sources:
 - https://git.sr.ht/~mcf/cproc
 - git://c9x.me/qbe.git
