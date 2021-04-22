@@ -1039,7 +1039,7 @@ emitvalue(struct value *v)
 	switch (v->kind) {
 	case VALUE_CONST:
 		if (v->repr->base == 's' || v->repr->base == 'd')
-			printf("%c_%.*g", v->repr->base, DECIMAL_DIG, v->f);
+			printf("%c_%.*g", v->repr->base, DBL_DECIMAL_DIG, v->f);
 		else
 			printf("%" PRIu64, v->i);
 		break;
