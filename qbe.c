@@ -969,9 +969,9 @@ void
 funcinit(struct func *func, struct decl *d, struct init *init)
 {
 	struct lvalue dst;
-	struct value *src;
+	struct value *src, *v;
 	uint64_t offset = 0, max = 0;
-	size_t i;
+	size_t i, w;
 
 	funcalloc(func, d);
 	if (!init)
@@ -980,11 +980,18 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 		zero(func, d->value, d->type->align, offset, init->start);
 		dst.bits = init->bits;
 		if (init->expr->kind == EXPRSTRING) {
-			for (i = 0; i < init->expr->string.size && i < init->end - init->start; ++i) {
-				dst.addr = funcinst(func, IADD, ptrclass, d->value, mkintconst(init->start + i));
-				funcstore(func, &typechar, QUALNONE, dst, mkintconst(init->expr->string.data[i]));
+			w = init->expr->type->base->size;
+			for (i = 0; i < init->expr->string.size && i * w < init->end - init->start; ++i) {
+				v = mkintconst(init->start + i * w);
+				dst.addr = funcinst(func, IADD, ptrclass, d->value, v);
+				switch (w) {
+				case 1: v = mkintconst(init->expr->string.data[i]); break;
+				case 2: v = mkintconst(init->expr->string.data16[i]); break;
+				case 4: v = mkintconst(init->expr->string.data32[i]); break;
+				}
+				funcstore(func, init->expr->type->base, QUALNONE, dst, v);
 			}
-			offset = init->start + i;
+			offset = init->start + i * w;
 		} else {
 			if (offset < init->end && (dst.bits.before || dst.bits.after))
 				zero(func, d->value, d->type->align, offset, init->end);
@@ -1274,7 +1281,7 @@ static void
 dataitem(struct expr *expr, uint64_t size)
 {
 	struct decl *decl;
-	size_t i;
+	size_t i, w;
 	unsigned c;
 
 	switch (expr->kind) {
@@ -1303,17 +1310,28 @@ dataitem(struct expr *expr, uint64_t size)
 			printf("%" PRIu64, expr->constant.i);
 		break;
 	case EXPRSTRING:
-		fputc('"', stdout);
-		for (i = 0; i < expr->string.size && i < size; ++i) {
-			c = expr->string.data[i];
-			if (isprint(c) && c != '"' && c != '\\')
-				putchar(c);
-			else
-				printf("\\%03o", c);
+		w = expr->type->base->size;
+		if (w == 1) {
+			fputc('"', stdout);
+			for (i = 0; i < expr->string.size && i < size; ++i) {
+				c = expr->string.data[i];
+				if (isprint(c) && c != '"' && c != '\\')
+					putchar(c);
+				else
+					printf("\\%03o", c);
+			}
+			fputc('"', stdout);
+		} else {
+			for (i = 0; i < expr->string.size && i * w < size; ++i) {
+				switch (w) {
+				case 2: printf("%hu ", expr->string.data16[i]); break;
+				case 4: printf("%u ", expr->string.data32[i]);  break;
+				default: assert(0);
+				}
+			}
 		}
-		fputc('"', stdout);
-		if (i < size)
-			printf(", z %" PRIu64, size - i);
+		if (i * w < size)
+			printf(", z %" PRIu64, size - i * w);
 		break;
 	default:
 		error(&tok.loc, "initializer is not a constant expression");
@@ -1326,6 +1344,7 @@ emitdata(struct decl *d, struct init *init)
 	struct init *cur;
 	struct type *t;
 	uint64_t offset = 0, start, end, bits = 0;
+	size_t i;
 
 	if (!d->align)
 		d->align = d->type->align;
@@ -1349,7 +1368,12 @@ emitdata(struct decl *d, struct init *init)
 			*/
 			assert(cur->expr->kind == EXPRSTRING);
 			assert(init->expr->kind == EXPRCONST);
-			cur->expr->string.data[init->start - cur->start] = init->expr->constant.i;
+			i = (init->start - cur->start) / cur->expr->type->base->size;
+			switch (cur->expr->type->base->size) {
+			case 1: cur->expr->string.data[i]   = init->expr->constant.i; break;
+			case 2: cur->expr->string.data16[i] = init->expr->constant.i; break;
+			case 4: cur->expr->string.data32[i] = init->expr->constant.i; break;
+			}
 		}
 		start = cur->start + cur->bits.before / 8;
 		end = cur->end - (cur->bits.after + 7) / 8;

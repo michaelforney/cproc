@@ -243,13 +243,12 @@ parseinit(struct scope *s, struct type *t)
 			t = p.sub->type;
 			switch (t->kind) {
 			case TYPEARRAY:
-				if (!expr->decayed || expr->base->kind != EXPRSTRING)
+				if (!expr->decayed || expr->base->kind != EXPRSTRING || !(t->base->prop & PROPINT))
 					break;
 				base = t->base;
-				/* XXX: wide string literals */
-				if (!(base->prop & PROPCHAR))
-					break;
 				expr = expr->base;
+				if (!(base->prop & PROPCHAR && expr->type->base->prop & PROPCHAR) && !typecompatible(base, expr->type->base))
+					error(&tok.loc, "cannot initialize array with string literal of different width");
 				if (t->incomplete)
 					updatearray(t, expr->string.size - 1);
 				goto add;

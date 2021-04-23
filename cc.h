@@ -331,7 +331,11 @@ struct expr {
 			double f;
 		} constant;
 		struct {
-			unsigned char *data;
+			union {
+				unsigned char *data;
+				uint_least16_t *data16;
+				uint_least32_t *data32;
+			};
 			size_t size;
 		} string;
 		struct {
