@@ -3,9 +3,9 @@
 #include "util.h"
 #include "cc.h"
 
-struct target *targ;
+const struct target *targ;
 
-static struct target alltargs[] = {
+static const struct target alltargs[] = {
 	{
 		.name = "x86_64",
 		.typewchar = &typeint,

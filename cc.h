@@ -437,7 +437,7 @@ struct target {
 	int signedchar;
 };
 
-extern struct target *targ;
+extern const struct target *targ;
 
 void targinit(const char *);
 

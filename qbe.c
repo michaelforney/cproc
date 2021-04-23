@@ -209,7 +209,7 @@ functemp(struct func *f, struct value *v, struct repr *repr)
 	v->repr = repr;
 }
 
-static const char *instname[] = {
+static const char *const instname[] = {
 #define OP(op, name) [op] = name,
 #include "ops.h"
 #undef OP

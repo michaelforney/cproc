@@ -129,10 +129,10 @@ test "$DEFAULT_DYNAMIC_LINKER" && linkflags=$linkflags' "--dynamic-linker", "'$D
 
 printf "creating config.h... "
 cat >config.h <<EOF
-static char target[]         = "$target";
-static char *startfiles[]    = {$startfiles};
-static char *endfiles[]      = {$endfiles};
-static char *preprocesscmd[] = {
+static const char target[]               = "$target";
+static const char *const startfiles[]    = {$startfiles};
+static const char *const endfiles[]      = {$endfiles};
+static const char *const preprocesscmd[] = {
 	"$DEFAULT_PREPROCESSOR", "-P",
 
 	/* clear preprocessor GNU C version */
@@ -149,9 +149,9 @@ static char *preprocesscmd[] = {
 	"-D", "__attribute__(x)=",
 	"-D", "__extension__=",
 $defines};
-static char *codegencmd[]    = {"$DEFAULT_QBE"};
-static char *assemblecmd[]   = {"$DEFAULT_ASSEMBLER"};
-static char *linkcmd[]       = {"$DEFAULT_LINKER", $linkflags};
+static const char *const codegencmd[]    = {"$DEFAULT_QBE"};
+static const char *const assemblecmd[]   = {"$DEFAULT_ASSEMBLER"};
+static const char *const linkcmd[]       = {"$DEFAULT_LINKER", $linkflags};
 EOF
 echo done
 
