@@ -1039,7 +1039,7 @@ emitvalue(struct value *v)
 	switch (v->kind) {
 	case VALUE_CONST:
 		if (v->repr->base == 's' || v->repr->base == 'd')
-			printf("%c_%.*g", v->repr->base, DBL_DECIMAL_DIG, v->f);
+			printf("%c_%.17g", v->repr->base, v->f);
 		else
 			printf("%" PRIu64, v->i);
 		break;
@@ -1275,7 +1275,7 @@ dataitem(struct expr *expr, uint64_t size)
 		break;
 	case EXPRCONST:
 		if (expr->type->prop & PROPFLOAT)
-			printf("%c_%.*g", expr->type->size == 4 ? 's' : 'd', DECIMAL_DIG, expr->constant.f);
+			printf("%c_%.17g", expr->type->size == 4 ? 's' : 'd', expr->constant.f);
 		else
 			printf("%" PRIu64, expr->constant.i);
 		break;
