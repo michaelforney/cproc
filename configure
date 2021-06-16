@@ -116,6 +116,12 @@ case "$target" in
 	"-D", "__aligned(x)=",
 '
 	;;
+*-*netbsd*)
+	: ${DEFAULT_DYNAMIC_LINKER:=/usr/libexec/ld.elf_so}
+	startfiles='"-l", ":crt0.o", "-l", ":crti.o"'
+	endfiles='"-l", "c", "-l", ":crtn.o"'
+	defines='"-D", "__builtin_stdarg_start(ap, last)=__builtin_va_start(ap, last)"'
+	;;
 *)
 	fail "unknown target '$target', please create config.h manually"
 esac
