@@ -632,3 +632,51 @@ consume(int kind)
 	next();
 	return true;
 }
+
+char *
+stringconcat(void)
+{
+	static struct array buf;
+	char *lit, *end;
+	int kind = 0, newkind;
+
+	assert(tok.kind == TSTRINGLIT);
+	lit = tok.lit;
+	next();
+	if (tok.kind != TSTRINGLIT) {
+		if (lit[0] == 'u' && lit[1] == '8')
+			lit += 2;
+		return lit;
+	}
+
+	/* concatenate adjacent string literals */
+	buf.len = 0;
+	((char *)arrayadd(&buf, 2))[1] = '"';
+	for (;;) {
+		switch (*lit) {
+		case 'u': if (lit[1] == '8') ++lit; /* fallthrough */
+		case 'L':
+		case 'U': newkind = *lit, ++lit; break;
+		case '"': newkind = 0; break;
+		default: assert(0);
+		}
+		if (kind != newkind && kind && newkind)
+			error(&tok.loc, "adjacent string literals have differing prefixes");
+		if (newkind)
+			kind = newkind;
+		arrayaddbuf(&buf, lit + 1, strlen(lit) - 2);
+		if (tok.kind != TSTRINGLIT)
+			break;
+		lit = tok.lit;
+		next();
+	}
+	end = arrayadd(&buf, 2);
+	end[0] = '"';
+	end[1] = '\0';
+	lit = buf.val;
+	if (kind && kind != '8')
+		*lit = kind;
+	else
+		++lit;
+	return lit;
+}
