@@ -9,22 +9,20 @@ function w $main() {
 @do_body.3
 	%.3 =w loadsw %.1
 	%.4 =w ceqw %.3, 1
-	%.5 =w cnew %.4, 0
-	jnz %.5, @if_true.6, @if_false.7
+	jnz %.4, @if_true.6, @if_false.7
 @if_true.6
 	jmp @do_cond.4
 @if_false.7
-	%.6 =w loadsw %.2
-	%.7 =w add %.6, 1
-	storew %.7, %.2
+	%.5 =w loadsw %.2
+	%.6 =w add %.5, 1
+	storew %.6, %.2
 @do_cond.4
-	%.8 =w loadsw %.1
-	%.9 =w sub %.8, 1
-	storew %.9, %.1
-	%.10 =w cnew %.8, 0
-	jnz %.10, @do_body.3, @do_join.5
+	%.7 =w loadsw %.1
+	%.8 =w sub %.7, 1
+	storew %.8, %.1
+	jnz %.7, @do_body.3, @do_join.5
 @do_join.5
-	%.11 =w loadsw %.2
-	%.12 =w cnew %.11, 2
-	ret %.12
+	%.9 =w loadsw %.2
+	%.10 =w cnew %.9, 2
+	ret %.10
 }
