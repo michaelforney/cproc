@@ -275,6 +275,34 @@ funcbits(struct func *f, struct type *t, struct value *v, struct bitfield b)
 	return v;
 }
 
+static void
+funccopy(struct func *f, struct value *dst, struct value *src, uint64_t size, int align)
+{
+	enum instkind load, store;
+	struct value *tmp, *inc;
+	uint64_t off;
+
+	switch (align) {
+	case 1: load = ILOADUB, store = ISTOREB; break;
+	case 2: load = ILOADUH, store = ISTOREH; break;
+	case 4: load = ILOADUW, store = ISTOREW; break;
+	case 8: load = ILOADL, store = ISTOREL; break;
+	default:
+		fatal("internal error; invalid alignment %d", align);
+	}
+	inc = mkintconst(&iptr, align);
+	off = 0;
+	for (;;) {
+		tmp = funcinst(f, load, &iptr, src, NULL);
+		funcinst(f, store, 0, tmp, dst);
+		off += align;
+		if (off >= size)
+			break;
+		src = funcinst(f, IADD, &iptr, src, inc);
+		dst = funcinst(f, IADD, &iptr, dst, inc);
+	}
+}
+
 static struct value *
 funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, struct value *v)
 {
@@ -293,33 +321,9 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 	switch (t->kind) {
 	case TYPESTRUCT:
 	case TYPEUNION:
-	case TYPEARRAY: {
-		struct value *src, *dst, *tmp, *align;
-		uint64_t offset;
-
-		switch (t->align) {
-		case 1: loadop = ILOADUB, storeop = ISTOREB; break;
-		case 2: loadop = ILOADUH, storeop = ISTOREH; break;
-		case 4: loadop = ILOADUW, storeop = ISTOREW; break;
-		case 8: loadop = ILOADL, storeop = ISTOREL; break;
-		default:
-			fatal("internal error; invalid alignment %d", t->align);
-		}
-		src = v;
-		dst = lval.addr;
-		align = mkintconst(&iptr, t->align);
-		offset = 0;
-		for (;;) {
-			tmp = funcinst(f, loadop, &iptr, src, NULL);
-			funcinst(f, storeop, NULL, tmp, dst);
-			offset += t->align;
-			if (offset >= t->size)
-				break;
-			src = funcinst(f, IADD, &iptr, src, align);
-			dst = funcinst(f, IADD, &iptr, dst, align);
-		}
+	case TYPEARRAY:
+		funccopy(f, lval.addr, v, t->size, t->align);
 		break;
-	}
 	case TYPEPOINTER:
 		t = &typeulong;
 		/* fallthrough */
