@@ -308,9 +308,13 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 		src = v;
 		dst = lval.addr;
 		align = mkintconst(&iptr, t->align);
-		for (offset = 0; offset < t->size; offset += t->align) {
+		offset = 0;
+		for (;;) {
 			tmp = funcinst(f, loadop, &iptr, src, NULL);
 			funcinst(f, storeop, NULL, tmp, dst);
+			offset += t->align;
+			if (offset >= t->size)
+				break;
 			src = funcinst(f, IADD, &iptr, src, align);
 			dst = funcinst(f, IADD, &iptr, dst, align);
 		}

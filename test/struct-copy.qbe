@@ -13,8 +13,6 @@ function $f() {
 	%.7 =l add %.4, 4
 	%.8 =l loaduw %.6
 	storew %.8, %.7
-	%.9 =l add %.6, 4
-	%.10 =l add %.7, 4
 	ret
 }
 export data $x = align 4 { z 12 }

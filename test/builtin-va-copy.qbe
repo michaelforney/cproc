@@ -18,7 +18,5 @@ function $f() {
 	%.9 =l add %.6, 8
 	%.10 =l loadl %.8
 	storel %.10, %.9
-	%.11 =l add %.8, 8
-	%.12 =l add %.9, 8
 	ret
 }
