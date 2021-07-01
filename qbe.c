@@ -10,11 +10,6 @@
 #include "util.h"
 #include "cc.h"
 
-struct name {
-	char *str;
-	uint64_t id;
-};
-
 struct repr {
 	char base;
 	char ext;
@@ -27,10 +22,12 @@ struct value {
 		VALUE_CONST,
 		VALUE_TEMP,
 		VALUE_TYPE,
+		VALUE_LABEL,
 	} kind;
+	unsigned id;
 	struct repr *repr;
 	union {
-		struct name name;
+		char *name;
 		uint64_t i;
 		double f;
 	};
@@ -68,7 +65,7 @@ struct jump {
 };
 
 struct block {
-	struct name label;
+	struct value label;
 	struct array insts;
 	struct {
 		struct block *blk[2];
@@ -91,7 +88,7 @@ struct func {
 	struct type *type;
 	struct block *start, *end;
 	struct map *gotos;
-	uint64_t lastid;
+	unsigned lastid;
 };
 
 struct repr i8 = {'w', 'b'};
@@ -118,11 +115,12 @@ switchcase(struct switchcases *cases, uint64_t i, struct block *b)
 struct block *
 mkblock(char *name)
 {
-	static uint64_t id;
+	static unsigned id;
 	struct block *b;
 
 	b = xmalloc(sizeof(*b));
-	b->label.str = name;
+	b->label.kind = VALUE_LABEL;
+	b->label.name = name;
 	b->label.id = ++id;
 	b->insts = (struct array){0};
 	b->jump.kind = JUMP_NONE;
@@ -135,14 +133,14 @@ mkblock(char *name)
 struct value *
 mkglobal(char *name, bool private)
 {
-	static uint64_t id;
+	static unsigned id;
 	struct value *v;
 
 	v = xmalloc(sizeof(*v));
 	v->kind = VALUE_GLOBAL;
 	v->repr = &iptr;
-	v->name.str = name;
-	v->name.id = private ? ++id : 0;
+	v->name = name;
+	v->id = private ? ++id : 0;
 
 	return v;
 }
@@ -150,8 +148,8 @@ mkglobal(char *name, bool private)
 char *
 globalname(struct value *v)
 {
-	assert(v->kind == VALUE_GLOBAL && !v->name.id);
-	return v->name.str;
+	assert(v->kind == VALUE_GLOBAL && !v->id);
+	return v->name;
 }
 
 struct value *
@@ -193,20 +191,14 @@ static void emittype(struct type *);
 static void emitvalue(struct value *);
 
 static void
-funcname(struct func *f, struct name *n, char *s)
-{
-	n->id = ++f->lastid;
-	n->str = s;
-}
-
-static void
 functemp(struct func *f, struct value *v, struct repr *repr)
 {
 	if (!repr)
 		fatal("temp has no type");
 	v->kind = VALUE_TEMP;
-	funcname(f, &v->name, NULL);
 	v->repr = repr;
+	v->name = NULL;
+	v->id = ++f->lastid;
 }
 
 static const char *const instname[] = {
@@ -1027,21 +1019,13 @@ funcswitch(struct func *f, struct value *v, struct switchcases *c, struct block 
 /* emit */
 
 static void
-emitname(struct name *n)
-{
-	if (n->str)
-		fputs(n->str, stdout);
-	if (n->id)
-		printf(".%" PRIu64, n->id);
-}
-
-static void
 emitvalue(struct value *v)
 {
 	static char sigil[] = {
 		[VALUE_TEMP] = '%',
 		[VALUE_GLOBAL] = '$',
 		[VALUE_TYPE] = ':',
+		[VALUE_LABEL] = '@',
 	};
 
 	switch (v->kind) {
@@ -1055,9 +1039,12 @@ emitvalue(struct value *v)
 		if (v->kind >= LEN(sigil) || !sigil[v->kind])
 			fatal("invalid value");
 		putchar(sigil[v->kind]);
-		if (v->kind == VALUE_GLOBAL && v->name.id)
+		if (v->kind == VALUE_GLOBAL && v->id)
 			fputs(".L", stdout);
-		emitname(&v->name);
+		if (v->name)
+			fputs(v->name, stdout);
+		if (v->id)
+			printf(".%u", v->id);
 	}
 }
 
@@ -1085,8 +1072,8 @@ emittype(struct type *t)
 		return;
 	t->value = xmalloc(sizeof(*t->value));
 	t->value->kind = VALUE_TYPE;
-	t->value->name.str = t->structunion.tag;
-	t->value->name.id = ++id;
+	t->value->name = t->structunion.tag;
+	t->value->id = ++id;
 	for (m = t->structunion.members; m; m = m->next) {
 		for (sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
 			;
@@ -1186,17 +1173,17 @@ emitjump(struct jump *j)
 		putchar('\n');
 		break;
 	case JUMP_JMP:
-		fputs("\tjmp @", stdout);
-		emitname(&j->blk[0]->label);
+		fputs("\tjmp ", stdout);
+		emitvalue(&j->blk[0]->label);
 		putchar('\n');
 		break;
 	case JUMP_JNZ:
 		fputs("\tjnz ", stdout);
 		emitvalue(j->arg);
-		fputs(", @", stdout);
-		emitname(&j->blk[0]->label);
-		fputs(", @", stdout);
-		emitname(&j->blk[1]->label);
+		fputs(", ", stdout);
+		emitvalue(&j->blk[0]->label);
+		fputs(", ", stdout);
+		emitvalue(&j->blk[1]->label);
 		putchar('\n');
 		break;
 	}
@@ -1231,18 +1218,17 @@ emitfunc(struct func *f, bool global)
 		fputs(", ...", stdout);
 	puts(") {");
 	for (b = f->start; b; b = b->next) {
-		putchar('@');
-		emitname(&b->label);
+		emitvalue(&b->label);
 		putchar('\n');
 		if (b->phi.res.kind) {
 			putchar('\t');
 			emitvalue(&b->phi.res);
-			printf(" =%c phi @", b->phi.res.repr->base);
-			emitname(&b->phi.blk[0]->label);
+			printf(" =%c phi ", b->phi.res.repr->base);
+			emitvalue(&b->phi.blk[0]->label);
 			putchar(' ');
 			emitvalue(b->phi.val[0]);
-			fputs(", @", stdout);
-			emitname(&b->phi.blk[1]->label);
+			fputs(", ", stdout);
+			emitvalue(&b->phi.blk[1]->label);
 			putchar(' ');
 			emitvalue(b->phi.val[1]);
 			putchar('\n');
