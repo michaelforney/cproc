@@ -206,6 +206,8 @@ tagspec(struct scope *s)
 		b.bits = 0;
 		do structdecl(s, &b);
 		while (tok.kind != TRBRACE);
+		if (!t->structunion.members)
+			error(&tok.loc, "struct/union has no members");
 		next();
 		t->size = ALIGNUP(t->size, t->align);
 		t->incomplete = false;
