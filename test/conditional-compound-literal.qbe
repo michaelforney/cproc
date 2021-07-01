@@ -11,12 +11,12 @@ function w $main() {
 @cond_true.3
 	jmp @cond_join.5
 @cond_false.4
-	%.5 =w loadsw %.1
+	%.5 =w loadw %.1
 	storew %.5, %.4
 @cond_join.5
 	%.6 =l phi @cond_true.3 0, @cond_false.4 %.4
 	storel %.6, %.2
 	%.7 =l loadl %.2
-	%.8 =w loadsw %.7
+	%.8 =w loadw %.7
 	ret %.8
 }

@@ -10,7 +10,7 @@ function w $main() {
 	%.6 =w shl %.5, 28
 	%.7 =w sar %.6, 28
 	%.8 =w and %.5, 15
-	%.9 =w loaduw %.4
+	%.9 =w loadw %.4
 	%.10 =w and %.9, 18446744073709551600
 	%.11 =w or %.8, %.10
 	storew %.11, %.4

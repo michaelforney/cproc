@@ -9,7 +9,7 @@ function $f() {
 	%.3 =l loadl %.2
 	%.4 =l add %.3, 4
 	storel %.4, %.2
-	%.5 =w loadsw %.3
+	%.5 =w loadw %.3
 	%.6 =w add %.5, 1
 	storew %.6, %.3
 	ret

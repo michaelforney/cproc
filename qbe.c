@@ -277,7 +277,7 @@ funccopy(struct func *f, struct value *dst, struct value *src, uint64_t size, in
 	switch (align) {
 	case 1: load = ILOADUB, store = ISTOREB; break;
 	case 2: load = ILOADUH, store = ISTOREH; break;
-	case 4: load = ILOADUW, store = ISTOREW; break;
+	case 4: load = ILOADW, store = ISTOREW; break;
 	case 8: load = ILOADL, store = ISTOREL; break;
 	default:
 		fatal("internal error; invalid alignment %d", align);
@@ -324,7 +324,7 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 		switch (t->size) {
 		case 1: loadop = ILOADUB; storeop = ISTOREB; break;
 		case 2: loadop = ILOADUH; storeop = ISTOREH; break;
-		case 4: loadop = ILOADUW; storeop = tp & PROPFLOAT ? ISTORES : ISTOREW; break;
+		case 4: loadop = ILOADW; storeop = tp & PROPFLOAT ? ISTORES : ISTOREW; break;
 		case 8: loadop = ILOADL; storeop = tp & PROPFLOAT ? ISTORED : ISTOREL; break;
 		default:
 			fatal("internal error; unimplemented store");
@@ -366,7 +366,7 @@ funcload(struct func *f, struct type *t, struct lvalue lval)
 		switch (t->size) {
 		case 1: op = t->basic.issigned ? ILOADSB : ILOADUB; break;
 		case 2: op = t->basic.issigned ? ILOADSH : ILOADUH; break;
-		case 4: op = t->prop & PROPFLOAT ? ILOADS : t->basic.issigned ? ILOADSW : ILOADUW; break;
+		case 4: op = t->prop & PROPFLOAT ? ILOADS : ILOADW; break;
 		case 8: op = t->prop & PROPFLOAT ? ILOADD : ILOADL; break;
 		default:
 			fatal("internal error; unimplemented load");

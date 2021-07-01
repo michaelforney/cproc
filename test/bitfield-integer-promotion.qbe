@@ -7,7 +7,7 @@ function w $main() {
 	%.3 =l mul 0, 1
 	%.4 =l add %.2, %.3
 	%.5 =l copy %.4
-	%.6 =w loaduw %.5
+	%.6 =w loadw %.5
 	%.7 =w shl %.6, 30
 	%.8 =w shr %.7, 30
 	%.9 =w copy %.8

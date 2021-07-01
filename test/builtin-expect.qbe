@@ -2,7 +2,7 @@ export
 function w $main() {
 @start.1
 @body.2
-	%.1 =w loadsw $x
+	%.1 =w loadw $x
 	ret %.1
 }
 export data $x = align 4 { z 4 }

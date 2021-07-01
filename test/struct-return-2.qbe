@@ -8,6 +8,6 @@ function w $f() {
 	%.3 =l mul 4, 1
 	%.4 =l add %.2, %.3
 	%.5 =l copy %.4
-	%.6 =w loadsw %.5
+	%.6 =w loadw %.5
 	ret %.6
 }
