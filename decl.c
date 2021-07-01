@@ -685,7 +685,9 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 	struct member *m;
 	size_t end;
 
-	// XXX: check incomplete type, except for flexible array member
+	/* XXX: flexible array member must be last */
+	if (mt.type->incomplete && mt.type->kind != TYPEARRAY)
+		error(&tok.loc, "struct member '%s' has incomplete type", name);
 	if (mt.type->kind == TYPEFUNC)
 		error(&tok.loc, "struct member '%s' has function type", name);
 	assert(mt.type->align > 0);
