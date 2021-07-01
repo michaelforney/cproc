@@ -209,7 +209,7 @@ struct type {
 	};
 	/* qualifiers of the base type */
 	enum typequal qual;
-	_Bool incomplete;
+	_Bool incomplete, flexible;
 	union {
 		struct {
 			_Bool issigned, iscomplex;

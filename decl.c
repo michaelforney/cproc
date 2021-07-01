@@ -685,11 +685,17 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, ui
 	struct member *m;
 	size_t end;
 
-	/* XXX: flexible array member must be last */
-	if (mt.type->incomplete && mt.type->kind != TYPEARRAY)
-		error(&tok.loc, "struct member '%s' has incomplete type", name);
+	if (t->flexible)
+		error(&tok.loc, "struct member '%s' is after flexible array member", name);
+	if (mt.type->incomplete) {
+		if (mt.type->kind != TYPEARRAY)
+			error(&tok.loc, "struct member '%s' has incomplete type", name);
+		t->flexible = true;
+	}
 	if (mt.type->kind == TYPEFUNC)
 		error(&tok.loc, "struct member '%s' has function type", name);
+	if (mt.type->flexible)
+		error(&tok.loc, "struct member '%s' contains flexible array member", name);
 	assert(mt.type->align > 0);
 	if (name || width == -1) {
 		m = xmalloc(sizeof(*m));
