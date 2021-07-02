@@ -935,14 +935,14 @@ funcexpr(struct func *f, struct expr *e)
 static void
 zero(struct func *func, struct value *addr, int align, uint64_t offset, uint64_t end)
 {
-	enum instkind store[] = {
+	static const enum instkind store[] = {
 		[1] = ISTOREB,
 		[2] = ISTOREH,
 		[4] = ISTOREW,
 		[8] = ISTOREL,
 	};
-	struct value *tmp;
 	static struct value z = {.kind = VALUE_INTCONST};
+	struct value *tmp;
 	int a = 1;
 
 	while (offset < end) {
@@ -1034,7 +1034,7 @@ funcswitch(struct func *f, struct value *v, struct switchcases *c, struct block 
 static void
 emitvalue(struct value *v)
 {
-	static char sigil[] = {
+	static const char sigil[] = {
 		[VALUE_TEMP] = '%',
 		[VALUE_GLOBAL] = '$',
 		[VALUE_TYPE] = ':',
