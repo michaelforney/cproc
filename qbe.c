@@ -329,6 +329,7 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 	enum typeprop tp;
 	unsigned long long mask;
 	struct qbetype qt;
+	int bits;
 
 	if (tq & QUALVOLATILE)
 		error(&tok.loc, "volatile store is not yet supported");
@@ -349,8 +350,9 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 	default:
 		assert(tp & PROPSCALAR);
 		qt = qbetype(t);
-		if (lval.bits.before || lval.bits.after) {
-			mask = 0xffffffffffffffffu >> lval.bits.after + 64 - t->size * 8 ^ (1 << lval.bits.before) - 1;
+		bits = lval.bits.before + lval.bits.after;
+		if (bits) {
+			mask = 0xffffffffffffffffu >> 64 - t->size * 8 + bits << lval.bits.before;
 			v = funcinst(f, ISHL, qt.base, v, mkintconst(lval.bits.before));
 			r = funcbits(f, t, v, lval.bits);
 			v = funcinst(f, IAND, qt.base, v, mkintconst(mask));
