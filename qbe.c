@@ -280,13 +280,17 @@ funcalloc(struct func *f, struct decl *d)
 static struct value *
 funcbits(struct func *f, struct type *t, struct value *v, struct bitfield b)
 {
-	int class;
+	int class, bits;
 
 	class = t->size <= 4 ? 'w' : 'l';
-	if (b.after)
-		v = funcinst(f, ISHL, class, v, mkintconst(b.after));
-	if (b.before + b.after)
-		v = funcinst(f, t->basic.issigned ? ISAR : ISHR, class, v, mkintconst(b.before + b.after));
+	bits = b.after;
+	if (bits) {
+		bits += (t->size + 3 & ~3) - t->size << 3;
+		v = funcinst(f, ISHL, class, v, mkintconst(bits));
+	}
+	bits += b.before;
+	if (bits)
+		v = funcinst(f, t->basic.issigned ? ISAR : ISHR, class, v, mkintconst(bits));
 	return v;
 }
 
