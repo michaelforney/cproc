@@ -37,6 +37,7 @@ SRC=\
 	token.c\
 	tree.c\
 	type.c\
+	utf.c\
 	util.c\
 	$(BACKEND).c
 OBJ=$(SRC:%.c=$(objdir)/%.o)
@@ -61,6 +62,7 @@ $(objdir)/targ.o    : targ.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS)
 $(objdir)/token.o   : token.c   util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ token.c
 $(objdir)/tree.o    : tree.c    util.h            $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ tree.c
 $(objdir)/type.o    : type.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ type.c
+$(objdir)/utf.o     : utf.c     utf.h             $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ utf.c
 $(objdir)/util.o    : util.c    util.h            $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ util.c
 
 # Make sure stage2 and stage3 binaries are stripped by adding -s to
