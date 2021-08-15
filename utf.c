@@ -1,8 +1,9 @@
-#include <uchar.h>
+#include <stddef.h>
+#include <stdint.h>
 #include "utf.h"
 
 size_t
-utf8enc(char32_t c, char *s)
+utf8enc(uint_least32_t c, char *s)
 {
 	if (c < 0x80) {
 		s[0] = c;
@@ -30,11 +31,11 @@ utf8enc(char32_t c, char *s)
 }
 
 size_t
-utf8dec(const char *s, size_t n, char32_t *c)
+utf8dec(const char *s, size_t n, uint_least32_t *c)
 {
 	size_t i, l;
 	unsigned char b;
-	char32_t x;
+	uint_least32_t x;
 
 	b = s[0];
 	if (b < 0x80) {
@@ -64,7 +65,7 @@ utf8dec(const char *s, size_t n, char32_t *c)
 }
 
 size_t
-utf16enc(char32_t c, char16_t *s)
+utf16enc(uint_least32_t c, uint_least16_t *s)
 {
 	if (c < 0xd800 || c - 0xe000 < 0x2000) {
 		s[0] = c;
