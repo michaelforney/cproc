@@ -51,6 +51,8 @@ utf8dec(const char *s, size_t n, uint_least32_t *c)
 	} else if ((b & 0xf8) == 0xf0) {
 		x = b & 0x07;
 		l = 4;
+	} else {
+		return -1;
 	}
 	if (n < l)
 		return -1;
