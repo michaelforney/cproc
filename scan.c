@@ -444,6 +444,12 @@ scanopen(void)
 	}
 }
 
+void
+scansetloc(struct location loc)
+{
+	scanner->loc = loc;
+}
+
 static void
 scanclose(void)
 {

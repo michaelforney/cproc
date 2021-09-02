@@ -302,15 +302,18 @@ undef(void)
 static void
 directive(void)
 {
+	struct location newloc;
 	enum ppflags oldflags;
-	char *name;
+	char *name = NULL;
 
 	scan(&tok);
 	if (tok.kind == TNEWLINE)
 		return;  /* empty directive */
 	oldflags = ppflags;
 	ppflags |= PPNEWLINE;
-	name = tokencheck(&tok, TIDENT, "or newline after '#'");
+	if (tok.kind == TNUMBER)
+		goto line;  /* gcc line markers */
+	name = tokencheck(&tok, TIDENT, "newline, or number after '#'");
 	if (strcmp(name, "if") == 0) {
 		error(&tok.loc, "#if directive is not implemented");
 	} else if (strcmp(name, "ifdef") == 0) {
@@ -330,7 +333,21 @@ directive(void)
 		scan(&tok);
 		undef();
 	} else if (strcmp(name, "line") == 0) {
-		error(&tok.loc, "#line directive is not implemented");
+		scan(&tok);
+		tokencheck(&tok, TNUMBER, "after #line");
+line:
+		newloc.line = strtoull(tok.lit, NULL, 0);
+		scan(&tok);
+		newloc.file = tok.loc.file;
+		if (tok.kind == TSTRINGLIT) {
+			/* XXX: handle escape sequences (reuse string decoding from expr.c) */
+			newloc.file = strchr(tok.lit, '"') + 1;
+			*strchr(newloc.file, '"') = '\0';
+			scan(&tok);
+		}
+		while (tok.kind == TNUMBER)
+			scan(&tok);
+		scansetloc(newloc);
 	} else if (strcmp(name, "error") == 0) {
 		error(&tok.loc, "#error directive is not implemented");
 	} else if (strcmp(name, "pragma") == 0) {

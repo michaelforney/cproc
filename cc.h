@@ -383,6 +383,7 @@ _Noreturn void error(const struct location *, const char *, ...);
 
 void scanfrom(const char *, FILE *);
 void scanopen(void);
+void scansetloc(struct location loc);
 void scan(struct token *);
 
 /* preprocessor */
