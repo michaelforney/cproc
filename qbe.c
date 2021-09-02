@@ -202,6 +202,7 @@ qbetype(struct type *t)
 	case 2: return t->basic.issigned ? sh : uh;
 	case 4: return t->prop & PROPFLOAT ? s : w;
 	case 8: return t->prop & PROPFLOAT ? d : l;
+	case 16: fatal("long double is not yet supported");
 	}
 	assert(0);
 }
