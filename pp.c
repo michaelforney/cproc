@@ -337,6 +337,7 @@ directive(void)
 		tokencheck(&tok, TNUMBER, "after #line");
 line:
 		newloc.line = strtoull(tok.lit, NULL, 0);
+		newloc.col = 1;
 		scan(&tok);
 		newloc.file = tok.loc.file;
 		if (tok.kind == TSTRINGLIT) {
