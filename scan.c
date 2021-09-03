@@ -57,10 +57,11 @@ nextchar(struct scanner *s)
 		bufadd(&s->buf, s->chr);
 	for (;;) {
 		s->chr = getc(s->file);
-		if (s->chr == '\n')
-			++s->loc.line, s->loc.col = 1;
-		else
-			++s->loc.col;
+		if (s->chr == '\n') {
+			++s->loc.line, s->loc.col = 0;
+			break;
+		}
+		++s->loc.col;
 		if (s->chr != '\\')
 			break;
 		c = getc(s->file);
@@ -68,7 +69,7 @@ nextchar(struct scanner *s)
 			ungetc(c, s->file);
 			break;
 		}
-		++s->loc.line, s->loc.col = 1;
+		++s->loc.line, s->loc.col = 0;
 	}
 }
 
@@ -269,12 +270,13 @@ comment(struct scanner *s)
 }
 
 static int
-scankind(struct scanner *s)
+scankind(struct scanner *s, struct location *loc)
 {
 	enum tokenkind tok;
-	struct location loc;
+	struct location oldloc;
 
 again:
+	*loc = s->loc;
 	switch (s->chr) {
 	case ' ':
 	case '\t':
@@ -353,11 +355,11 @@ again:
 		}
 		if (s->chr != '.')
 			return TPERIOD;
-		loc = s->loc;
+		oldloc = s->loc;
 		nextchar(s);
 		if (s->chr != '.') {
 			ungetc(s->chr, s->file);
-			s->loc = loc;
+			s->loc = oldloc;
 			s->chr = '.';
 			return TPERIOD;
 		}
@@ -463,8 +465,7 @@ scan(struct token *t)
 {
 	scanner->sawspace = false;
 	for (;;) {
-		t->loc = scanner->loc;
-		t->kind = scankind(scanner);
+		t->kind = scankind(scanner, &t->loc);
 		if (t->kind != TEOF || !scanner->next)
 			break;
 		scanclose();
