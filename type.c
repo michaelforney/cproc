@@ -39,15 +39,6 @@ struct type typefloat   = FLTTYPE(TYPEFLOAT, 4);
 struct type typedouble  = FLTTYPE(TYPEDOUBLE, 8);
 struct type typeldouble = FLTTYPE(TYPELDOUBLE, 16);
 
-struct type typevalist = {
-	.kind = TYPEARRAY, .size = 32, .align = 8, .array = {1},
-	.prop = PROPOBJECT|PROPDERIVED|PROPAGGR,
-	.base = &(struct type){
-		.kind = TYPESTRUCT, .size = 32, .align = 8,
-		.prop = PROPOBJECT|PROPAGGR,
-	},
-};
-
 struct type *
 mktype(enum typekind kind, enum typeprop prop)
 {

@@ -1104,6 +1104,10 @@ emittype(struct type *t)
 	}
 	fputs("type ", stdout);
 	emitvalue(t->value);
+	if (t == targ->typevalist) {
+		printf(" = align %d { %" PRIu64 " }\n", t->align, t->size);
+		return;
+	}
 	fputs(" = { ", stdout);
 	for (m = t->structunion.members, off = 0; m;) {
 		if (t->kind == TYPESTRUCT) {

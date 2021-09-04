@@ -25,13 +25,16 @@ scopeinit(void)
 		{"__builtin_va_arg",     {.kind = DECLBUILTIN, .builtin = BUILTINVAARG}},
 		{"__builtin_va_copy",    {.kind = DECLBUILTIN, .builtin = BUILTINVACOPY}},
 		{"__builtin_va_end",     {.kind = DECLBUILTIN, .builtin = BUILTINVAEND}},
-		{"__builtin_va_list",    {.kind = DECLTYPE, .type = &typevalist}},
 		{"__builtin_va_start",   {.kind = DECLBUILTIN, .builtin = BUILTINVASTART}},
 	};
+	static struct decl valist;
 	struct builtin *b;
 
 	for (b = builtins; b < builtins + LEN(builtins); ++b)
 		scopeputdecl(&filescope, b->name, &b->decl);
+	valist.kind = DECLTYPE;
+	valist.type = targ->typevalist;
+	scopeputdecl(&filescope, "__builtin_va_list", &valist);
 }
 
 struct scope *

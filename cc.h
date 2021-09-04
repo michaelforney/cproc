@@ -428,12 +428,12 @@ extern struct type typeint, typeuint;
 extern struct type typelong, typeulong;
 extern struct type typellong, typeullong;
 extern struct type typefloat, typedouble, typeldouble;
-extern struct type typevalist;
 
 /* targ */
 
 struct target {
 	const char *name;
+	struct type *typevalist;
 	struct type *typewchar;
 	int signedchar;
 };

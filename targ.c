@@ -9,14 +9,32 @@ static const struct target alltargs[] = {
 	{
 		.name = "x86_64",
 		.typewchar = &typeint,
+		.typevalist = &(struct type){
+			.kind = TYPEARRAY, .prop = PROPOBJECT|PROPDERIVED|PROPAGGR,
+			.align = 8, .size = 24,
+			.array = {1}, .base = &(struct type){
+				.kind = TYPESTRUCT, .prop = PROPOBJECT|PROPAGGR,
+				.align = 8, .size = 24,
+			},
+		},
 		.signedchar = 1,
 	},
 	{
 		.name = "aarch64",
+		.typevalist = &(struct type){
+			.kind = TYPESTRUCT, .prop = PROPOBJECT|PROPAGGR,
+			.align = 8, .size = 32,
+			.structunion.tag = "va_list",
+		},
 		.typewchar = &typeuint,
 	},
 	{
 		.name = "riscv64",
+		.typevalist = &(struct type){
+			.kind = TYPEPOINTER, .prop = PROPOBJECT|PROPDERIVED|PROPSCALAR,
+			.align = 8, .size = 8,
+			.base = &typevoid,
+		},
 		.typewchar = &typeint,
 	},
 };

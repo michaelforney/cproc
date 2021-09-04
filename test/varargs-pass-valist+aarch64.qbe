@@ -1,0 +1,9 @@
+data $.Lap.2 = align 8 { z 32 }
+type :va_list.1 = align 8 { 32 }
+export
+function $g() {
+@start.1
+@body.2
+	call $f(:va_list.1 $.Lap.2)
+	ret
+}
