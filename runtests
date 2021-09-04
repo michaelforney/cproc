@@ -12,12 +12,16 @@ trap 'rm "$got"' EXIT
 
 for test ; do
 	name=${test%.c}
+	case $name in
+	*+*) arch=${name##*+} ;;
+	*) arch=x86_64 ;;
+	esac
 	if [ -f "$name.qbe" ] ; then
 		want=$name.qbe
-		set -- $CCQBE -o "$got" "$test"
+		set -- $CCQBE -t $arch -o "$got" "$test"
 	elif [ -f "$name.pp" ] ; then
 		want=$name.pp
-		set -- $CCQBE -E -o "$got" "$test"
+		set -- $CCQBE -t $arch -E -o "$got" "$test"
 	else
 		echo "invalid test '$test'" >&2
 		set -- false
