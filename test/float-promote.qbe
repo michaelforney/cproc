@@ -5,7 +5,7 @@ function $f() {
 	%.1 =d exts s_1
 	call $g1(d %.1)
 	%.2 =d exts s_1
-	call $g2(w 0, d %.2, ...)
+	call $g2(w 0, ..., d %.2)
 	call $g3(s s_1)
 	ret
 }

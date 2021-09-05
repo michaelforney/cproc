@@ -93,7 +93,6 @@ OP(ICOPY,    "copy")
 
 /* call */
 OP(ICALL,    "call")
-OP(IVACALL,  "call")
 
 /* variadic */
 OP(IVASTART, "vastart")

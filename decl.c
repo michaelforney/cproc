@@ -516,6 +516,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 			t->func.isvararg = false;
 			t->func.isnoreturn = false;
 			t->func.params = NULL;
+			t->func.nparam = 0;
 			p = &t->func.params;
 			switch (tok.kind) {
 			case TIDENT:
@@ -534,6 +535,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				for (;;) {
 					*p = parameter(s);
 					p = &(*p)->next;
+					++t->func.nparam;
 					if (!consume(TCOMMA))
 						break;
 					if (consume(TELLIPSIS)) {

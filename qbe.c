@@ -40,6 +40,7 @@ enum instkind {
 #undef OP
 
 	IARG,
+	IVARARG,
 };
 
 struct qbetype {
@@ -722,7 +723,7 @@ funcexpr(struct func *f, struct expr *e)
 	struct lvalue lval;
 	struct expr *arg;
 	struct block *b[3];
-	struct type *t;
+	struct type *t, *functype;
 	size_t i;
 
 	switch (e->kind) {
@@ -761,7 +762,6 @@ funcexpr(struct func *f, struct expr *e)
 		v = funcstore(f, e->type, e->qual, lval, v);
 		return e->incdec.post ? l : v;
 	case EXPRCALL:
-		op = e->base->type->base->func.isvararg ? IVACALL : ICALL;
 		argvals = xreallocarray(NULL, e->call.nargs, sizeof(argvals[0]));
 		for (arg = e->call.args, i = 0; arg; arg = arg->next, ++i) {
 			emittype(arg->type);
@@ -769,12 +769,15 @@ funcexpr(struct func *f, struct expr *e)
 		}
 		t = e->type;
 		emittype(t);
-		v = funcinst(f, op, qbetype(t).base, funcexpr(f, e->base), t->value);
+		v = funcinst(f, ICALL, qbetype(t).base, funcexpr(f, e->base), t->value);
+		functype = e->base->type->base;
 		for (arg = e->call.args, i = 0; arg; arg = arg->next, ++i) {
+			if (functype->func.isvararg && i == functype->func.nparam)
+				funcinst(f, IVARARG, 0, NULL, NULL);
 			t = arg->type;
 			funcinst(f, IARG, qbetype(t).base, argvals[i], t->value);
 		}
-		//if (e->base->type->base->func.isnoreturn)
+		//if (functype->func.isnoreturn)
 		//	funcret(f, NULL);
 		return v;
 	case EXPRUNARY:
@@ -1181,20 +1184,23 @@ emitinst(struct inst **instp, struct inst **instend)
 	op = inst->kind;
 	switch (op) {
 	case ICALL:
-	case IVACALL:
 		putchar('(');
-		for (first = 1; instp != instend && (*instp)->kind == IARG; ++instp) {
+		for (first = 1; instp != instend; ++instp) {
+			inst = *instp;
+			if (inst->kind == IVARARG) {
+				fputs(", ...", stdout);
+				continue;
+			}
+			if (inst->kind != IARG)
+				break;
 			if (first)
 				first = 0;
 			else
 				fputs(", ", stdout);
-			inst = *instp;
 			emitclass(inst->class, inst->arg[1]);
 			putchar(' ');
 			emitvalue(inst->arg[0]);
 		}
-		if (op == IVACALL)
-			fputs(", ...", stdout);
 		putchar(')');
 		break;
 	default:

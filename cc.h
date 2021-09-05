@@ -219,6 +219,7 @@ struct type {
 		struct {
 			_Bool isprototype, isvararg, isnoreturn, paraminfo;
 			struct param *params;
+			size_t nparam;
 		} func;
 		struct {
 			char *tag;
