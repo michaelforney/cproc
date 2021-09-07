@@ -2,5 +2,6 @@
 /cproc
 /cproc-qbe
 /config.h
+/config.mk
 /stage2
 /stage3
