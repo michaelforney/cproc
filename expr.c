@@ -642,31 +642,31 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 	case BUILTINVAARG:
 		e = mkexpr(EXPRBUILTIN, NULL);
 		e->builtin.kind = BUILTINVAARG;
-		e->base = mkunaryexpr(TBAND, assignexpr(s));
-		if (e->base->base->type != targ->typevalist)
+		e->base = assignexpr(s);
+		if (!typesame(e->base->type, typeadjvalist))
 			error(&tok.loc, "va_arg argument must have type va_list");
+		if (!e->base->decayed)
+			e->base = mkunaryexpr(TBAND, e->base);
 		expect(TCOMMA, "after va_list");
 		e->type = typename(s, &e->qual);
 		break;
 	case BUILTINVACOPY:
 		e = mkexpr(EXPRASSIGN, &typevoid);
 		e->assign.l = assignexpr(s);
+		if (!typesame(e->assign.l->type, typeadjvalist))
+			error(&tok.loc, "va_copy destination must have type va_list");
 		if (e->assign.l->decayed)
 			e->assign.l = e->assign.l->base;
-		if (e->assign.l->type != targ->typevalist)
-			error(&tok.loc, "va_copy destination must have type va_list");
 		expect(TCOMMA, "after target va_list");
 		e->assign.r = assignexpr(s);
+		if (!typesame(e->assign.r->type, typeadjvalist))
+			error(&tok.loc, "va_copy source must have type va_list");
 		if (e->assign.r->decayed)
 			e->assign.r = e->assign.r->base;
-		if (e->assign.r->type != targ->typevalist)
-			error(&tok.loc, "va_copy source must have type va_list");
 		break;
 	case BUILTINVAEND:
 		e = assignexpr(s);
-		if (e->decayed)
-			e = e->base;
-		if (e->type != targ->typevalist)
+		if (!typesame(e->type, typeadjvalist))
 			error(&tok.loc, "va_end argument must have type va_list");
 		e = mkexpr(EXPRBUILTIN, &typevoid);
 		e->builtin.kind = BUILTINVAEND;
@@ -674,9 +674,11 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 	case BUILTINVASTART:
 		e = mkexpr(EXPRBUILTIN, &typevoid);
 		e->builtin.kind = BUILTINVASTART;
-		e->base = mkunaryexpr(TBAND, assignexpr(s));
-		if (e->base->base->type != targ->typevalist)
+		e->base = assignexpr(s);
+		if (!typesame(e->base->type, typeadjvalist))
 			error(&tok.loc, "va_start argument must have type va_list");
+		if (!e->base->decayed)
+			e->base = mkunaryexpr(TBAND, e->base);
 		expect(TCOMMA, "after va_list");
 		param = assignexpr(s);
 		if (param->kind != EXPRIDENT)

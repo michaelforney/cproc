@@ -618,21 +618,6 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 	return base;
 }
 
-static struct type *
-adjust(struct type *t)
-{
-	switch (t->kind) {
-	case TYPEARRAY:
-		t = mkpointertype(t->base, t->qual);
-		break;
-	case TYPEFUNC:
-		t = mkpointertype(t, QUALNONE);
-		break;
-	}
-
-	return t;
-}
-
 static struct param *
 parameter(struct scope *s)
 {
@@ -647,7 +632,7 @@ parameter(struct scope *s)
 		error(&tok.loc, "parameter declaration has invalid storage-class specifier");
 	t = declarator(s, t, &name, true);
 
-	return mkparam(name, adjust(t.type), t.qual);
+	return mkparam(name, typeadjust(t.type), t.qual);
 }
 
 static bool
@@ -669,7 +654,7 @@ paramdecl(struct scope *s, struct param *params)
 			;
 		if (!p)
 			error(&tok.loc, "old-style function declarator has no parameter named '%s'", name);
-		p->type = adjust(t.type);
+		p->type = typeadjust(t.type);
 		p->qual = t.qual;
 		if (tok.kind == TSEMICOLON)
 			break;

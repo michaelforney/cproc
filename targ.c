@@ -55,4 +55,5 @@ targinit(const char *name)
 	if (!targ)
 		fatal("unknown target '%s'", name);
 	typechar.basic.issigned = targ->signedchar;
+	typeadjvalist = typeadjust(targ->typevalist);
 }

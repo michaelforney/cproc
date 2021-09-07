@@ -39,6 +39,8 @@ struct type typefloat   = FLTTYPE(TYPEFLOAT, 4);
 struct type typedouble  = FLTTYPE(TYPEDOUBLE, 8);
 struct type typeldouble = FLTTYPE(TYPELDOUBLE, 16);
 
+struct type *typeadjvalist;
+
 struct type *
 mktype(enum typekind kind, enum typeprop prop)
 {
@@ -214,6 +216,22 @@ typecommonreal(struct type *t1, unsigned w1, struct type *t2, unsigned w2)
 	if (t2 == &typellong)
 		return &typeullong;
 	fatal("internal error; could not find common real type");
+}
+
+/* function parameter type adjustment (C11 6.7.6.3p7) */
+struct type *
+typeadjust(struct type *t)
+{
+	switch (t->kind) {
+	case TYPEARRAY:
+		t = mkpointertype(t->base, t->qual);
+		break;
+	case TYPEFUNC:
+		t = mkpointertype(t, QUALNONE);
+		break;
+	}
+
+	return t;
 }
 
 struct member *
