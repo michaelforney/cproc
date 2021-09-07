@@ -139,7 +139,7 @@ static const char target[]               = "$target";
 static const char *const startfiles[]    = {$startfiles};
 static const char *const endfiles[]      = {$endfiles};
 static const char *const preprocesscmd[] = {
-	"$DEFAULT_PREPROCESSOR", "-E",
+	"$DEFAULT_PREPROCESSOR",
 
 	/* clear preprocessor GNU C version */
 	"-U", "__GNUC__",
