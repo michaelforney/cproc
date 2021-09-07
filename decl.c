@@ -559,10 +559,8 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				;
 			if (tok.kind == TMUL)
 				error(&tok.loc, "VLAs are not yet supported");
-			if (tok.kind == TRBRACK) {
-				i = 0;
-				next();
-			} else {
+			t = mkarraytype(NULL, tq, 0);
+			if (tok.kind != TRBRACK) {
 				e = eval(assignexpr(s), EVALARITH);
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "VLAs are not yet supported");
@@ -570,9 +568,10 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				if (e->type->basic.issigned && i > INT64_MAX)
 					error(&tok.loc, "array length must be non-negative");
 				delexpr(e);
-				expect(TRBRACK, "after array length");
+				t->array.length = i;
+				t->incomplete = false;
 			}
-			t = mkarraytype(NULL, tq, i);
+			expect(TRBRACK, "after array length");
 			listinsert(ptr->prev, &t->link);
 			break;
 		default:
