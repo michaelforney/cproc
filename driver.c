@@ -500,7 +500,7 @@ main(int argc, char *argv[])
 				output = nextarg(&argv);
 				break;
 			case 'P':
-				/* ignore */
+				arrayaddptr(&stages[PREPROCESS].cmd, "-P");
 				break;
 			case 'S':
 				last = CODEGEN;
