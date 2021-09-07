@@ -332,10 +332,10 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			next();
 			break;
 		case T_COMPLEX:
-			fatal("_Complex is not yet supported");
+			error(&tok.loc, "_Complex is not yet supported");
 			break;
 		case T_ATOMIC:
-			fatal("_Atomic is not yet supported");
+			error(&tok.loc, "_Atomic is not yet supported");
 			break;
 		case TSTRUCT:
 		case TUNION:
