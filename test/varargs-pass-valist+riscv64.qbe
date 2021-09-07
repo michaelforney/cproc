@@ -1,9 +1,0 @@
-data $.Lap.2 = align 8 { z 8 }
-export
-function $g() {
-@start.1
-@body.2
-	%.1 =l loadl $.Lap.2
-	call $f(l %.1)
-	ret
-}

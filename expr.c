@@ -645,7 +645,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->base = assignexpr(s);
 		if (!typesame(e->base->type, typeadjvalist))
 			error(&tok.loc, "va_arg argument must have type va_list");
-		if (!e->base->decayed)
+		if (typeadjvalist == targ->typevalist)
 			e->base = mkunaryexpr(TBAND, e->base);
 		expect(TCOMMA, "after va_list");
 		e->type = typename(s, &e->qual);
@@ -655,14 +655,14 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->assign.l = assignexpr(s);
 		if (!typesame(e->assign.l->type, typeadjvalist))
 			error(&tok.loc, "va_copy destination must have type va_list");
-		if (e->assign.l->decayed)
-			e->assign.l = e->assign.l->base;
+		if (typeadjvalist != targ->typevalist)
+			e->assign.l = mkunaryexpr(TMUL, e->assign.l);
 		expect(TCOMMA, "after target va_list");
 		e->assign.r = assignexpr(s);
 		if (!typesame(e->assign.r->type, typeadjvalist))
 			error(&tok.loc, "va_copy source must have type va_list");
-		if (e->assign.r->decayed)
-			e->assign.r = e->assign.r->base;
+		if (typeadjvalist != targ->typevalist)
+			e->assign.r = mkunaryexpr(TMUL, e->assign.r);
 		break;
 	case BUILTINVAEND:
 		e = assignexpr(s);
@@ -677,7 +677,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->base = assignexpr(s);
 		if (!typesame(e->base->type, typeadjvalist))
 			error(&tok.loc, "va_start argument must have type va_list");
-		if (!e->base->decayed)
+		if (typeadjvalist == targ->typevalist)
 			e->base = mkunaryexpr(TBAND, e->base);
 		expect(TCOMMA, "after va_list");
 		param = assignexpr(s);

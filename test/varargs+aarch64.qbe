@@ -1,22 +1,47 @@
+type :va_list.1 = align 8 { 32 }
 export
-function $f(w %.1, ...) {
+function w $f1(w %.1, :va_list.1 %.3) {
 @start.1
 	%.2 =l alloc4 4
 	storew %.1, %.2
-	%.3 =l alloc8 32
 @body.2
+	%.4 =w vaarg %.3
+	ret %.4
+}
+export
+function w $f2(w %.1, ...) {
+@start.3
+	%.2 =l alloc4 4
+	storew %.1, %.2
+	%.3 =l alloc4 4
+	%.4 =l alloc8 32
+@body.4
+	vastart %.4
+	%.5 =w loadw %.2
+	%.6 =w call $f1(w %.5, :va_list.1 %.4)
+	storew %.6, %.3
+	%.7 =w loadw %.3
+	ret %.7
+}
+export
+function $f3(w %.1, ...) {
+@start.5
+	%.2 =l alloc4 4
+	storew %.1, %.2
+	%.3 =l alloc8 32
+@body.6
 	vastart %.3
-@while_cond.3
+@while_cond.7
 	%.4 =w loadw %.2
-	jnz %.4, @while_body.4, @while_join.5
-@while_body.4
+	jnz %.4, @while_body.8, @while_join.9
+@while_body.8
 	%.5 =w vaarg %.3
 	%.6 =s vaarg %.3
 	%.7 =l vaarg %.3
 	%.8 =w loadw %.2
 	%.9 =w sub %.8, 1
 	storew %.9, %.2
-	jmp @while_cond.3
-@while_join.5
+	jmp @while_cond.7
+@while_join.9
 	ret
 }
