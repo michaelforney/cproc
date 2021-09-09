@@ -1,4 +1,4 @@
-image: debian/sid
+image: debian/stable
 packages:
 - gcc-aarch64-linux-gnu
 - libc-dev-arm64-cross
