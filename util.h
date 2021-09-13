@@ -9,7 +9,7 @@ struct array {
 
 struct mapkey {
 	uint64_t hash;
-	const char *str;
+	const void *str;
 	size_t len;
 };
 
@@ -47,7 +47,7 @@ void *arraylast(struct array *, size_t);
 
 /* map */
 
-void mapkey(struct mapkey *, const char *, size_t);
+void mapkey(struct mapkey *, const void *, size_t);
 struct map *mkmap(size_t);
 void delmap(struct map *, void(void *));
 void **mapput(struct map *, struct mapkey *);

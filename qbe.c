@@ -1275,7 +1275,7 @@ dataitem(struct expr *expr, uint64_t size)
 {
 	struct decl *decl;
 	size_t i;
-	char c;
+	unsigned c;
 
 	switch (expr->kind) {
 	case EXPRUNARY:
@@ -1309,7 +1309,7 @@ dataitem(struct expr *expr, uint64_t size)
 			if (isprint(c) && c != '"' && c != '\\')
 				putchar(c);
 			else
-				printf("\\%03hho", c);
+				printf("\\%03o", c);
 		}
 		fputc('"', stdout);
 		if (i < size)

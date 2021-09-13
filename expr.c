@@ -363,10 +363,10 @@ isodigit(int c)
 	return '0' <= c && c <= '8';
 }
 
-static int
+static unsigned
 unescape(char **p)
 {
-	int c;
+	unsigned c;
 	char *s = *p;
 
 	if (*s == '\\') {
@@ -397,7 +397,7 @@ unescape(char **p)
 			while (isodigit(*++s));
 		}
 	} else {
-		c = *s++;
+		c = (unsigned char)*s++;
 	}
 	*p = s;
 	return c;
@@ -456,7 +456,8 @@ primaryexpr(struct scope *s)
 	struct expr *e;
 	struct decl *d;
 	struct type *t;
-	char *src, *dst, *end;
+	char *src, *end;
+	unsigned char *dst;
 	int base;
 
 	switch (tok.kind) {

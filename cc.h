@@ -331,7 +331,7 @@ struct expr {
 			double f;
 		} constant;
 		struct {
-			char *data;
+			unsigned char *data;
 			size_t size;
 		} string;
 		struct {

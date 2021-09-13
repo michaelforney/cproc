@@ -24,7 +24,7 @@ hash(const void *ptr, size_t len)
 }
 
 void
-mapkey(struct mapkey *k, const char *s, size_t n)
+mapkey(struct mapkey *k, const void *s, size_t n)
 {
 	k->str = s;
 	k->len = n;
