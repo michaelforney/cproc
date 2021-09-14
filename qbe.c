@@ -303,14 +303,13 @@ funccopy(struct func *f, struct value *dst, struct value *src, uint64_t size, in
 	struct value *tmp, *inc;
 	uint64_t off;
 
+	assert((align & align - 1) == 0);
 	class = 'w';
 	switch (align) {
 	case 1: load = ILOADUB, store = ISTOREB; break;
 	case 2: load = ILOADUH, store = ISTOREH; break;
 	case 4: load = ILOADW, store = ISTOREW; break;
-	case 8: load = ILOADL, store = ISTOREL, class = 'l'; break;
-	default:
-		fatal("internal error; invalid alignment %d", align);
+	default: load = ILOADL, store = ISTOREL, align = 8, class = 'l'; break;
 	}
 	inc = mkintconst(align);
 	off = 0;
