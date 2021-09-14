@@ -426,6 +426,8 @@ main(int argc, char *argv[])
 		/* TODO: use a binary search for these long parameters */
 		if (strcmp(arg, "-nostdlib") == 0) {
 			flags.nostdlib = true;
+		} else if (strcmp(arg, "-nostdinc") == 0) {
+			arrayaddptr(&stages[PREPROCESS].cmd, arg);
 		} else if (strcmp(arg, "-static") == 0) {
 			arrayaddptr(&stages[LINK].cmd, arg);
 		} else if (strcmp(arg, "-emit-qbe") == 0) {
