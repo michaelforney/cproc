@@ -476,14 +476,21 @@ primaryexpr(struct scope *s)
 	case TSTRINGLIT:
 		e = mkexpr(EXPRSTRING, mkarraytype(&typechar, QUALNONE, 0));
 		e->lvalue = true;
-		src = stringconcat();
-		dst = e->string.data = xmalloc(strlen(src) - 1);
-		if (*src != '"')
-			fatal("wide string literal not yet implemented");
-		for (++src; *src != '"'; ++dst)
-			*dst = unescape(&src);
+		e->string.size = 0;
+		e->string.data = NULL;
+		do {
+			e->string.data = xreallocarray(e->string.data, e->string.size + strlen(tok.lit) + 1, 1);
+			dst = e->string.data + e->string.size;
+			src = tok.lit;
+			if (*src != '"')
+				fatal("wide string literal not yet implemented");
+			for (++src; *src != '"'; ++dst)
+				*dst = unescape(&src);
+			e->string.size = dst - e->string.data;
+			next();
+		} while (tok.kind == TSTRINGLIT);
 		*dst = '\0';
-		e->type->array.length = e->string.size = dst - e->string.data + 1;
+		e->type->array.length = ++e->string.size;
 		e->type->size = e->type->array.length * e->type->base->size;
 		e->type->incomplete = false;
 		e = decay(e);

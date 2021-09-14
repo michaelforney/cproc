@@ -405,7 +405,6 @@ void next(void);
 _Bool peek(int);
 char *expect(enum tokenkind, const char *);
 _Bool consume(int);
-char *stringconcat(void);
 
 /* type */
 
