@@ -299,21 +299,23 @@ static void
 funccopy(struct func *f, struct value *dst, struct value *src, uint64_t size, int align)
 {
 	enum instkind load, store;
+	int class;
 	struct value *tmp, *inc;
 	uint64_t off;
 
+	class = 'w';
 	switch (align) {
 	case 1: load = ILOADUB, store = ISTOREB; break;
 	case 2: load = ILOADUH, store = ISTOREH; break;
 	case 4: load = ILOADW, store = ISTOREW; break;
-	case 8: load = ILOADL, store = ISTOREL; break;
+	case 8: load = ILOADL, store = ISTOREL, class = 'l'; break;
 	default:
 		fatal("internal error; invalid alignment %d", align);
 	}
 	inc = mkintconst(align);
 	off = 0;
 	for (;;) {
-		tmp = funcinst(f, load, ptrclass, src, NULL);
+		tmp = funcinst(f, load, class, src, NULL);
 		funcinst(f, store, 0, tmp, dst);
 		off += align;
 		if (off >= size)
