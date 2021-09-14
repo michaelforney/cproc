@@ -1,0 +1,12 @@
+data $.Lstring.2 = align 1 { b "\0001\000", }
+export
+function w $main() {
+@start.1
+@body.2
+	%.1 =l extsw 0
+	%.2 =l mul %.1, 1
+	%.3 =l add $.Lstring.2, %.2
+	%.4 =w loadsb %.3
+	%.5 =w extsb %.4
+	ret %.5
+}
