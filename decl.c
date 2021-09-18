@@ -747,7 +747,7 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 static bool
 staticassert(struct scope *s)
 {
-	struct expr *e;
+	struct stringlit msg;
 	uint64_t c;
 
 	if (!consume(T_STATIC_ASSERT))
@@ -755,11 +755,10 @@ staticassert(struct scope *s)
 	expect(TLPAREN, "after _Static_assert");
 	c = intconstexpr(s, true);
 	if (consume(TCOMMA)) {
-		e = assignexpr(s);
-		if (!e->decayed || e->base->kind != EXPRSTRING)
-			error(&tok.loc, "expected string literal after static assertion expression");
+		tokencheck(&tok, TSTRINGLIT, "after static assertion expression");
+		stringconcat(&msg, true);
 		if (!c)
-			error(&tok.loc, "static assertion failed: %.*s", (int)e->base->string.size, e->base->string.data);
+			error(&tok.loc, "static assertion failed: %.*s", (int)(msg.size - 1), msg.data);
 	} else if (!c) {
 		error(&tok.loc, "static assertion failed");
 	}

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
+#include "utf.h"
 #include "cc.h"
 
 static struct expr *
@@ -358,11 +359,12 @@ isodigit(int c)
 	return '0' <= c && c <= '8';
 }
 
-static unsigned
-unescape(char **p)
+static size_t
+decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc, struct location *loc)
 {
-	unsigned c;
-	char *s = *p;
+	uint_least32_t c;
+	size_t n;
+	const char *s = src;
 
 	if (*s == '\\') {
 		++s;
@@ -384,18 +386,133 @@ unescape(char **p)
 			c = 0;
 			do c = c * 16 + (*s > '9' ? 10 + tolower(*s) - 'a' : *s - '0');
 			while (isxdigit(*++s));
+			if (hexoct)
+				*hexoct = true;
 			break;
 		default:
 			assert(isodigit(*s));
 			c = 0;
 			do c = c * 8 + (*s - '0');
 			while (isodigit(*++s));
+			if (hexoct)
+				*hexoct = true;
 		}
 	} else {
-		c = (unsigned char)*s++;
+		n = utf8dec(&c, s, 4);
+		if (n == -1)
+			error(loc, "%s contains invalid UTF-8", desc);
+		s += n;
 	}
-	*p = s;
-	return c;
+	*chr = c;
+	return s - src;
+}
+
+static size_t
+encodechar8(void *dst, uint_least32_t chr, bool hexoct)
+{
+	if (!hexoct)
+		return utf8enc(dst, chr);
+	*(unsigned char *)dst = chr;
+	return 1;
+}
+
+static size_t
+encodechar16(void *dst, uint_least32_t chr, bool hexoct)
+{
+	if (!hexoct)
+		return utf16enc(dst, chr) * sizeof(uint_least16_t);
+	*(uint_least16_t *)dst = chr;
+	return sizeof(uint_least16_t);
+}
+
+static size_t
+encodechar32(void *dst, uint_least32_t chr, bool hexoct)
+{
+	*(uint_least32_t *)dst = chr;
+	return sizeof(uint_least32_t);
+}
+
+struct type *
+stringconcat(struct stringlit *str, bool forceutf8)
+{
+	static struct array parts;
+	struct {
+		struct location loc;
+		char *str;
+	} *p;
+	int kind, newkind;
+	struct type *t;
+	size_t (*encodechar)(void *, uint_least32_t, bool);
+	char *src;
+	unsigned char *buf, *dst;
+	uint_least32_t chr;
+	bool hexoct;
+	size_t len, width;
+
+	assert(tok.kind == TSTRINGLIT);
+	parts.len = 0;
+	len = 0;
+	kind = 0;
+	do {
+		src = tok.lit;
+		switch (*src) {
+		case 'u': if (src[1] == '8') ++src; /* fallthrough */
+		case 'L':
+		case 'U': newkind = *src, ++src; break;
+		case '"': newkind = 0; break;
+		default: assert(0);
+		}
+		if (kind != newkind && kind && newkind)
+			error(&tok.loc, "adjacent string literals have differing prefixes");
+		if (newkind)
+			kind = newkind;
+		p = arrayadd(&parts, sizeof(*p));
+		p->loc = tok.loc;
+		p->str = src + 1;
+		len += strlen(src) - 2;
+		next();
+	} while (tok.kind == TSTRINGLIT);
+	if (forceutf8 || kind == '8')
+		kind = 0;
+	++len;  /* null byte */
+	switch (kind) {
+	case 0: t = &typechar; break;
+	case 'u': t = &typeushort; break;
+	case 'U': t = &typeuint; break;
+	case 'L': t = targ->typewchar; break;
+	}
+	switch (t->size) {
+	case 1:
+		width = 1;
+		encodechar = encodechar8;
+		buf = xreallocarray(NULL, len, 1);
+		str->data = buf;
+		break;
+	case 2:
+		width = sizeof(uint_least16_t);
+		encodechar = encodechar16;
+		buf = xreallocarray(NULL, len, width);
+		str->data16 = (uint_least16_t *)buf;
+		break;
+	case 4:
+		width = sizeof(uint_least32_t);
+		encodechar = encodechar32;
+		buf = xreallocarray(NULL, len, width);
+		str->data32 = (uint_least32_t *)buf;
+		break;
+	}
+	dst = buf;
+	arrayforeach(&parts, p) {
+		src = p->str;
+		while (*src != '"') {
+			hexoct = false;
+			src += decodechar(src, &chr, &hexoct, "string literal", &p->loc);
+			dst += encodechar(dst, chr, hexoct);
+		}
+	}
+	dst += encodechar(dst, 0, false);
+	str->size = (dst - buf) / width;
+	return t;
 }
 
 static struct expr *
@@ -452,7 +569,7 @@ primaryexpr(struct scope *s)
 	struct decl *d;
 	struct type *t;
 	char *src, *end;
-	unsigned char *dst;
+	uint_least32_t chr;
 	int base;
 
 	switch (tok.kind) {
@@ -469,25 +586,10 @@ primaryexpr(struct scope *s)
 		next();
 		break;
 	case TSTRINGLIT:
-		e = mkexpr(EXPRSTRING, mkarraytype(&typechar, QUALNONE, 0), NULL);
+		e = mkexpr(EXPRSTRING, NULL, NULL);
+		t = stringconcat(&e->string, false);
+		e->type = mkarraytype(t, QUALNONE, e->string.size);
 		e->lvalue = true;
-		e->string.size = 0;
-		e->string.data = NULL;
-		do {
-			e->string.data = xreallocarray(e->string.data, e->string.size + strlen(tok.lit) + 1, 1);
-			dst = e->string.data + e->string.size;
-			src = tok.lit;
-			if (*src != '"')
-				fatal("wide string literal not yet implemented");
-			for (++src; *src != '"'; ++dst)
-				*dst = unescape(&src);
-			e->string.size = dst - e->string.data;
-			next();
-		} while (tok.kind == TSTRINGLIT);
-		*dst = '\0';
-		e->type->array.length = ++e->string.size;
-		e->type->size = e->type->array.length * e->type->base->size;
-		e->type->incomplete = false;
 		e = decay(e);
 		break;
 	case TCHARCONST:
@@ -500,7 +602,8 @@ primaryexpr(struct scope *s)
 		}
 		assert(*src == '\'');
 		++src;
-		e = mkconstexpr(t, unescape(&src));
+		src += decodechar(src, &chr, NULL, "character constant", &tok.loc);
+		e = mkconstexpr(t, chr);
 		if (*src != '\'')
 			error(&tok.loc, "character constant contains more than one character: %c", *src);
 		next();

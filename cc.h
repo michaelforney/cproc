@@ -309,6 +309,15 @@ enum exprkind {
 	EXPRTEMP,
 };
 
+struct stringlit {
+	size_t size;
+	union {
+		unsigned char *data;
+		uint_least16_t *data16;
+		uint_least32_t *data32;
+	};
+};
+
 struct expr {
 	enum exprkind kind;
 	/* whether this expression is an lvalue */
@@ -331,14 +340,7 @@ struct expr {
 			int64_t i;
 			double f;
 		} constant;
-		struct {
-			union {
-				unsigned char *data;
-				uint_least16_t *data16;
-				uint_least32_t *data32;
-			};
-			size_t size;
-		} string;
+		struct stringlit string;
 		struct {
 			struct expr *args;
 			size_t nargs;
@@ -473,6 +475,8 @@ struct type *scopegettag(struct scope *, const char *, _Bool);
 extern struct scope filescope;
 
 /* expr */
+
+struct type *stringconcat(struct stringlit *, _Bool);
 
 struct expr *expr(struct scope *);
 struct expr *assignexpr(struct scope *);

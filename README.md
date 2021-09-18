@@ -88,7 +88,6 @@ specified in `config.h`.
 
 - Digraph and trigraph sequences ([6.4.6p3] and [5.2.1.1], will not
   be implemented).
-- Wide string literals ([#35]).
 - Variable-length arrays ([#1]).
 - `volatile`-qualified types ([#7]).
 - `_Thread_local` storage-class specifier ([#5]).

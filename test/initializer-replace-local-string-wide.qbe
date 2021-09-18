@@ -1,0 +1,61 @@
+export
+function $f() {
+@start.1
+	%.1 =l alloc4 60
+@body.2
+	%.2 =l add %.1, 0
+	storeh 104, %.2
+	%.3 =l add %.1, 2
+	storeh 101, %.3
+	%.4 =l add %.1, 4
+	storeh 108, %.4
+	%.5 =l add %.1, 6
+	storeh 108, %.5
+	%.6 =l add %.1, 8
+	storeh 111, %.6
+	%.7 =l add %.1, 10
+	storeh 0, %.7
+	%.8 =l add %.1, 2
+	storeh 97, %.8
+	%.9 =l add %.1, 4
+	storew 0, %.9
+	%.10 =l add %.1, 8
+	storew 0, %.10
+	%.11 =l add %.1, 12
+	storew 104, %.11
+	%.12 =l add %.1, 16
+	storew 101, %.12
+	%.13 =l add %.1, 20
+	storew 108, %.13
+	%.14 =l add %.1, 24
+	storew 108, %.14
+	%.15 =l add %.1, 28
+	storew 111, %.15
+	%.16 =l add %.1, 32
+	storew 0, %.16
+	%.17 =l add %.1, 16
+	storew 97, %.17
+	%.18 =l add %.1, 20
+	storew 0, %.18
+	%.19 =l add %.1, 24
+	storew 0, %.19
+	%.20 =l add %.1, 28
+	storew 0, %.20
+	%.21 =l add %.1, 32
+	storew 0, %.21
+	%.22 =l add %.1, 36
+	storew 104, %.22
+	%.23 =l add %.1, 40
+	storew 101, %.23
+	%.24 =l add %.1, 44
+	storew 108, %.24
+	%.25 =l add %.1, 48
+	storew 108, %.25
+	%.26 =l add %.1, 52
+	storew 111, %.26
+	%.27 =l add %.1, 56
+	storew 0, %.27
+	%.28 =l add %.1, 40
+	storew 97, %.28
+	ret
+}
