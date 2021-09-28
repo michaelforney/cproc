@@ -527,7 +527,7 @@ struct type *functype(struct func *);
 void funclabel(struct func *, struct block *);
 struct value *funcexpr(struct func *, struct expr *);
 void funcjmp(struct func *, struct block *);
-void funcjnz(struct func *, struct value *, struct block *, struct block *);
+void funcjnz(struct func *, struct value *, struct type *, struct block *, struct block *);
 void funcret(struct func *, struct value *);
 struct gotolabel *funcgoto(struct func *, char *);
 void funcswitch(struct func *, struct value *, struct switchcases *, struct block *);

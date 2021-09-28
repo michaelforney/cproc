@@ -204,8 +204,6 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 			error(loc, "left operand of '%s' operator must be scalar", tokstr[op]);
 		if (!(rp & PROPSCALAR))
 			error(loc, "right operand of '%s' operator must be scalar", tokstr[op]);
-		l = exprconvert(l, &typebool);
-		r = exprconvert(r, &typebool);
 		t = &typeint;
 		break;
 	case TEQL:
@@ -1023,7 +1021,7 @@ condexpr(struct scope *s)
 	if (!consume(TQUESTION))
 		return r;
 	e = mkexpr(EXPRCOND, NULL);
-	e->base = exprconvert(r, &typebool);
+	e->base = r;
 	e->cond.t = expr(s);
 	expect(TCOLON, "in conditional expression");
 	e->cond.f = condexpr(s);

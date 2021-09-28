@@ -1,0 +1,44 @@
+export
+function w $main() {
+@start.1
+@body.2
+	%.1 =w loadw $i
+	jnz %.1, @cond_true.3, @cond_false.4
+@cond_true.3
+	jmp @cond_join.5
+@cond_false.4
+@cond_join.5
+	%.2 =w phi @cond_true.3 1, @cond_false.4 0
+	jnz %.2, @if_true.6, @if_false.7
+@if_true.6
+	ret 1
+@if_false.7
+	%.3 =s loads $f
+	%.4 =w cnes %.3, s_0
+	jnz %.4, @cond_true.8, @cond_false.9
+@cond_true.8
+	jmp @cond_join.10
+@cond_false.9
+@cond_join.10
+	%.5 =w phi @cond_true.8 1, @cond_false.9 0
+	jnz %.5, @if_true.11, @if_false.12
+@if_true.11
+	ret 1
+@if_false.12
+	%.6 =l loadl $p
+	%.7 =w cnel %.6, 0
+	jnz %.7, @cond_true.13, @cond_false.14
+@cond_true.13
+	jmp @cond_join.15
+@cond_false.14
+@cond_join.15
+	%.8 =w phi @cond_true.13 1, @cond_false.14 0
+	jnz %.8, @if_true.16, @if_false.17
+@if_true.16
+	ret 1
+@if_false.17
+	ret 0
+}
+export data $i = align 4 { z 4 }
+export data $f = align 4 { z 4 }
+export data $p = align 8 { z 8 }

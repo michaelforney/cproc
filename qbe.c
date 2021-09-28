@@ -405,7 +405,7 @@ utof(struct func *f, int dst, int src, struct value *v)
 	join->phi.blk[1] = mkblock("utof_big");
 
 	big = funcinst(f, ICSLTL, 'w', v, mkintconst(0));
-	funcjnz(f, big, join->phi.blk[1], join->phi.blk[0]);
+	funcjnz(f, big, NULL, join->phi.blk[1], join->phi.blk[0]);
 
 	funclabel(f, join->phi.blk[0]);
 	join->phi.val[0] = funcinst(f, ISLTOF, dst, v, NULL);
@@ -442,7 +442,7 @@ ftou(struct func *f, int dst, int src, struct value *v)
 	maxint = mkintconst(1ull<<63);
 
 	big = funcinst(f, src == 's' ? ICGES : ICGED, 'w', v, maxflt);
-	funcjnz(f, big, join->phi.blk[1], join->phi.blk[0]);
+	funcjnz(f, big, NULL, join->phi.blk[1], join->phi.blk[0]);
 
 	funclabel(f, join->phi.blk[0]);
 	join->phi.val[0] = funcinst(f, op, dst, v, NULL);
@@ -616,16 +616,26 @@ funcjmp(struct func *f, struct block *l)
 }
 
 void
-funcjnz(struct func *f, struct value *v, struct block *l1, struct block *l2)
+funcjnz(struct func *f, struct value *v, struct type *t, struct block *l1, struct block *l2)
 {
 	struct block *b = f->end;
 
-	if (!b->jump.kind) {
-		b->jump.kind = JUMP_JNZ;
-		b->jump.arg = v;
-		b->jump.blk[0] = l1;
-		b->jump.blk[1] = l2;
+	if (b->jump.kind)
+		return;
+	if (t) {
+		assert(t->prop & PROPSCALAR);
+		/*
+		Ideally we would just do this conversion unconditionally,
+		but QBE is not currently able to optimize the conversion
+		away for int.
+		*/
+		if (t->prop & PROPFLOAT || t->size > 4)
+			v = convert(f, &typebool, t, v);
 	}
+	b->jump.kind = JUMP_JNZ;
+	b->jump.arg = v;
+	b->jump.blk[0] = l1;
+	b->jump.blk[1] = l2;
 }
 
 void
@@ -786,11 +796,14 @@ funcexpr(struct func *f, struct expr *e)
 		if (e->op == TLOR || e->op == TLAND) {
 			b[0] = mkblock("logic_right");
 			b[1] = mkblock("logic_join");
-			if (e->op == TLOR)
-				funcjnz(f, l, b[1], b[0]);
-			else
-				funcjnz(f, l, b[0], b[1]);
-			b[1]->phi.val[0] = l;
+			t = e->binary.l->type;
+			if (e->op == TLOR) {
+				funcjnz(f, l, t, b[1], b[0]);
+				b[1]->phi.val[0] = mkintconst(1);
+			} else {
+				funcjnz(f, l, t, b[0], b[1]);
+				b[1]->phi.val[0] = mkintconst(0);
+			}
 			b[1]->phi.blk[0] = f->end;
 			funclabel(f, b[0]);
 			r = funcexpr(f, e->binary.r);
@@ -882,7 +895,7 @@ funcexpr(struct func *f, struct expr *e)
 		b[2] = mkblock("cond_join");
 
 		v = funcexpr(f, e->base);
-		funcjnz(f, v, b[0], b[1]);
+		funcjnz(f, v, e->base->type, b[0], b[1]);
 
 		funclabel(f, b[0]);
 		b[2]->phi.val[0] = funcexpr(f, e->cond.t);
@@ -1030,10 +1043,10 @@ casesearch(struct func *f, int class, struct value *v, struct switchcase *c, str
 	// XXX: linear search if c->node.height < 4
 	key = mkintconst(c->node.key);
 	res = funcinst(f, class == 'w' ? ICEQW : ICEQL, 'w', v, key);
-	funcjnz(f, res, c->body, label[0]);
+	funcjnz(f, res, NULL, c->body, label[0]);
 	funclabel(f, label[0]);
 	res = funcinst(f, class == 'w' ? ICULTW : ICULTL, 'w', v, key);
-	funcjnz(f, res, label[1], label[2]);
+	funcjnz(f, res, NULL, label[1], label[2]);
 	funclabel(f, label[1]);
 	casesearch(f, class, v, c->node.child[0], defaultlabel);
 	funclabel(f, label[2]);
