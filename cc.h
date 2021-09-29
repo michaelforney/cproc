@@ -327,7 +327,7 @@ struct expr {
 			struct decl *decl;
 		} ident;
 		union {
-			uint64_t i;
+			uint64_t u;
 			double f;
 		} constant;
 		struct {

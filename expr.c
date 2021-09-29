@@ -80,7 +80,7 @@ mkconstexpr(struct type *t, uint64_t n)
 	struct expr *e;
 
 	e = mkexpr(EXPRCONST, t, NULL);
-	e->constant.i = n;
+	e->constant.u = n;
 
 	return e;
 }
@@ -184,7 +184,7 @@ nullpointer(struct expr *e)
 		return false;
 	if (!(e->type->prop & PROPINT) && (e->type->kind != TYPEPOINTER || e->type->base != &typevoid))
 		return false;
-	return e->constant.i == 0;
+	return e->constant.u == 0;
 }
 
 static struct expr *
@@ -527,10 +527,10 @@ primaryexpr(struct scope *s)
 		} else {
 			/* integer constant */
 			errno = 0;
-			e->constant.i = strtoull(tok.lit, &end, 0);
+			e->constant.u = strtoull(tok.lit, &end, 0);
 			if (errno)
 				error(&tok.loc, "invalid integer constant '%s': %s", tok.lit, strerror(errno));
-			e->type = inttype(e->constant.i, base == 10, end);
+			e->type = inttype(e->constant.u, base == 10, end);
 		}
 		next();
 		break;
@@ -1050,7 +1050,7 @@ condexpr(struct scope *s)
 	}
 	e = eval(e, EVALARITH);
 	if (e->kind == EXPRCONST && e->type->prop & PROPINT)
-		return exprconvert(e->constant.i ? l : r, t);
+		return exprconvert(e->constant.u ? l : r, t);
 	e = mkexpr(EXPRCOND, t, e);
 	e->cond.t = l;
 	e->cond.f = r;
@@ -1071,9 +1071,9 @@ intconstexpr(struct scope *s, bool allowneg)
 	e = constexpr(s);
 	if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 		error(&tok.loc, "not an integer constant expression");
-	if (!allowneg && e->type->basic.issigned && e->constant.i > INT64_MAX)
+	if (!allowneg && e->type->basic.issigned && e->constant.u > INT64_MAX)
 		error(&tok.loc, "integer constant expression cannot be negative");
-	return e->constant.i;
+	return e->constant.u;
 }
 
 static struct expr *

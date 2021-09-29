@@ -738,7 +738,7 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRCONST:
 		t = e->type;
 		if (t->prop & PROPINT || t->kind == TYPEPOINTER)
-			return mkintconst(e->constant.i);
+			return mkintconst(e->constant.u);
 		assert(t->prop & PROPFLOAT);
 		return mkfltconst(t->size == 4 ? VALUE_FLTCONST : VALUE_DBLCONST, e->constant.f);
 	case EXPRBITFIELD:
@@ -1321,7 +1321,7 @@ dataitem(struct expr *expr, uint64_t size)
 		if (expr->type->prop & PROPFLOAT)
 			printf("%c_%.17g", expr->type->size == 4 ? 's' : 'd', expr->constant.f);
 		else
-			printf("%" PRIu64, expr->constant.i);
+			printf("%" PRIu64, expr->constant.u);
 		break;
 	case EXPRSTRING:
 		w = expr->type->base->size;
@@ -1384,9 +1384,9 @@ emitdata(struct decl *d, struct init *init)
 			assert(init->expr->kind == EXPRCONST);
 			i = (init->start - cur->start) / cur->expr->type->base->size;
 			switch (cur->expr->type->base->size) {
-			case 1: cur->expr->string.data[i]   = init->expr->constant.i; break;
-			case 2: cur->expr->string.data16[i] = init->expr->constant.i; break;
-			case 4: cur->expr->string.data32[i] = init->expr->constant.i; break;
+			case 1: cur->expr->string.data[i]   = init->expr->constant.u; break;
+			case 2: cur->expr->string.data16[i] = init->expr->constant.u; break;
+			case 4: cur->expr->string.data32[i] = init->expr->constant.u; break;
 			}
 		}
 		start = cur->start + cur->bits.before / 8;
@@ -1402,7 +1402,7 @@ emitdata(struct decl *d, struct init *init)
 			/* XXX: little-endian specific */
 			assert(cur->expr->type->prop & PROPINT);
 			assert(cur->expr->kind == EXPRCONST);
-			bits |= cur->expr->constant.i << cur->bits.before % 8;
+			bits |= cur->expr->constant.u << cur->bits.before % 8;
 			for (offset = start; offset < end; ++offset, bits >>= 8)
 				printf("b %u, ", (unsigned)bits & 0xff);
 			/*

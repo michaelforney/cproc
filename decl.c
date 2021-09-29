@@ -220,7 +220,7 @@ tagspec(struct scope *s)
 				e = constexpr(s);
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "expected integer constant expression");
-				i = e->constant.i;
+				i = e->constant.u;
 				if (e->type->basic.issigned && i >= 1ull << 63) {
 					if (i < -1ull << 31)
 						goto invalid;
@@ -564,7 +564,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				e = eval(assignexpr(s), EVALARITH);
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "VLAs are not yet supported");
-				i = e->constant.i;
+				i = e->constant.u;
 				if (e->type->basic.issigned && i > INT64_MAX)
 					error(&tok.loc, "array length must be non-negative");
 				delexpr(e);
