@@ -1,0 +1,16 @@
+export
+function w $main() {
+@start.1
+@body.2
+	%.1 =w cnew 123, 123
+	jnz %.1, @if_true.3, @if_false.4
+@if_true.3
+	ret 1
+@if_false.4
+	%.2 =w cnew 456, 456
+	jnz %.2, @if_true.5, @if_false.6
+@if_true.5
+	ret 1
+@if_false.6
+	ret 0
+}

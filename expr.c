@@ -1007,49 +1007,53 @@ binaryexpr(struct scope *s, struct expr *l, int i)
 static struct expr *
 condexpr(struct scope *s)
 {
-	struct expr *r, *e;
-	struct type *t, *f;
+	struct expr *e, *l, *r;
+	struct type *t, *lt, *rt;
 	enum typequal tq;
 
-	r = binaryexpr(s, NULL, 0);
+	e = binaryexpr(s, NULL, 0);
 	if (!consume(TQUESTION))
-		return r;
-	e = mkexpr(EXPRCOND, NULL, r);
-	e->cond.t = expr(s);
+		return e;
+	l = expr(s);
 	expect(TCOLON, "in conditional expression");
-	e->cond.f = condexpr(s);
-	t = e->cond.t->type;
-	f = e->cond.f->type;
-	if (t == f) {
-		e->type = t;
-	} else if (t->prop & PROPARITH && f->prop & PROPARITH) {
-		e->type = commonreal(&e->cond.t, &e->cond.f);
-	} else if (t == &typevoid && f == &typevoid) {
-		e->type = &typevoid;
+	r = condexpr(s);
+
+	lt = l->type;
+	rt = r->type;
+	if (lt == rt) {
+		t = lt;
+	} else if (lt->prop & PROPARITH && rt->prop & PROPARITH) {
+		t = commonreal(&l, &r);
+	} else if (lt == &typevoid && rt == &typevoid) {
+		t = &typevoid;
 	} else {
-		e->cond.t = eval(e->cond.t, EVALARITH);
-		e->cond.f = eval(e->cond.f, EVALARITH);
-		if (nullpointer(e->cond.t) && f->kind == TYPEPOINTER) {
-			e->type = f;
-		} else if (nullpointer(e->cond.f) && t->kind == TYPEPOINTER) {
-			e->type = t;
-		} else if (t->kind == TYPEPOINTER && f->kind == TYPEPOINTER) {
-			tq = t->qual | f->qual;
-			t = t->base;
-			f = f->base;
-			if (t == &typevoid || f == &typevoid) {
-				e->type = &typevoid;
-			} else {
-				if (!typecompatible(t, f))
-					error(&tok.loc, "operands of conditional operator must have compatible types");
-				e->type = typecomposite(t, f);
-			}
-			e->type = mkpointertype(e->type, tq);
+		l = eval(l, EVALARITH);
+		r = eval(r, EVALARITH);
+		if (nullpointer(l) && rt->kind == TYPEPOINTER) {
+			t = rt;
+		} else if (nullpointer(r) && lt->kind == TYPEPOINTER) {
+			t = lt;
+		} else if (lt->kind == TYPEPOINTER && rt->kind == TYPEPOINTER) {
+			tq = lt->qual | rt->qual;
+			lt = lt->base;
+			rt = rt->base;
+			if (lt == &typevoid || rt == &typevoid)
+				t = &typevoid;
+			else if (typecompatible(lt, rt))
+				t = typecomposite(lt, rt);
+			else
+				error(&tok.loc, "operands of conditional operator must have compatible types");
+			t = mkpointertype(t, tq);
 		} else {
 			error(&tok.loc, "invalid operands to conditional operator");
 		}
 	}
-
+	e = eval(e, EVALARITH);
+	if (e->kind == EXPRCONST && e->type->prop & PROPINT)
+		return exprconvert(e->constant.i ? l : r, t);
+	e = mkexpr(EXPRCOND, t, e);
+	e->cond.t = l;
+	e->cond.f = r;
 	return e;
 }
 
