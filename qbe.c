@@ -1311,7 +1311,7 @@ dataitem(struct expr *expr, uint64_t size)
 		emitvalue(decl->value);
 		break;
 	case EXPRBINARY:
-		if (expr->binary.l->kind != EXPRUNARY || expr->binary.r->kind != EXPRCONST)
+		if (expr->op != TADD || expr->binary.l->kind != EXPRUNARY || expr->binary.r->kind != EXPRCONST)
 			error(&tok.loc, "initializer is not a constant expression");
 		dataitem(expr->binary.l, 0);
 		fputs(" + ", stdout);
