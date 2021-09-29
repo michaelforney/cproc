@@ -328,6 +328,7 @@ struct expr {
 		} ident;
 		union {
 			uint64_t u;
+			int64_t i;
 			double f;
 		} constant;
 		struct {
