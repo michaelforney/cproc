@@ -191,7 +191,7 @@ struct member {
 	char *name;
 	struct type *type;
 	enum typequal qual;
-	uint64_t offset;
+	unsigned long long offset;
 	struct bitfield bits;
 	struct member *next;
 };
@@ -200,7 +200,7 @@ struct type {
 	enum typekind kind;
 	enum typeprop prop;
 	int align;
-	uint64_t size;
+	unsigned long long size;
 	struct value *value;  /* used by the backend */
 	union {
 		struct type *base;
@@ -214,7 +214,7 @@ struct type {
 			_Bool issigned, iscomplex;
 		} basic;
 		struct {
-			uint64_t length;
+			unsigned long long length;
 		} array;
 		struct {
 			_Bool isprototype, isvararg, isnoreturn, paraminfo;
@@ -368,7 +368,7 @@ struct expr {
 };
 
 struct init {
-	uint64_t start, end;
+	unsigned long long start, end;
 	struct expr *expr;
 	struct bitfield bits;
 	struct init *next;
@@ -410,7 +410,7 @@ _Bool consume(int);
 
 struct type *mktype(enum typekind, enum typeprop);
 struct type *mkpointertype(struct type *, enum typequal);
-struct type *mkarraytype(struct type *, enum typequal, uint64_t);
+struct type *mkarraytype(struct type *, enum typequal, unsigned long long);
 
 _Bool typecompatible(struct type *, struct type *);
 _Bool typesame(struct type *, struct type *);
@@ -420,7 +420,7 @@ struct type *typecommonreal(struct type *, unsigned, struct type *, unsigned);
 struct type *typepromote(struct type *, unsigned);
 struct type *typeadjust(struct type *);
 enum typeprop typeprop(struct type *);
-struct member *typemember(struct type *, const char *, uint64_t *);
+struct member *typemember(struct type *, const char *, unsigned long long *);
 
 struct param *mkparam(char *, struct type *, enum typequal);
 
@@ -493,7 +493,7 @@ struct expr *eval(struct expr *, enum evalkind);
 
 /* init */
 
-struct init *mkinit(uint64_t, uint64_t, struct bitfield, struct expr *);
+struct init *mkinit(unsigned long long, unsigned long long, struct bitfield, struct expr *);
 struct init *parseinit(struct scope *, struct type *);
 
 void stmt(struct func *, struct scope *);

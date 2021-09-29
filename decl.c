@@ -261,7 +261,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 	enum typespec ts = SPECNONE;
 	enum typequal tq = QUALNONE;
 	int ntypes = 0;
-	uint64_t i;
+	unsigned long long i;
 
 	t = NULL;
 	if (sc)
@@ -464,7 +464,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 	struct type *t;
 	struct param **p;
 	struct expr *e;
-	uint64_t i;
+	unsigned long long i;
 	enum typequal tq;
 
 	while (consume(TMUL)) {
@@ -664,7 +664,7 @@ paramdecl(struct scope *s, struct param *params)
 }
 
 static void
-addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, uint64_t width)
+addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, unsigned long long width)
 {
 	struct type *t = b->type;
 	struct member *m;
@@ -774,7 +774,7 @@ structdecl(struct scope *s, struct structbuilder *b)
 {
 	struct qualtype base, mt;
 	char *name;
-	uint64_t width;
+	unsigned long long width;
 	int align;
 
 	if (staticassert(s))

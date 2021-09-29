@@ -553,7 +553,7 @@ static struct expr *condexpr(struct scope *);
 
 /* TODO: merge with init.c:designator() */
 static void
-designator(struct scope *s, struct type *t, uint64_t *offset)
+designator(struct scope *s, struct type *t, unsigned long long *offset)
 {
 	char *name;
 	struct member *m;
@@ -594,7 +594,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 	struct type *t;
 	struct member *m;
 	char *name;
-	uint64_t offset;
+	unsigned long long offset;
 
 	switch (kind) {
 	case BUILTINALLOCA:
@@ -717,7 +717,7 @@ postfixexpr(struct scope *s, struct expr *r)
 	struct type *t;
 	struct param *p;
 	struct member *m;
-	uint64_t offset;
+	unsigned long long offset;
 	enum typequal tq;
 	enum tokenkind op;
 	bool lvalue;

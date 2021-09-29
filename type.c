@@ -71,7 +71,7 @@ mkpointertype(struct type *base, enum typequal qual)
 }
 
 struct type *
-mkarraytype(struct type *base, enum typequal qual, uint64_t len)
+mkarraytype(struct type *base, enum typequal qual, unsigned long long len)
 {
 	struct type *t;
 
@@ -235,7 +235,7 @@ typeadjust(struct type *t)
 }
 
 struct member *
-typemember(struct type *t, const char *name, uint64_t *offset)
+typemember(struct type *t, const char *name, unsigned long long *offset)
 {
 	struct member *m, *sub;
 

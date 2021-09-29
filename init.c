@@ -7,7 +7,7 @@
 #include "cc.h"
 
 struct object {
-	uint64_t offset;
+	unsigned long long offset;
 	struct type *type;
 	union {
 		struct member *mem;
@@ -24,7 +24,7 @@ struct initparser {
 };
 
 struct init *
-mkinit(uint64_t start, uint64_t end, struct bitfield bits, struct expr *expr)
+mkinit(unsigned long long start, unsigned long long end, struct bitfield bits, struct expr *expr)
 {
 	struct init *init;
 
@@ -64,7 +64,7 @@ initadd(struct initparser *p, struct init *new)
 }
 
 static void
-updatearray(struct type *t, uint64_t i)
+updatearray(struct type *t, unsigned long long i)
 {
 	if (!t->incomplete)
 		return;
@@ -75,7 +75,7 @@ updatearray(struct type *t, uint64_t i)
 }
 
 static void
-subobj(struct initparser *p, struct type *t, uint64_t off)
+subobj(struct initparser *p, struct type *t, unsigned long long off)
 {
 	off += p->sub->offset;
 	if (++p->sub == p->obj + LEN(p->obj))

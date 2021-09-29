@@ -1128,7 +1128,7 @@ emittype(struct type *t)
 	fputs("type ", stdout);
 	emitvalue(t->value);
 	if (t == targ->typevalist) {
-		printf(" = align %d { %" PRIu64 " }\n", t->align, t->size);
+		printf(" = align %d { %llu }\n", t->align, t->size);
 		return;
 	}
 	fputs(" = { ", stdout);
@@ -1427,6 +1427,6 @@ emitdata(struct decl *d, struct init *init)
 	}
 	assert(offset <= d->type->size);
 	if (offset < d->type->size)
-		printf("z %" PRIu64 " ", d->type->size - offset);
+		printf("z %llu ", d->type->size - offset);
 	puts("}");
 }
