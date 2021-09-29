@@ -157,19 +157,19 @@ eval(struct expr *expr, enum evalkind kind)
 		case TADD:
 			if (r->kind == EXPRBINARY)
 				c = l, l = r, r = c;
+			/* fallthrough */
+		case TSUB:
 			if (r->kind != EXPRCONST)
 				break;
 			if (l->kind == EXPRCONST) {
 				binary(expr, expr->op, l, r);
-			} else if (l->kind == EXPRBINARY && l->type->kind == TYPEPOINTER && l->binary.r->kind == EXPRCONST) {
-				if (l->op == TADD || l->op == TSUB) {
-					/* (P ± C1) + C2  ->  P + (C2 ± C1) */
-					expr->binary.l = l->binary.l;
-					binary(expr->binary.r, l->op, r, l->binary.r);
-				}
+			} else if (l->kind == EXPRBINARY && l->type->kind == TYPEPOINTER && l->op == TADD && l->binary.r->kind == EXPRCONST) {
+				/* (P + C1) ± C2  ->  P + (C1 ± C2) */
+				binary(expr->binary.r, expr->op, l->binary.r, r);
+				expr->op = TADD;
+				expr->binary.l = l->binary.l;
 			}
 			break;
-		/* TODO: TSUB pointer handling */
 		case TLOR:
 			if (l->kind != EXPRCONST)
 				break;
