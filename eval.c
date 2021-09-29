@@ -184,13 +184,6 @@ eval(struct expr *expr, enum evalkind kind)
 			binary(expr, expr->op, l, r);
 		}
 		break;
-	case EXPRCOND:
-		l = expr->cond.t;
-		r = expr->cond.f;
-		c = eval(expr->base, kind);
-		if (c->kind != EXPRCONST)
-			break;
-		return eval(c->constant.i ? l : r, kind);
 	}
 
 	return expr;
