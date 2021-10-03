@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <ctype.h>
-#include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -511,10 +510,9 @@ primaryexpr(struct scope *s)
 		base = tok.lit[0] != '0' ? 10 : tolower(tok.lit[1]) == 'x' ? 16 : 8;
 		if (strpbrk(tok.lit, base == 16 ? ".pP" : ".eE")) {
 			/* floating constant */
-			errno = 0;
 			e->constant.f = strtod(tok.lit, &end);
-			if (errno && errno != ERANGE)
-				error(&tok.loc, "invalid floating constant '%s': %s", tok.lit, strerror(errno));
+			if (end == tok.lit)
+				error(&tok.loc, "invalid floating constant '%s'", tok.lit);
 			if (!end[0])
 				e->type = &typedouble;
 			else if (tolower(end[0]) == 'f' && !end[1])
@@ -525,10 +523,9 @@ primaryexpr(struct scope *s)
 				error(&tok.loc, "invalid floating constant suffix '%s'", end);
 		} else {
 			/* integer constant */
-			errno = 0;
 			e->constant.u = strtoull(tok.lit, &end, 0);
-			if (errno)
-				error(&tok.loc, "invalid integer constant '%s': %s", tok.lit, strerror(errno));
+			if (end == tok.lit)
+				error(&tok.loc, "invalid integer constant '%s'", tok.lit);
 			e->type = inttype(e->constant.u, base == 10, end);
 		}
 		next();
