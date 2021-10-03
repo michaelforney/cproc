@@ -58,7 +58,7 @@ void *
 xreallocarray(void *buf, size_t n, size_t m)
 {
 	buf = reallocarray(buf, n, m);
-	if (!buf)
+	if (!buf && n && m)
 		fatal("reallocarray:");
 
 	return buf;
@@ -70,7 +70,7 @@ xmalloc(size_t len)
 	void *buf;
 
 	buf = malloc(len);
-	if (!buf)
+	if (!buf && len)
 		fatal("malloc:");
 
 	return buf;
