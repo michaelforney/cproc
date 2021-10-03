@@ -5,29 +5,32 @@ function w $main() {
 	%.1 =w loadw $i
 	jnz %.1, @logic_join.4, @logic_right.3
 @logic_right.3
+	%.2 =w cnew 0, 0
 @logic_join.4
-	%.2 =w phi @body.2 1, @logic_right.3 0
-	jnz %.2, @if_true.5, @if_false.6
+	%.3 =w phi @body.2 1, @logic_right.3 %.2
+	jnz %.3, @if_true.5, @if_false.6
 @if_true.5
 	ret 1
 @if_false.6
-	%.3 =s loads $f
-	%.4 =w cnes %.3, s_0
-	jnz %.4, @logic_join.8, @logic_right.7
+	%.4 =s loads $f
+	%.5 =w cnes %.4, s_0
+	jnz %.5, @logic_join.8, @logic_right.7
 @logic_right.7
+	%.6 =w cnew 0, 0
 @logic_join.8
-	%.5 =w phi @if_false.6 1, @logic_right.7 0
-	jnz %.5, @if_true.9, @if_false.10
+	%.7 =w phi @if_false.6 1, @logic_right.7 %.6
+	jnz %.7, @if_true.9, @if_false.10
 @if_true.9
 	ret 1
 @if_false.10
-	%.6 =l loadl $p
-	%.7 =w cnel %.6, 0
-	jnz %.7, @logic_join.12, @logic_right.11
+	%.8 =l loadl $p
+	%.9 =w cnel %.8, 0
+	jnz %.9, @logic_join.12, @logic_right.11
 @logic_right.11
+	%.10 =w cnew 0, 0
 @logic_join.12
-	%.8 =w phi @if_false.10 1, @logic_right.11 0
-	jnz %.8, @if_true.13, @if_false.14
+	%.11 =w phi @if_false.10 1, @logic_right.11 %.10
+	jnz %.11, @if_true.13, @if_false.14
 @if_true.13
 	ret 1
 @if_false.14

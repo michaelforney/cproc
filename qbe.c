@@ -807,7 +807,7 @@ funcexpr(struct func *f, struct expr *e)
 			b[1]->phi.blk[0] = f->end;
 			funclabel(f, b[0]);
 			r = funcexpr(f, e->binary.r);
-			b[1]->phi.val[1] = r;
+			b[1]->phi.val[1] = convert(f, &typebool, e->binary.r->type, r);
 			b[1]->phi.blk[1] = f->end;
 			funclabel(f, b[1]);
 			functemp(f, &b[1]->phi.res);
