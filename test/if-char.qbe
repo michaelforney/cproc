@@ -1,0 +1,11 @@
+export
+function w $main() {
+@start.1
+@body.2
+	%.1 =w extub 256
+	jnz %.1, @if_true.3, @if_false.4
+@if_true.3
+	ret 1
+@if_false.4
+	ret 0
+}

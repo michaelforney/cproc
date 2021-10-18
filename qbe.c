@@ -627,7 +627,9 @@ funcjnz(struct func *f, struct value *v, struct type *t, struct block *l1, struc
 		but QBE is not currently able to optimize the conversion
 		away for int.
 		*/
-		if (t->prop & PROPFLOAT || t->size > 4)
+		if (t->prop & PROPINT && t->size < 4)
+			v = convert(f, &typeint, t, v);
+		else if (t->prop & PROPFLOAT || t->size > 4)
 			v = convert(f, &typebool, t, v);
 	}
 	b->jump.kind = JUMP_JNZ;
