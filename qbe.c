@@ -937,9 +937,6 @@ funcexpr(struct func *f, struct expr *e)
 				error(&tok.loc, "va_arg with non-scalar type is not yet supported");
 			l = funcexpr(f, e->base);
 			return funcinst(f, IVAARG, qbetype(e->type).base, l, NULL);
-		case BUILTINVAEND:
-			/* no-op */
-			break;
 		case BUILTINALLOCA:
 			l = funcexpr(f, e->base);
 			return funcinst(f, IALLOC16, ptrclass, l, NULL);

@@ -668,8 +668,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e = assignexpr(s);
 		if (!typesame(e->type, typeadjvalist))
 			error(&tok.loc, "va_end argument must have type va_list");
-		e = mkexpr(EXPRBUILTIN, &typevoid, NULL);
-		e->builtin.kind = BUILTINVAEND;
+		e = exprconvert(e, &typevoid);
 		break;
 	case BUILTINVASTART:
 		e = mkexpr(EXPRBUILTIN, &typevoid, assignexpr(s));
