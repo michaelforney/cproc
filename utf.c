@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include "utf.h"
@@ -27,7 +28,8 @@ utf8enc(unsigned char *s, uint_least32_t c)
 		s[3] = 0x80 | c & 0x3f;
 		return 4;
 	}
-	return -1;
+	assert(0);
+	return 0;
 }
 
 size_t
@@ -62,6 +64,8 @@ utf8dec(uint_least32_t *c, const char *s, size_t n)
 			return -1;
 		x = x << 6 | b & 0x3f;
 	}
+	if (x >= 0x110000 || x - 0xd800 < 0x0200)
+		return -1;
 	*c = x;
 	return l;
 }
@@ -79,5 +83,6 @@ utf16enc(uint_least16_t *s, uint_least32_t c)
 		s[1] = 0xdc00 | c & 0x3ff;
 		return 2;
 	}
-	return -1;
+	assert(0);
+	return 0;
 }
