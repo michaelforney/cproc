@@ -364,6 +364,7 @@ decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc,
 {
 	uint_least32_t c;
 	size_t n;
+	int i;
 	const char *s = src;
 
 	if (*s == '\\') {
@@ -392,8 +393,9 @@ decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc,
 		default:
 			assert(isodigit(*s));
 			c = 0;
-			do c = c * 8 + (*s - '0');
-			while (isodigit(*++s));
+			i = 0;
+			do c = c * 8 + (*s++ - '0');
+			while (++i < 3 && isodigit(*s));
 			if (hexoct)
 				*hexoct = true;
 		}

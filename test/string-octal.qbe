@@ -1,0 +1,2 @@
+data $.Lstring.1 = align 1 { b "\001\012SS4\000", }
+export data $s = align 8 { l $.Lstring.1, }
