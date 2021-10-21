@@ -7,21 +7,56 @@
 #include "util.h"
 #include "cc.h"
 
+/* 6.8.1 Labeled statements */
 static bool
-gotolabel(struct func *f)
+label(struct func *f, struct scope *s)
 {
 	char *name;
 	struct gotolabel *g;
+	struct block *b;
+	uint64_t i;
 
-	if (tok.kind != TIDENT)
+	switch (tok.kind) {
+	case TCASE:
+		next();
+		if (!s->switchcases)
+			error(&tok.loc, "'case' label must be in switch");
+		b = mkblock("switch_case");
+		funclabel(f, b);
+		i = intconstexpr(s, true);
+		switchcase(s->switchcases, i, b);
+		expect(TCOLON, "after case expression");
+		break;
+	case TDEFAULT:
+		next();
+		if (!s->switchcases)
+			error(&tok.loc, "'default' label must be in switch");
+		if (s->switchcases->defaultlabel)
+			error(&tok.loc, "multiple 'default' labels");
+		expect(TCOLON, "after 'default'");
+		s->switchcases->defaultlabel = mkblock("switch_default");
+		funclabel(f, s->switchcases->defaultlabel);
+		break;
+	case TIDENT:
+		name = tok.lit;
+		if (!peek(TCOLON))
+			return false;
+		g = funcgoto(f, name);
+		g->defined = true;
+		funclabel(f, g->label);
+		break;
+	default:
 		return false;
-	name = tok.lit;
-	if (!peek(TCOLON))
-		return false;
-	g = funcgoto(f, name);
-	g->defined = true;
-	funclabel(f, g->label);
+	}
 	return true;
+}
+
+static void
+labelstmt(struct func *f, struct scope *s)
+{
+	while (label(f, s))
+		;
+	stmt(f, s);
 }
 
 /* 6.8 Statements and blocks */
@@ -34,41 +69,14 @@ stmt(struct func *f, struct scope *s)
 	struct value *v;
 	struct block *b[4];
 	struct switchcases swtch;
-	uint64_t i;
 
-	while (gotolabel(f))
-		;
 	switch (tok.kind) {
-	/* 6.8.1 Labeled statements */
-	case TCASE:
-		next();
-		if (!s->switchcases)
-			error(&tok.loc, "'case' label must be in switch");
-		b[0] = mkblock("switch_case");
-		funclabel(f, b[0]);
-		i = intconstexpr(s, true);
-		switchcase(s->switchcases, i, b[0]);
-		expect(TCOLON, "after case expression");
-		stmt(f, s);
-		break;
-	case TDEFAULT:
-		next();
-		if (!s->switchcases)
-			error(&tok.loc, "'default' label must be in switch");
-		if (s->switchcases->defaultlabel)
-			error(&tok.loc, "multiple 'default' labels");
-		expect(TCOLON, "after 'default'");
-		s->switchcases->defaultlabel = mkblock("switch_default");
-		funclabel(f, s->switchcases->defaultlabel);
-		stmt(f, s);
-		break;
-
 	/* 6.8.2 Compound statement */
 	case TLBRACE:
 		next();
 		s = mkscope(s);
 		while (tok.kind != TRBRACE) {
-			if (gotolabel(f) || !decl(s, f))
+			if (!label(f, s) && !decl(s, f))
 				stmt(f, s);
 		}
 		s = delscope(s);
@@ -105,7 +113,7 @@ stmt(struct func *f, struct scope *s)
 
 		funclabel(f, b[0]);
 		s = mkscope(s);
-		stmt(f, s);
+		labelstmt(f, s);
 		s = delscope(s);
 
 		if (consume(TELSE)) {
@@ -113,7 +121,7 @@ stmt(struct func *f, struct scope *s)
 			funcjmp(f, b[2]);
 			funclabel(f, b[1]);
 			s = mkscope(s);
-			stmt(f, s);
+			labelstmt(f, s);
 			s = delscope(s);
 			funclabel(f, b[2]);
 		} else {
@@ -145,7 +153,7 @@ stmt(struct func *f, struct scope *s)
 		s = mkscope(s);
 		s->breaklabel = b[1];
 		s->switchcases = &swtch;
-		stmt(f, s);
+		labelstmt(f, s);
 		funcjmp(f, b[1]);
 
 		funclabel(f, b[0]);
@@ -178,7 +186,7 @@ stmt(struct func *f, struct scope *s)
 		s = mkscope(s);
 		s->continuelabel = b[0];
 		s->breaklabel = b[2];
-		stmt(f, s);
+		labelstmt(f, s);
 		s = delscope(s);
 		funcjmp(f, b[0]);
 		funclabel(f, b[2]);
@@ -196,7 +204,7 @@ stmt(struct func *f, struct scope *s)
 		s->continuelabel = b[1];
 		s->breaklabel = b[2];
 		funclabel(f, b[0]);
-		stmt(f, s);
+		labelstmt(f, s);
 		s = delscope(s);
 
 		expect(TWHILE, "after 'do' statement");
@@ -250,7 +258,7 @@ stmt(struct func *f, struct scope *s)
 		s = mkscope(s);
 		s->breaklabel = b[3];
 		s->continuelabel = b[2];
-		stmt(f, s);
+		labelstmt(f, s);
 		s = delscope(s);
 
 		funclabel(f, b[2]);
