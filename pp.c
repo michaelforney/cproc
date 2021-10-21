@@ -436,86 +436,96 @@ stringize(struct array *buf, struct token *t)
 	}
 }
 
+static void expandfunc(struct macro *);
+
 static bool
 expand(struct token *t)
 {
 	struct macro *m;
-	struct macroparam *p;
-	struct macroarg *arg;
-	struct array str, tok;
-	size_t i, depth, paren;
 	bool space;
 
 	if (t->kind != TIDENT)
 		return false;
 	m = macroget(t->lit);
-	if (!m || m->hide || t->hide) {
+	if (!m || m->hide)
 		t->hide = true;
+	if (t->hide)
 		return false;
-	}
 	space = t->space;
 	if (m->kind == MACROFUNC) {
 		if (!peekparen())
 			return false;
-		/* read macro arguments */
-		paren = 0;
-		depth = macrodepth;
-		tok = (struct array){0};
-		arg = xreallocarray(NULL, m->nparam, sizeof(*arg));
-		t = rawnext();
-		for (i = 0; i < m->nparam; ++i) {
-			p = &m->param[i];
-			if (p->flags & PARAMSTR) {
-				str = (struct array){0};
-				arrayaddbuf(&str, "\"", 1);
-			}
-			arg[i].ntoken = 0;
-			for (;;) {
-				if (t->kind == TEOF)
-					error(&t->loc, "EOF when reading macro parameters");
-				if (macrodepth <= depth) {
-					/* adjust current macro depth, in case it got shallower */
-					depth = macrodepth;
-					if (paren == 0 && (t->kind == TRPAREN || t->kind == TCOMMA && !(p->flags & PARAMVAR)))
-						break;
-					switch (t->kind) {
-					case TLPAREN: ++paren; break;
-					case TRPAREN: --paren; break;
-					}
-					if (p->flags & PARAMSTR)
-						stringize(&str, t);
-				}
-				if (p->flags & PARAMTOK && !expand(t)) {
-					arrayaddbuf(&tok, t, sizeof(*t));
-					++arg[i].ntoken;
-				}
-				t = rawnext();
-			}
-			if (p->flags & PARAMSTR) {
-				arrayaddbuf(&str, "\"", 2);
-				arg[i].str = (struct token){
-					.kind = TSTRINGLIT,
-					.lit = str.val,
-				};
-			}
-			if (t->kind == TRPAREN)
-				break;
-			t = rawnext();
-		}
-		if (i + 1 < m->nparam)
-			error(&t->loc, "not enough arguments for macro '%s'", m->name);
-		if (t->kind != TRPAREN)
-			error(&t->loc, "too many arguments for macro '%s'", m->name);
-		for (i = 0, t = tok.val; i < m->nparam; ++i) {
-			arg[i].token = t;
-			t += arg[i].ntoken;
-		}
-		m->arg = arg;
+		expandfunc(m);
 	}
 	ctxpush(m->token, m->ntoken, m, space);
 	m->hide = true;
 	++macrodepth;
 	return true;
+}
+
+static void
+expandfunc(struct macro *m)
+{
+	struct macroparam *p;
+	struct macroarg *arg;
+	struct array str, tok;
+	size_t i, depth, paren;
+	struct token *t;
+
+	/* read macro arguments */
+	paren = 0;
+	depth = macrodepth;
+	tok = (struct array){0};
+	arg = xreallocarray(NULL, m->nparam, sizeof(*arg));
+	t = rawnext();
+	for (i = 0; i < m->nparam; ++i) {
+		p = &m->param[i];
+		if (p->flags & PARAMSTR) {
+			str = (struct array){0};
+			arrayaddbuf(&str, "\"", 1);
+		}
+		arg[i].ntoken = 0;
+		for (;;) {
+			if (t->kind == TEOF)
+				error(&t->loc, "EOF when reading macro parameters");
+			if (macrodepth <= depth) {
+				/* adjust current macro depth, in case it got shallower */
+				depth = macrodepth;
+				if (paren == 0 && (t->kind == TRPAREN || t->kind == TCOMMA && !(p->flags & PARAMVAR)))
+					break;
+				switch (t->kind) {
+				case TLPAREN: ++paren; break;
+				case TRPAREN: --paren; break;
+				}
+				if (p->flags & PARAMSTR)
+					stringize(&str, t);
+			}
+			if (p->flags & PARAMTOK && !expand(t)) {
+				arrayaddbuf(&tok, t, sizeof(*t));
+				++arg[i].ntoken;
+			}
+			t = rawnext();
+		}
+		if (p->flags & PARAMSTR) {
+			arrayaddbuf(&str, "\"", 2);
+			arg[i].str = (struct token){
+				.kind = TSTRINGLIT,
+				.lit = str.val,
+			};
+		}
+		if (t->kind == TRPAREN)
+			break;
+		t = rawnext();
+	}
+	if (i + 1 < m->nparam)
+		error(&t->loc, "not enough arguments for macro '%s'", m->name);
+	if (t->kind != TRPAREN)
+		error(&t->loc, "too many arguments for macro '%s'", m->name);
+	for (i = 0, t = tok.val; i < m->nparam; ++i) {
+		arg[i].token = t;
+		t += arg[i].ntoken;
+	}
+	m->arg = arg;
 }
 
 static void
