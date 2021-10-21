@@ -209,7 +209,7 @@ stmt(struct func *f, struct scope *s)
 		expect(TRPAREN, "after expression");
 
 		v = funcexpr(f, e);
-		funcjnz(f, v, t, label[0], label[2]);  // XXX: compare to 0
+		funcjnz(f, v, t, label[0], label[2]);
 		funclabel(f, label[2]);
 		s = delscope(s);
 		expect(TSEMICOLON, "after 'do' statement");
