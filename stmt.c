@@ -32,7 +32,7 @@ stmt(struct func *f, struct scope *s)
 	struct expr *e;
 	struct type *t;
 	struct value *v;
-	struct block *label[4];
+	struct block *b[4];
 	struct switchcases swtch;
 	uint64_t i;
 
@@ -44,10 +44,10 @@ stmt(struct func *f, struct scope *s)
 		next();
 		if (!s->switchcases)
 			error(&tok.loc, "'case' label must be in switch");
-		label[0] = mkblock("switch_case");
-		funclabel(f, label[0]);
+		b[0] = mkblock("switch_case");
+		funclabel(f, b[0]);
 		i = intconstexpr(s, true);
-		switchcase(s->switchcases, i, label[0]);
+		switchcase(s->switchcases, i, b[0]);
 		expect(TCOLON, "after case expression");
 		stmt(f, s);
 		break;
@@ -99,25 +99,25 @@ stmt(struct func *f, struct scope *s)
 		delexpr(e);
 		expect(TRPAREN, "after expression");
 
-		label[0] = mkblock("if_true");
-		label[1] = mkblock("if_false");
-		funcjnz(f, v, t, label[0], label[1]);
+		b[0] = mkblock("if_true");
+		b[1] = mkblock("if_false");
+		funcjnz(f, v, t, b[0], b[1]);
 
-		funclabel(f, label[0]);
+		funclabel(f, b[0]);
 		s = mkscope(s);
 		stmt(f, s);
 		s = delscope(s);
 
 		if (consume(TELSE)) {
-			label[2] = mkblock("if_join");
-			funcjmp(f, label[2]);
-			funclabel(f, label[1]);
+			b[2] = mkblock("if_join");
+			funcjmp(f, b[2]);
+			funclabel(f, b[1]);
 			s = mkscope(s);
 			stmt(f, s);
 			s = delscope(s);
-			funclabel(f, label[2]);
+			funclabel(f, b[2]);
 		} else {
-			funclabel(f, label[1]);
+			funclabel(f, b[1]);
 		}
 		s = delscope(s);
 		break;
@@ -137,22 +137,22 @@ stmt(struct func *f, struct scope *s)
 		swtch.type = e->type;
 		swtch.defaultlabel = NULL;
 
-		label[0] = mkblock("switch_cond");
-		label[1] = mkblock("switch_join");
+		b[0] = mkblock("switch_cond");
+		b[1] = mkblock("switch_join");
 
 		v = funcexpr(f, e);
-		funcjmp(f, label[0]);
+		funcjmp(f, b[0]);
 		s = mkscope(s);
-		s->breaklabel = label[1];
+		s->breaklabel = b[1];
 		s->switchcases = &swtch;
 		stmt(f, s);
-		funcjmp(f, label[1]);
+		funcjmp(f, b[1]);
 
-		funclabel(f, label[0]);
-		funcswitch(f, v, &swtch, swtch.defaultlabel ? swtch.defaultlabel : label[1]);
+		funclabel(f, b[0]);
+		funcswitch(f, v, &swtch, swtch.defaultlabel ? swtch.defaultlabel : b[1]);
 		s = delscope(s);
 
-		funclabel(f, label[1]);
+		funclabel(f, b[1]);
 		s = delscope(s);
 		break;
 
@@ -167,41 +167,41 @@ stmt(struct func *f, struct scope *s)
 			error(&tok.loc, "controlling expression of loop must have scalar type");
 		expect(TRPAREN, "after expression");
 
-		label[0] = mkblock("while_cond");
-		label[1] = mkblock("while_body");
-		label[2] = mkblock("while_join");
+		b[0] = mkblock("while_cond");
+		b[1] = mkblock("while_body");
+		b[2] = mkblock("while_join");
 
-		funclabel(f, label[0]);
+		funclabel(f, b[0]);
 		v = funcexpr(f, e);
-		funcjnz(f, v, t, label[1], label[2]);
-		funclabel(f, label[1]);
+		funcjnz(f, v, t, b[1], b[2]);
+		funclabel(f, b[1]);
 		s = mkscope(s);
-		s->continuelabel = label[0];
-		s->breaklabel = label[2];
+		s->continuelabel = b[0];
+		s->breaklabel = b[2];
 		stmt(f, s);
 		s = delscope(s);
-		funcjmp(f, label[0]);
-		funclabel(f, label[2]);
+		funcjmp(f, b[0]);
+		funclabel(f, b[2]);
 		s = delscope(s);
 		break;
 	case TDO:
 		next();
 
-		label[0] = mkblock("do_body");
-		label[1] = mkblock("do_cond");
-		label[2] = mkblock("do_join");
+		b[0] = mkblock("do_body");
+		b[1] = mkblock("do_cond");
+		b[2] = mkblock("do_join");
 
 		s = mkscope(s);
 		s = mkscope(s);
-		s->continuelabel = label[1];
-		s->breaklabel = label[2];
-		funclabel(f, label[0]);
+		s->continuelabel = b[1];
+		s->breaklabel = b[2];
+		funclabel(f, b[0]);
 		stmt(f, s);
 		s = delscope(s);
 
 		expect(TWHILE, "after 'do' statement");
 		expect(TLPAREN, "after 'while'");
-		funclabel(f, label[1]);
+		funclabel(f, b[1]);
 		e = expr(s);
 		t = e->type;
 		if (!(t->prop & PROPSCALAR))
@@ -209,8 +209,8 @@ stmt(struct func *f, struct scope *s)
 		expect(TRPAREN, "after expression");
 
 		v = funcexpr(f, e);
-		funcjnz(f, v, t, label[0], label[2]);
-		funclabel(f, label[2]);
+		funcjnz(f, v, t, b[0], b[2]);
+		funclabel(f, b[2]);
 		s = delscope(s);
 		expect(TSEMICOLON, "after 'do' statement");
 		break;
@@ -227,39 +227,39 @@ stmt(struct func *f, struct scope *s)
 			expect(TSEMICOLON, NULL);
 		}
 
-		label[0] = mkblock("for_cond");
-		label[1] = mkblock("for_body");
-		label[2] = mkblock("for_cont");
-		label[3] = mkblock("for_join");
+		b[0] = mkblock("for_cond");
+		b[1] = mkblock("for_body");
+		b[2] = mkblock("for_cont");
+		b[3] = mkblock("for_join");
 
-		funclabel(f, label[0]);
+		funclabel(f, b[0]);
 		if (tok.kind != TSEMICOLON) {
 			e = expr(s);
 			t = e->type;
 			if (!(t->prop & PROPSCALAR))
 				error(&tok.loc, "controlling expression of loop must have scalar type");
 			v = funcexpr(f, e);
-			funcjnz(f, v, t, label[1], label[3]);
+			funcjnz(f, v, t, b[1], b[3]);
 			delexpr(e);
 		}
 		expect(TSEMICOLON, NULL);
 		e = tok.kind == TRPAREN ? NULL : expr(s);
 		expect(TRPAREN, NULL);
 
-		funclabel(f, label[1]);
+		funclabel(f, b[1]);
 		s = mkscope(s);
-		s->breaklabel = label[3];
-		s->continuelabel = label[2];
+		s->breaklabel = b[3];
+		s->continuelabel = b[2];
 		stmt(f, s);
 		s = delscope(s);
 
-		funclabel(f, label[2]);
+		funclabel(f, b[2]);
 		if (e) {
 			funcexpr(f, e);
 			delexpr(e);
 		}
-		funcjmp(f, label[0]);
-		funclabel(f, label[3]);
+		funcjmp(f, b[0]);
+		funclabel(f, b[3]);
 		s = delscope(s);
 		break;
 
