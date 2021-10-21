@@ -612,7 +612,15 @@ primaryexpr(struct scope *s)
 		break;
 	case TNUMBER:
 		e = mkexpr(EXPRCONST, NULL, NULL);
-		base = tok.lit[0] != '0' ? 10 : tolower(tok.lit[1]) == 'x' ? 16 : 8;
+		if (tok.lit[0] == '0') {
+			switch (tolower(tok.lit[1])) {
+			case 'x': base = 16; break;
+			case 'b': base = 2; break;
+			default: base = 8; break;
+			}
+		} else {
+			base = 10;
+		}
 		if (strpbrk(tok.lit, base == 16 ? ".pP" : ".eE")) {
 			/* floating constant */
 			e->constant.f = strtod(tok.lit, &end);
@@ -627,9 +635,12 @@ primaryexpr(struct scope *s)
 			else
 				error(&tok.loc, "invalid floating constant suffix '%s'", end);
 		} else {
+			src = tok.lit;
+			if (base == 2)
+				src += 2;
 			/* integer constant */
-			e->constant.u = strtoull(tok.lit, &end, 0);
-			if (end == tok.lit)
+			e->constant.u = strtoull(src, &end, base);
+			if (end == src)
 				error(&tok.loc, "invalid integer constant '%s'", tok.lit);
 			e->type = inttype(e->constant.u, base == 10, end);
 		}
