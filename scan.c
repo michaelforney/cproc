@@ -388,18 +388,11 @@ again:
 	case 'u':
 		s->usebuf = true;
 		nextchar(s);
-		switch (s->chr) {
-		case '\'':
-			return charconst(s);
-		case '8':
-			if (s->buf.str[0] != 'u')
-				break;
+		if (s->buf.str[0] == 'u' && s->chr == '8')
 			nextchar(s);
-			if (s->chr != '"')
-				break;
-			/* fallthrough */
-		case '"':
-			return stringlit(s);
+		switch (s->chr) {
+		case '\'': return charconst(s);
+		case '"': return stringlit(s);
 		}
 		return ident(s);
 	case EOF:

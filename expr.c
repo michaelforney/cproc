@@ -596,11 +596,11 @@ primaryexpr(struct scope *s)
 		break;
 	case TCHARCONST:
 		src = tok.lit;
-		t = &typeint;
 		switch (*src) {
 		case 'L': ++src; t = targ->typewchar; break;
-		case 'u': ++src; t = &typeushort;     break;
-		case 'U': ++src; t = &typeuint;       break;
+		case 'u': ++src; t = *src == '8' ? ++src, &typeuchar : &typeushort; break;
+		case 'U': ++src; t = &typeuint; break;
+		default: t = &typeint;
 		}
 		assert(*src == '\'');
 		++src;
