@@ -1351,6 +1351,23 @@ dataitem(struct expr *expr, uint64_t size)
 }
 
 void
+emittoplevelasm(unsigned char *text, size_t sz) {
+	unsigned char c;
+	size_t i;
+
+	fputs("asm \"\n", stdout);
+	for (i = 0; i < sz; i++) {
+		c = text[i];
+		if (c == '\\' || c == '"') {
+			fputc('\\', stdout);
+			continue;
+		}
+		fputc(c, stdout);
+	}
+	fputs("\"\n", stdout);
+}
+
+void
 emitdata(struct decl *d, struct init *init)
 {
 	struct init *cur;

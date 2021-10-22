@@ -22,6 +22,7 @@ $(objdir)/cproc: $(DRIVER_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(DRIVER_OBJ)
 
 SRC=\
+	asm.c\
 	decl.c\
 	eval.c\
 	expr.c\
@@ -45,6 +46,7 @@ OBJ=$(SRC:%.c=$(objdir)/%.o)
 $(objdir)/cproc-qbe: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OBJ)
 
+$(objdir)/asm.o     : asm.c     util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ asm.c
 $(objdir)/decl.o    : decl.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ decl.c
 $(objdir)/driver.o  : driver.c  util.h config.h   $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ driver.c
 $(objdir)/eval.o    : eval.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ eval.c

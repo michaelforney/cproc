@@ -58,7 +58,9 @@ main(int argc, char *argv[])
 	} else {
 		scopeinit();
 		while (tok.kind != TEOF) {
-			if (!decl(&filescope, NULL)) {
+			if (tok.kind == T__ASM__) {
+				toplevelasm();
+			} else if (!decl(&filescope, NULL)) {
 				if (tok.kind == TSEMICOLON)
 					error(&tok.loc, "unexpected ';' at top-level");
 				error(&tok.loc, "expected declaration or function definition");

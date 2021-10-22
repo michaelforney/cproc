@@ -358,7 +358,7 @@ isodigit(int c)
 	return '0' <= c && c <= '8';
 }
 
-static unsigned
+unsigned
 unescape(char **p)
 {
 	unsigned c;

@@ -448,6 +448,10 @@ extern const struct target *targ;
 
 void targinit(const char *);
 
+/* asm */
+
+void toplevelasm(void);
+
 /* decl */
 
 struct decl *mkdecl(enum declkind, struct type *, enum typequal, enum linkage);
@@ -474,6 +478,7 @@ extern struct scope filescope;
 
 /* expr */
 
+unsigned unescape(char **p);
 struct expr *expr(struct scope *);
 struct expr *assignexpr(struct scope *);
 struct expr *constexpr(struct scope *);
@@ -534,5 +539,7 @@ struct gotolabel *funcgoto(struct func *, char *);
 void funcswitch(struct func *, struct value *, struct switchcases *, struct block *);
 void funcinit(struct func *, struct decl *, struct init *);
 
+
+void emittoplevelasm(unsigned char *, size_t);
 void emitfunc(struct func *, _Bool);
 void emitdata(struct decl *,  struct init *);
