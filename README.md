@@ -5,7 +5,7 @@
 `cproc` is a [C11] compiler using [QBE] as a backend. It is released
 under the [ISC] license.
 
-Several GNU C [extensions] are also implemented.
+Some [C23 features] and [GNU C extensions] are also implemented.
 
 There is still much to do, but it currently implements most of the
 language and is capable of [building software] including itself, mcpp,
@@ -115,7 +115,8 @@ Patches are greatly appreciated. Send them to the mailing list
 [QBE]: https://c9x.me/compile/
 [C11]: http://port70.net/~nsz/c/c11/n1570.html
 [ISC]: https://git.sr.ht/~mcf/cproc/blob/master/LICENSE
-[extensions]: https://man.sr.ht/~mcf/cproc/doc/extensions.md
+[C23 features]: https://man.sr.ht/~mcf/cproc/doc/c23.md
+[GNU C extensions]: https://man.sr.ht/~mcf/cproc/doc/extensions.md
 [building software]: https://man.sr.ht/~mcf/cproc/doc/software.md
 [8cc]: https://github.com/rui314/8cc
 [c]: https://github.com/andrewchambers/c
