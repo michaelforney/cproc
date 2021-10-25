@@ -1,0 +1,9 @@
+export
+function w $main() {
+@start.1
+	%.1 =l alloc16 1
+@body.2
+	%.2 =l extsw 16
+	%.3 =l urem %.1, %.2
+	ret %.3
+}

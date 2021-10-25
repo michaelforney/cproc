@@ -1,0 +1,1 @@
+export data $s = align 32 { w 123, z 28, b "abc\000", z 28, }

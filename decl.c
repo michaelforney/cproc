@@ -379,7 +379,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 				*align = other->align;
 			} else {
 				i = intconstexpr(s, false);
-				if (i & (i - 1) || i > 16)
+				if (i & (i - 1))
 					error(&tok.loc, "invalid alignment: %d", i);
 				if (i)
 					*align = (int)i;
@@ -960,8 +960,10 @@ decl(struct scope *s, struct func *f)
 			if (init || d->linkage == LINKNONE) {
 				if (d->linkage != LINKNONE || sc & SCSTATIC)
 					emitdata(d, init);
-				else
+				else if (d->align <= 16)
 					funcinit(f, d, init);
+				else
+					error(&tok.loc, "unsupported alignment %d for object with automatic storage duration", d->align);
 				d->defined = true;
 				if (d->tentative.next)
 					listremove(&d->tentative);
