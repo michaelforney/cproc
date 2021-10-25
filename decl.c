@@ -960,10 +960,8 @@ decl(struct scope *s, struct func *f)
 			if (init || d->linkage == LINKNONE) {
 				if (d->linkage != LINKNONE || sc & SCSTATIC)
 					emitdata(d, init);
-				else if (d->align <= 16)
-					funcinit(f, d, init);
 				else
-					error(&tok.loc, "unsupported alignment %d for object with automatic storage duration", d->align);
+					funcinit(f, d, init);
 				d->defined = true;
 				if (d->tentative.next)
 					listremove(&d->tentative);

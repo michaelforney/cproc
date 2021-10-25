@@ -1,0 +1,11 @@
+export
+function w $main() {
+@start.1
+	%.1 =l alloc16 17
+	%.2 =l add %.1, 16
+	%.3 =l and %.2, 18446744073709551584
+@body.2
+	%.4 =l extsw 32
+	%.5 =l urem %.3, %.4
+	ret %.5
+}

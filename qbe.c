@@ -259,6 +259,7 @@ funcalloc(struct func *f, struct decl *d)
 {
 	enum instkind op;
 	struct inst *inst;
+	unsigned long long size;
 
 	assert(!d->type->incomplete);
 	assert(d->type->size > 0);
@@ -266,17 +267,24 @@ funcalloc(struct func *f, struct decl *d)
 		d->align = d->type->align;
 	else if (d->align < d->type->align)
 		error(&tok.loc, "object requires alignment %d, which is stricter than %d", d->type->align, d->align);
+	size = d->type->size;
 	switch (d->align) {
 	case 1:
 	case 2:
 	case 4:  op = IALLOC4; break;
 	case 8:  op = IALLOC8; break;
+	default: size += d->align - 16; /* fallthrough */
 	case 16: op = IALLOC16; break;
-	default:
-		fatal("internal error: invalid alignment: %d\n", d->align);
 	}
 	inst = mkinst(f, op, ptrclass, mkintconst(size), NULL);
 	arrayaddptr(&f->start->insts, inst);
+	if (d->align > 16) {
+		/* TODO: implement alloc32 in QBE and use that instead */
+		inst = mkinst(f, IADD, ptrclass, &inst->res, mkintconst(d->align - 16));
+		arrayaddptr(&f->start->insts, inst);
+		inst = mkinst(f, IAND, ptrclass, &inst->res, mkintconst(-d->align));
+		arrayaddptr(&f->start->insts, inst);
+	}
 	d->value = &inst->res;
 }
 
