@@ -225,13 +225,11 @@ static const char *const instname[] = {
 #undef OP
 };
 
-static struct value *
-funcinst(struct func *f, int op, int class, struct value *arg0, struct value *arg1)
+static struct inst *
+mkinst(struct func *f, int op, int class, struct value *arg0, struct value *arg1)
 {
 	struct inst *inst;
 
-	if (f->end->jump.kind)
-		return NULL;
 	inst = xmalloc(sizeof(*inst));
 	inst->kind = op;
 	inst->class = class;
@@ -241,8 +239,18 @@ funcinst(struct func *f, int op, int class, struct value *arg0, struct value *ar
 		functemp(f, &inst->res);
 	else
 		inst->res.kind = VALUE_NONE;
-	arrayaddptr(&f->end->insts, inst);
+	return inst;
+}
 
+static struct value *
+funcinst(struct func *f, int op, int class, struct value *arg0, struct value *arg1)
+{
+	struct inst *inst;
+
+	if (f->end->jump.kind)
+		return NULL;
+	inst = mkinst(f, op, class, arg0, arg1);
+	arrayaddptr(&f->end->insts, inst);
 	return &inst->res;
 }
 
@@ -267,14 +275,9 @@ funcalloc(struct func *f, struct decl *d)
 	default:
 		fatal("internal error: invalid alignment: %d\n", d->align);
 	}
-	inst = xmalloc(sizeof(*inst));
-	inst->kind = op;
-	functemp(f, &inst->res);
-	inst->class = ptrclass;
-	inst->arg[0] = mkintconst(d->type->size);
-	inst->arg[1] = NULL;
-	d->value = &inst->res;
+	inst = mkinst(f, op, ptrclass, mkintconst(size), NULL);
 	arrayaddptr(&f->start->insts, inst);
+	d->value = &inst->res;
 }
 
 static struct value *
