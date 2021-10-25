@@ -1,0 +1,22 @@
+export
+function $f(w %.1, w %.3) {
+@start.1
+	%.2 =l alloc4 4
+	storew %.1, %.2
+	%.4 =l alloc4 4
+	storew %.3, %.4
+@body.2
+	jnz 0, @if_true.3, @if_false.4
+@if_true.3
+@if_false.4
+@L1.5
+@L2.6
+	ret
+}
+export data $a = align 4 { z 4 }
+export data $b = align 4 { z 4 }
+export data $c = align 4 { z 4 }
+export data $d = align 4 { z 4 }
+export data $x = align 4 { z 4 }
+export data $array = align 4 { z 32 }
+export data $pointer = align 8 { z 8 }

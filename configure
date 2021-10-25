@@ -154,8 +154,7 @@ static const char *const preprocesscmd[] = {
 	/* we don't generate position-independent code */
 	"-U", "__PIC__",
 
-	/* ignore attributes and extension markers */
-	"-D", "__attribute__(x)=",
+	/* ignore extension markers */
 	"-D", "__extension__=",
 $defines};
 static const char *const codegencmd[]    = {"$DEFAULT_QBE"};

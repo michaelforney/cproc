@@ -470,6 +470,18 @@ extern const struct target *targ;
 
 void targinit(const char *);
 
+/* attr */
+
+enum attrkind {
+	ATTRNONE,
+};
+
+struct attr {
+	enum attrkind kind;
+};
+
+_Bool attr(struct attr *, enum attrkind);
+
 /* decl */
 
 struct decl *mkdecl(enum declkind, struct type *, enum typequal, enum linkage);

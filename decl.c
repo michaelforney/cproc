@@ -170,6 +170,7 @@ tagspec(struct scope *s)
 	default: fatal("internal error: unknown tag kind");
 	}
 	next();
+	attr(NULL, 0);
 	tag = NULL;
 	t = NULL;
 	et = NULL;
@@ -236,6 +237,7 @@ tagspec(struct scope *s)
 		for (value = 0; tok.kind == TIDENT; ++value) {
 			name = tok.lit;
 			next();
+			attr(NULL, 0);
 			if (consume(TASSIGN)) {
 				e = evalexpr(s);
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
@@ -497,6 +499,12 @@ done:
 		t = mkarraytype(t->base, t->qual | tq, t->u.array.length);
 		tq = QUALNONE;
 	}
+	/*
+	TODO: consider delaying attribute parsing to declarator(),
+	so we can tell the difference between the start of an
+	attribute and an array declarator.
+	*/
+	attr(NULL, 0);
 
 	return (struct qualtype){t, tq};
 }
@@ -528,8 +536,10 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 	struct expr *e;
 	unsigned long long i;
 	enum typequal tq;
+	bool allowattr;
 
 	while (consume(TMUL)) {
+		attr(NULL, 0);
 		tq = QUALNONE;
 		while (typequal(&tq))
 			;
@@ -552,21 +562,25 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 					break;
 				/* fallthrough */
 			default:
+				allowattr = true;
 				goto func;
 			}
 		}
 		declaratortypes(s, result, name, allowabstract);
 		expect(TRPAREN, "after parenthesized declarator");
+		allowattr = false;
 		break;
 	case TIDENT:
 		if (!name)
 			error(&tok.loc, "identifier not allowed in abstract declarator");
 		*name = tok.lit;
 		next();
+		allowattr = true;
 		break;
 	default:
 		if (!allowabstract)
 			error(&tok.loc, "expected '(' or identifier");
+		allowattr = true;
 	}
 	for (;;) {
 		switch (tok.kind) {
@@ -615,8 +629,11 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 			expect(TRPAREN, "to close function declarator");
 			t->u.func.paraminfo = t->u.func.isprototype || t->u.func.params || tok.kind == TLBRACE;
 			listinsert(ptr->prev, &t->link);
+			allowattr = true;
 			break;
 		case TLBRACK:  /* array declarator */
+			if (allowattr && attr(NULL, 0))
+				goto attr;
 			next();
 			tq = QUALNONE;
 			while (consume(TSTATIC) || typequal(&tq))
@@ -637,6 +654,14 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 			}
 			expect(TRBRACK, "after array length");
 			listinsert(ptr->prev, &t->link);
+			allowattr = true;
+			break;
+		case T__ATTRIBUTE__:
+			if (!allowattr)
+				error(&tok.loc, "attribute not allowed after parenthesized declarator");
+			/* attribute applies to identifier if ptr->prev == result, otherwise type ptr->prev */
+			attr(NULL, 0);
+		attr:
 			break;
 		default:
 			return;
@@ -688,6 +713,7 @@ parameter(struct scope *s)
 	struct qualtype t;
 	enum storageclass sc;
 
+	attr(NULL, 0);
 	t = declspecs(s, &sc, NULL, NULL);
 	if (!t.type)
 		error(&tok.loc, "no type in parameter declaration");
@@ -844,6 +870,7 @@ structdecl(struct scope *s, struct structbuilder *b)
 
 	if (staticassert(s))
 		return;
+	attr(NULL, 0);
 	base = declspecs(s, NULL, NULL, &align);
 	if (!base.type)
 		error(&tok.loc, "no type in struct member declaration");
@@ -965,6 +992,8 @@ decl(struct scope *s, struct func *f)
 	int align;
 
 	if (staticassert(s))
+		return true;
+	if (attr(NULL, 0) && consume(TSEMICOLON))
 		return true;
 	base = declspecs(s, &sc, &fs, &align);
 	if (!base.type)
