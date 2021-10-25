@@ -91,7 +91,9 @@ eval(struct expr *expr, enum evalkind kind)
 {
 	struct expr *l, *r, *c;
 	struct decl *d;
+	struct type *t;
 
+	t = expr->type;
 	switch (expr->kind) {
 	case EXPRIDENT:
 		if (expr->ident.decl->kind != DECLCONST)
@@ -102,7 +104,7 @@ eval(struct expr *expr, enum evalkind kind)
 	case EXPRCOMPOUND:
 		if (kind != EVALINIT)
 			break;
-		d = mkdecl(DECLOBJECT, expr->type, expr->qual, LINKNONE);
+		d = mkdecl(DECLOBJECT, t, expr->qual, LINKNONE);
 		d->value = mkglobal(NULL, true);
 		emitdata(d, expr->compound.init);
 		expr->kind = EXPRIDENT;
@@ -130,12 +132,24 @@ eval(struct expr *expr, enum evalkind kind)
 		l = eval(expr->base, kind);
 		if (l->kind == EXPRCONST) {
 			expr->kind = EXPRCONST;
-			if (l->type->prop & PROPINT && expr->type->prop & PROPFLOAT)
-				expr->constant.f = l->constant.u;
-			else if (l->type->prop & PROPFLOAT && expr->type->prop & PROPINT)
-				expr->constant.u = l->constant.f;
-			else
+			if (l->type->prop & PROPINT && t->prop & PROPFLOAT) {
+				if (l->type->basic.issigned)
+					expr->constant.f = l->constant.i;
+				else
+					expr->constant.f = l->constant.u;
+			} else if (l->type->prop & PROPFLOAT && t->prop & PROPINT) {
+				if (t->basic.issigned) {
+					if (l->constant.f < INT64_MIN || l->constant.f > INT64_MAX)
+						error(&tok.loc, "integer part of floating-point constant %g cannot be represented as signed integer", l->constant.f);
+					expr->constant.i = l->constant.f;
+				} else {
+					if (l->constant.f < 0 || l->constant.f > UINT64_MAX)
+						error(&tok.loc, "integer part of floating-point constant %g cannot be represented as unsigned integer", l->constant.f);
+					expr->constant.u = l->constant.f;
+				}
+			} else {
 				expr->constant = l->constant;
+			}
 			cast(expr);
 		} else if (l->type->kind == TYPEPOINTER) {
 			/*
@@ -144,7 +158,7 @@ eval(struct expr *expr, enum evalkind kind)
 			other forms of constant expressions (6.6p10), and some
 			programs expect this functionality.
 			*/
-			if (expr->type->kind == TYPEPOINTER || expr->type->prop & PROPINT && expr->type->size == typelong.size)
+			if (t->kind == TYPEPOINTER || t->prop & PROPINT && t->size == typelong.size)
 				expr = l;
 		}
 		break;
