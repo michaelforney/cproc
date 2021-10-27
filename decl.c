@@ -697,8 +697,11 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 	if (width == -1) {
 		m->bits.before = 0;
 		m->bits.after = 0;
-		if (align < mt.type->align)
+		if (align < mt.type->align) {
+			if (align)
+				error(&tok.loc, "specified alignment of struct member '%s' is less strict than is required by type", name);
 			align = mt.type->align;
+		}
 		t->size = ALIGNUP(t->size, align);
 		if (t->kind == TYPESTRUCT) {
 			m->offset = t->size;
@@ -946,6 +949,8 @@ decl(struct scope *s, struct func *f)
 			break;
 		case DECLOBJECT:
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
+			if (align && align < t->align)
+				error(&tok.loc, "specified alignment of object '%s' is less strict than is required by type", name);
 			if (d->align < align)
 				d->align = align;
 			if (consume(TASSIGN)) {
