@@ -698,10 +698,9 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 				error(&tok.loc, "specified alignment of struct member is less strict than is required by type");
 			align = mt.type->align;
 		}
-		t->size = ALIGNUP(t->size, align);
 		if (t->kind == TYPESTRUCT) {
-			m->offset = t->size;
-			t->size += mt.type->size;
+			m->offset = ALIGNUP(t->size, align);
+			t->size = m->offset + mt.type->size;
 		} else {
 			m->offset = 0;
 			if (t->size < mt.type->size)
