@@ -375,15 +375,11 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			next();
 			expect(TLPAREN, "after '_Alignas'");
 			other = typename(s, NULL);
-			if (other) {
-				*align = other->align;
-			} else {
-				i = intconstexpr(s, false);
-				if (i & (i - 1))
-					error(&tok.loc, "invalid alignment: %d", i);
-				if (i)
-					*align = (int)i;
-			}
+			i = other ? other->align : intconstexpr(s, false);
+			if (i & (i - 1))
+				error(&tok.loc, "invalid alignment: %d", i);
+			if (i > *align)
+				*align = i;
 			expect(TRPAREN, "to close '_Alignas' specifier");
 			break;
 
