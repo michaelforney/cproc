@@ -668,16 +668,16 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 	size_t end;
 
 	if (t->flexible)
-		error(&tok.loc, "struct member '%s' is after flexible array member", name);
+		error(&tok.loc, "struct has member after flexible array member");
 	if (mt.type->incomplete) {
 		if (mt.type->kind != TYPEARRAY)
-			error(&tok.loc, "struct member '%s' has incomplete type", name);
+			error(&tok.loc, "struct member has incomplete type");
 		t->flexible = true;
 	}
 	if (mt.type->kind == TYPEFUNC)
-		error(&tok.loc, "struct member '%s' has function type", name);
+		error(&tok.loc, "struct member has function type");
 	if (mt.type->flexible)
-		error(&tok.loc, "struct member '%s' contains flexible array member", name);
+		error(&tok.loc, "struct member contains flexible array member");
 	assert(mt.type->align > 0);
 	if (name || width == -1) {
 		m = xmalloc(sizeof(*m));
@@ -695,7 +695,7 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 		m->bits.after = 0;
 		if (align < mt.type->align) {
 			if (align)
-				error(&tok.loc, "specified alignment of struct member '%s' is less strict than is required by type", name);
+				error(&tok.loc, "specified alignment of struct member is less strict than is required by type");
 			align = mt.type->align;
 		}
 		t->size = ALIGNUP(t->size, align);
