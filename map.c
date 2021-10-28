@@ -5,12 +5,6 @@
 #include <string.h>
 #include "util.h"
 
-struct map {
-	size_t len, cap;
-	struct mapkey *keys;
-	void **vals;
-};
-
 static uint64_t
 hash(const void *ptr, size_t len)
 {
@@ -31,31 +25,25 @@ mapkey(struct mapkey *k, const void *s, size_t n)
 	k->hash = hash(s, n);
 }
 
-struct map *
-mkmap(size_t cap)
+void
+mapinit(struct map *h, size_t cap)
 {
-	struct map *h;
 	size_t i;
 
 	assert(!(cap & cap - 1));
-	h = xmalloc(sizeof(*h));
 	h->len = 0;
 	h->cap = cap;
 	h->keys = xreallocarray(NULL, cap, sizeof(h->keys[0]));
 	h->vals = xreallocarray(NULL, cap, sizeof(h->vals[0]));
 	for (i = 0; i < cap; ++i)
 		h->keys[i].str = NULL;
-
-	return h;
 }
 
 void
-delmap(struct map *h, void del(void *))
+mapfree(struct map *h, void del(void *))
 {
 	size_t i;
 
-	if (!h)
-		return;
 	if (del) {
 		for (i = 0; i < h->cap; ++i) {
 			if (h->keys[i].str)
@@ -64,7 +52,6 @@ delmap(struct map *h, void del(void *))
 	}
 	free(h->keys);
 	free(h->vals);
-	free(h);
 }
 
 static bool

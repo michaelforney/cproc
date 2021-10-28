@@ -44,8 +44,8 @@ mkscope(struct scope *parent)
 	struct scope *s;
 
 	s = xmalloc(sizeof(*s));
-	s->decls = NULL;
-	s->tags = NULL;
+	s->decls.len = 0;
+	s->tags.len = 0;
 	s->breaklabel = parent->breaklabel;
 	s->continuelabel = parent->continuelabel;
 	s->switchcases = parent->switchcases;
@@ -59,10 +59,10 @@ delscope(struct scope *s)
 {
 	struct scope *parent = s->parent;
 
-	if (s->decls)
-		delmap(s->decls, NULL);
-	if (s->tags)
-		delmap(s->tags, NULL);
+	if (s->decls.len)
+		mapfree(&s->decls, NULL);
+	if (s->tags.len)
+		mapfree(&s->tags, NULL);
 	free(s);
 
 	return parent;
@@ -76,7 +76,7 @@ scopegetdecl(struct scope *s, const char *name, bool recurse)
 
 	mapkey(&k, name, strlen(name));
 	do {
-		d = s->decls ? mapget(s->decls, &k) : NULL;
+		d = s->decls.len ? mapget(&s->decls, &k) : NULL;
 		s = s->parent;
 	} while (!d && s && recurse);
 
@@ -91,7 +91,7 @@ scopegettag(struct scope *s, const char *name, bool recurse)
 
 	mapkey(&k, name, strlen(name));
 	do {
-		t = s->tags ? mapget(s->tags, &k) : NULL;
+		t = s->tags.len ? mapget(&s->tags, &k) : NULL;
 		s = s->parent;
 	} while (!t && s && recurse);
 
@@ -103,10 +103,10 @@ scopeputdecl(struct scope *s, const char *name, struct decl *d)
 {
 	struct mapkey k;
 
-	if (!s->decls)
-		s->decls = mkmap(32);
+	if (!s->decls.len)
+		mapinit(&s->decls, 32);
 	mapkey(&k, name, strlen(name));
-	*mapput(s->decls, &k) = d;
+	*mapput(&s->decls, &k) = d;
 }
 
 void
@@ -114,8 +114,8 @@ scopeputtag(struct scope *s, const char *name, struct type *t)
 {
 	struct mapkey k;
 
-	if (!s->tags)
-		s->tags = mkmap(32);
+	if (!s->tags.len)
+		mapinit(&s->tags, 32);
 	mapkey(&k, name, strlen(name));
-	*mapput(s->tags, &k) = t;
+	*mapput(&s->tags, &k) = t;
 }

@@ -89,7 +89,7 @@ struct func {
 	char *name;
 	struct type *type;
 	struct block *start, *end;
-	struct map *gotos;
+	struct map gotos;
 	unsigned lastid;
 };
 
@@ -481,8 +481,8 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 	f->name = name;
 	f->type = t;
 	f->start = f->end = mkblock("start");
-	f->gotos = mkmap(8);
 	f->lastid = 0;
+	mapinit(&f->gotos, 8);
 	emittype(t->base);
 
 	/* allocate space for parameters */
@@ -528,7 +528,7 @@ delfunc(struct func *f)
 		free(b->insts.val);
 		free(b);
 	}
-	delmap(f->gotos, free);
+	mapfree(&f->gotos, free);
 	free(f);
 }
 
@@ -600,7 +600,7 @@ funcgoto(struct func *f, char *name)
 	struct mapkey key;
 
 	mapkey(&key, name, strlen(name));
-	entry = mapput(f->gotos, &key);
+	entry = mapput(&f->gotos, &key);
 	g = *entry;
 	if (!g) {
 		g = xmalloc(sizeof(*g));

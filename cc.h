@@ -297,8 +297,8 @@ struct decl {
 };
 
 struct scope {
-	struct map *tags;
-	struct map *decls;
+	struct map tags;
+	struct map decls;
 	struct block *breaklabel;
 	struct block *continuelabel;
 	struct switchcases *switchcases;

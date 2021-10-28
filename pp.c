@@ -51,14 +51,14 @@ struct frame {
 enum ppflags ppflags;
 
 static struct array ctx;
-static struct map *macros;
+static struct map macros;
 /* number of macros currently undergoing expansion */
 static size_t macrodepth;
 
 void
 ppinit(void)
 {
-	macros = mkmap(64);
+	mapinit(&macros, 64);
 	next();
 }
 
@@ -112,7 +112,7 @@ macroget(char *name)
 	struct mapkey k;
 
 	mapkey(&k, name, strlen(name));
-	return mapget(macros, &k);
+	return mapget(&macros, &k);
 }
 
 static void
@@ -272,7 +272,7 @@ define(void)
 	tok = *t;
 
 	mapkey(&k, m->name, strlen(m->name));
-	entry = mapput(macros, &k);
+	entry = mapput(&macros, &k);
 	if (*entry && !macroequal(m, *entry))
 		error(&tok.loc, "redefinition of macro '%s'", m->name);
 	*entry = m;
@@ -288,7 +288,7 @@ undef(void)
 
 	name = tokencheck(&tok, TIDENT, "after #undef");
 	mapkey(&k, name, strlen(name));
-	entry = mapput(macros, &k);
+	entry = mapput(&macros, &k);
 	m = *entry;
 	if (m) {
 		free(name);

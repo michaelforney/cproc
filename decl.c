@@ -1089,16 +1089,16 @@ decl(struct scope *s, struct func *f)
 struct decl *
 stringdecl(struct expr *expr)
 {
-	static struct map *strings;
+	static struct map strings;
 	struct mapkey key;
 	void **entry;
 	struct decl *d;
 
-	if (!strings)
-		strings = mkmap(64);
+	if (!strings.len)
+		mapinit(&strings, 64);
 	assert(expr->kind == EXPRSTRING);
 	mapkey(&key, expr->u.string.data, expr->u.string.size);
-	entry = mapput(strings, &key);
+	entry = mapput(&strings, &key);
 	d = *entry;
 	if (!d) {
 		d = mkdecl(DECLOBJECT, expr->type, QUALNONE, LINKNONE);
