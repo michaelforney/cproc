@@ -756,6 +756,10 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		expect(TCOMMA, "after type name");
 		e = mkconstexpr(&typeint, typecompatible(t, typename(s, NULL)));
 		break;
+	case BUILTINUNREACHABLE:
+		e = mkexpr(EXPRBUILTIN, &typevoid, NULL);
+		e->builtin.kind = BUILTINUNREACHABLE;
+		break;
 	case BUILTINVAARG:
 		e = mkexpr(EXPRBUILTIN, NULL, assignexpr(s));
 		e->builtin.kind = BUILTINVAARG;

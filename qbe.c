@@ -954,6 +954,8 @@ funcexpr(struct func *f, struct expr *e)
 		case BUILTINALLOCA:
 			l = funcexpr(f, e->base);
 			return funcinst(f, IALLOC16, ptrclass, l, NULL);
+		case BUILTINUNREACHABLE:
+			return NULL;
 		default:
 			fatal("internal error: unimplemented builtin");
 		}
