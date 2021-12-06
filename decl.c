@@ -349,6 +349,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			if (!d || d->kind != DECLTYPE)
 				goto done;
 			t = d->type;
+			tq |= d->qual;
 			++ntypes;
 			next();
 			break;
