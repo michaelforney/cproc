@@ -163,15 +163,12 @@ enum typekind {
 enum typeprop {
 	PROPNONE,
 
-	PROPOBJECT  = 1<<0,
-	PROPCHAR    = 1<<1,
-	PROPINT     = 1<<2,
-	PROPREAL    = 1<<3,
-	PROPARITH   = 1<<4,
-	PROPSCALAR  = 1<<5,
-	PROPAGGR    = 1<<6,
-	PROPDERIVED = 1<<7,
-	PROPFLOAT   = 1<<8
+	PROPCHAR    = 1<<0,
+	PROPINT     = 1<<1,
+	PROPREAL    = 1<<2,
+	PROPARITH   = 1<<3,
+	PROPSCALAR  = 1<<4,
+	PROPFLOAT   = 1<<5
 };
 
 struct param {

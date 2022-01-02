@@ -8,14 +8,14 @@
 
 #define INTTYPE(k, n, s, p) { \
 	.kind = k, .size = n, .align = n, .u.basic.issigned = s, \
-	.prop = PROPOBJECT|PROPSCALAR|PROPARITH|PROPREAL|PROPINT|p, \
+	.prop = PROPSCALAR|PROPARITH|PROPREAL|PROPINT|p, \
 }
 #define FLTTYPE(k, n) { \
 	.kind = k, .size = n, .align = n, \
-	.prop = PROPOBJECT|PROPSCALAR|PROPARITH|PROPREAL|PROPFLOAT, \
+	.prop = PROPSCALAR|PROPARITH|PROPREAL|PROPFLOAT, \
 }
 
-struct type typevoid    = {.kind = TYPEVOID, .prop = PROPOBJECT, .incomplete = true};
+struct type typevoid    = {.kind = TYPEVOID, .incomplete = true};
 
 struct type typebool    = INTTYPE(TYPEBOOL, 1, false, 0);
 
@@ -61,7 +61,7 @@ mkpointertype(struct type *base, enum typequal qual)
 {
 	struct type *t;
 
-	t = mktype(TYPEPOINTER, PROPOBJECT|PROPDERIVED|PROPSCALAR);
+	t = mktype(TYPEPOINTER, PROPSCALAR);
 	t->base = base;
 	t->qual = qual;
 	t->size = 8;
@@ -75,7 +75,7 @@ mkarraytype(struct type *base, enum typequal qual, unsigned long long len)
 {
 	struct type *t;
 
-	t = mktype(TYPEARRAY, PROPOBJECT|PROPDERIVED|PROPAGGR);
+	t = mktype(TYPEARRAY, 0);
 	t->base = base;
 	t->qual = qual;
 	t->u.array.length = len;

@@ -10,10 +10,10 @@ static const struct target alltargs[] = {
 		.name = "x86_64",
 		.typewchar = &typeint,
 		.typevalist = &(struct type){
-			.kind = TYPEARRAY, .prop = PROPOBJECT|PROPDERIVED|PROPAGGR,
+			.kind = TYPEARRAY,
 			.align = 8, .size = 24,
 			.u.array = {1}, .base = &(struct type){
-				.kind = TYPESTRUCT, .prop = PROPOBJECT|PROPAGGR,
+				.kind = TYPESTRUCT,
 				.align = 8, .size = 24,
 			},
 		},
@@ -22,7 +22,7 @@ static const struct target alltargs[] = {
 	{
 		.name = "aarch64",
 		.typevalist = &(struct type){
-			.kind = TYPESTRUCT, .prop = PROPOBJECT|PROPAGGR,
+			.kind = TYPESTRUCT,
 			.align = 8, .size = 32,
 			.u.structunion.tag = "va_list",
 		},
@@ -31,7 +31,7 @@ static const struct target alltargs[] = {
 	{
 		.name = "riscv64",
 		.typevalist = &(struct type){
-			.kind = TYPEPOINTER, .prop = PROPOBJECT|PROPDERIVED|PROPSCALAR,
+			.kind = TYPEPOINTER, .prop = PROPSCALAR,
 			.align = 8, .size = 8,
 			.base = &typevoid,
 		},

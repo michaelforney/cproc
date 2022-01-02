@@ -179,9 +179,7 @@ tagspec(struct scope *s)
 			*t = typeuint;
 			t->kind = kind;
 		} else {
-			t = mktype(kind, PROPOBJECT);
-			if (kind == TYPESTRUCT)
-				t->prop |= PROPAGGR;
+			t = mktype(kind, 0);
 			t->size = 0;
 			t->align = 0;
 			t->u.structunion.tag = tag;
@@ -507,7 +505,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 		case TLPAREN:  /* function declarator */
 			next();
 		func:
-			t = mktype(TYPEFUNC, PROPDERIVED);
+			t = mktype(TYPEFUNC, 0);
 			t->qual = QUALNONE;
 			t->u.func.isprototype = false;
 			t->u.func.isvararg = false;
