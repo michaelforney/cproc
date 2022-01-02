@@ -9,7 +9,7 @@
 #include "cc.h"
 
 struct buffer {
-	char *str;
+	unsigned char *str;
 	size_t len, cap;
 };
 
@@ -26,7 +26,7 @@ struct scanner {
 static struct scanner *scanner;
 
 static void
-bufadd(struct buffer *b, char c)
+bufadd(struct buffer *b, int c)
 {
 	if (b->len >= b->cap) {
 		b->cap = b->cap ? b->cap * 2 : 1<<8;

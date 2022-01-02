@@ -161,8 +161,8 @@ tokendesc(char *buf, size_t len, enum tokenkind kind, const char *lit)
 		snprintf(buf, len, quote ? "%s '%s'" : "%s %s", class, lit);
 	else if (class)
 		snprintf(buf, len, "%s", class);
-	else if (kind == TOTHER && !isprint(lit[0]))
-		snprintf(buf, len, "<U+%04x>", lit[0]);
+	else if (kind == TOTHER && !isprint(*(unsigned char *)lit))
+		snprintf(buf, len, "<U+%04x>", *(unsigned char *)lit);
 	else if (lit)
 		snprintf(buf, len, "'%s'", lit);
 	else

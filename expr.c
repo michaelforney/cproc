@@ -365,7 +365,7 @@ decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc,
 	uint_least32_t c;
 	size_t n;
 	int i;
-	const char *s = src;
+	const unsigned char *s = (const unsigned char *)src;
 
 	if (*s == '\\') {
 		++s;
@@ -406,7 +406,7 @@ decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc,
 		s += n;
 	}
 	*chr = c;
-	return s - src;
+	return s - (const unsigned char *)src;
 }
 
 static size_t

@@ -33,7 +33,7 @@ utf8enc(unsigned char *s, uint_least32_t c)
 }
 
 size_t
-utf8dec(uint_least32_t *c, const char *s, size_t n)
+utf8dec(uint_least32_t *c, const unsigned char *s, size_t n)
 {
 	size_t i, l;
 	unsigned char b;
