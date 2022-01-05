@@ -14,7 +14,7 @@ struct mapkey {
 };
 
 struct treenode {
-	uint64_t key;
+	unsigned long long key;
 	void *child[2];
 	int height;
 	_Bool new;  /* set by treeinsert if this node was newly allocated */
@@ -55,4 +55,4 @@ void *mapget(struct map *, struct mapkey *);
 
 /* tree */
 
-void *treeinsert(void **, uint64_t, size_t);
+void *treeinsert(void **, unsigned long long, size_t);

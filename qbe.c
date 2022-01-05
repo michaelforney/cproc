@@ -1,10 +1,10 @@
 #include <assert.h>
 #include <ctype.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 #include "util.h"
 #include "cc.h"
 
@@ -22,7 +22,7 @@ struct value {
 	unsigned id;
 	union {
 		char *name;
-		uint64_t i;
+		unsigned long long i;
 		double f;
 	} u;
 };
@@ -96,7 +96,7 @@ struct func {
 static const int ptrclass = 'l';
 
 void
-switchcase(struct switchcases *cases, uint64_t i, struct block *b)
+switchcase(struct switchcases *cases, unsigned long long i, struct block *b)
 {
 	struct switchcase *c;
 
@@ -148,7 +148,7 @@ globalname(struct value *v)
 }
 
 struct value *
-mkintconst(uint64_t n)
+mkintconst(unsigned long long n)
 {
 	struct value *v;
 
@@ -159,7 +159,7 @@ mkintconst(uint64_t n)
 	return v;
 }
 
-uint64_t
+unsigned long long
 intconstvalue(struct value *v)
 {
 	assert(v->kind == VALUE_INTCONST);
@@ -306,12 +306,12 @@ funcbits(struct func *f, struct type *t, struct value *v, struct bitfield b)
 }
 
 static void
-funccopy(struct func *f, struct value *dst, struct value *src, uint64_t size, int align)
+funccopy(struct func *f, struct value *dst, struct value *src, unsigned long long size, int align)
 {
 	enum instkind load, store;
 	int class;
 	struct value *tmp, *inc;
-	uint64_t off;
+	unsigned long long off;
 
 	assert((align & align - 1) == 0);
 	class = 'w';
@@ -971,7 +971,7 @@ funcexpr(struct func *f, struct expr *e)
 }
 
 static void
-zero(struct func *func, struct value *addr, int align, uint64_t offset, uint64_t end)
+zero(struct func *func, struct value *addr, int align, unsigned long long offset, unsigned long long end)
 {
 	static const enum instkind store[] = {
 		[1] = ISTOREB,
@@ -999,7 +999,7 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 {
 	struct lvalue dst;
 	struct value *src, *v;
-	uint64_t offset = 0, max = 0;
+	unsigned long long offset = 0, max = 0;
 	size_t i, w;
 
 	funcalloc(func, d);
@@ -1088,7 +1088,7 @@ emitvalue(struct value *v)
 
 	switch (v->kind) {
 	case VALUE_INTCONST:
-		printf("%" PRIu64, v->u.i);
+		printf("%llu", v->u.i);
 		break;
 	case VALUE_FLTCONST:
 		printf("s_%.17g", v->u.f);
@@ -1124,10 +1124,10 @@ emitclass(int class, struct value *v)
 static void
 emittype(struct type *t)
 {
-	static uint64_t id;
+	static unsigned id;
 	struct member *m, *other;
 	struct type *sub;
-	uint64_t i, off;
+	unsigned long long i, off;
 
 	if (t->value || t->kind != TYPESTRUCT && t->kind != TYPEUNION)
 		return;
@@ -1164,7 +1164,7 @@ emittype(struct type *t)
 			i *= sub->u.array.length;
 		emitclass(qbetype(sub).data, sub->value);
 		if (i > 1)
-			printf(" %" PRIu64, i);
+			printf(" %llu", i);
 		if (t->kind == TYPESTRUCT) {
 			fputs(", ", stdout);
 			/* skip subsequent members contained within the same storage unit */
@@ -1310,7 +1310,7 @@ emitfunc(struct func *f, bool global)
 }
 
 static void
-dataitem(struct expr *expr, uint64_t size)
+dataitem(struct expr *expr, unsigned long long size)
 {
 	struct decl *decl;
 	size_t i, w;
@@ -1339,7 +1339,7 @@ dataitem(struct expr *expr, uint64_t size)
 		if (expr->type->prop & PROPFLOAT)
 			printf("%c_%.17g", expr->type->size == 4 ? 's' : 'd', expr->u.constant.f);
 		else
-			printf("%" PRIu64, expr->u.constant.u);
+			printf("%llu", expr->u.constant.u);
 		break;
 	case EXPRSTRING:
 		w = expr->type->base->size;
@@ -1363,7 +1363,7 @@ dataitem(struct expr *expr, uint64_t size)
 			}
 		}
 		if (i * w < size)
-			printf(", z %" PRIu64, size - i * w);
+			printf(", z %llu", size - (unsigned long long)i * w);
 		break;
 	default:
 		error(&tok.loc, "initializer is not a constant expression");
@@ -1375,7 +1375,7 @@ emitdata(struct decl *d, struct init *init)
 {
 	struct init *cur;
 	struct type *t;
-	uint64_t offset = 0, start, end, bits = 0;
+	unsigned long long offset = 0, start, end, bits = 0;
 	size_t i;
 
 	if (!d->align)
@@ -1415,7 +1415,7 @@ emitdata(struct decl *d, struct init *init)
 			bits = 0;
 		}
 		if (offset < start)
-			printf("z %" PRIu64 ", ", start - offset);
+			printf("z %llu, ", start - offset);
 		if (cur->bits.before || cur->bits.after) {
 			/* XXX: little-endian specific */
 			assert(cur->expr->type->prop & PROPINT);

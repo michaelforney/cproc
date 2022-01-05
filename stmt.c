@@ -14,7 +14,7 @@ label(struct func *f, struct scope *s)
 	char *name;
 	struct gotolabel *g;
 	struct block *b;
-	uint64_t i;
+	unsigned long long i;
 
 	switch (tok.kind) {
 	case TCASE:

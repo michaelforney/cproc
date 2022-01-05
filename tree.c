@@ -68,7 +68,7 @@ static int balance(void **p)
 }
 
 void *
-treeinsert(void **root, uint64_t key, size_t sz)
+treeinsert(void **root, unsigned long long key, size_t sz)
 {
 	void **a[MAXH];
 	struct treenode *n = *root;

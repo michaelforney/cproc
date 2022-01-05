@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -10,14 +11,14 @@ static void
 cast(struct expr *expr)
 {
 	unsigned size;
-	uint64_t m;
+	unsigned long long m;
 
 	size = expr->type->size;
 	if (expr->type->prop & PROPFLOAT) {
 		if (size == 4)
 			expr->u.constant.f = (float)expr->u.constant.f;
 	} else if (expr->type->prop & PROPINT) {
-		expr->u.constant.u &= UINT64_MAX >> (8 - size) * 8;
+		expr->u.constant.u &= -1ull >> CHAR_BIT * sizeof(unsigned long long) - size * 8;
 		if (expr->type->u.basic.issigned) {
 			m = 1ull << size * 8 - 1;
 			expr->u.constant.u = (expr->u.constant.u ^ m) - m;
@@ -137,11 +138,11 @@ eval(struct expr *expr, enum evalkind kind)
 					expr->u.constant.f = l->u.constant.u;
 			} else if (l->type->prop & PROPFLOAT && t->prop & PROPINT) {
 				if (t->u.basic.issigned) {
-					if (l->u.constant.f < INT64_MIN || l->u.constant.f > INT64_MAX)
+					if (l->u.constant.f < -1 - 0x7fffffffffffffff || l->u.constant.f > 0x7fffffffffffffff)
 						error(&tok.loc, "integer part of floating-point constant %g cannot be represented as signed integer", l->u.constant.f);
 					expr->u.constant.i = l->u.constant.f;
 				} else {
-					if (l->u.constant.f < 0 || l->u.constant.f > UINT64_MAX)
+					if (l->u.constant.f < 0 || l->u.constant.f > 0xffffffffffffffff)
 						error(&tok.loc, "integer part of floating-point constant %g cannot be represented as unsigned integer", l->u.constant.f);
 					expr->u.constant.u = l->u.constant.f;
 				}

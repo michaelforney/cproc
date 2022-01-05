@@ -151,7 +151,7 @@ tagspec(struct scope *s)
 	struct decl *d;
 	struct expr *e;
 	struct structbuilder b;
-	uint64_t i;
+	unsigned long long i;
 	bool large;
 
 	switch (tok.kind) {
@@ -561,7 +561,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "VLAs are not yet supported");
 				i = e->u.constant.u;
-				if (e->type->u.basic.issigned && i > INT64_MAX)
+				if (e->type->u.basic.issigned && i >> 63)
 					error(&tok.loc, "array length must be non-negative");
 				delexpr(e);
 				t->u.array.length = i;
@@ -747,7 +747,7 @@ static bool
 staticassert(struct scope *s)
 {
 	struct stringlit msg;
-	uint64_t c;
+	unsigned long long c;
 
 	if (!consume(T_STATIC_ASSERT))
 		return false;

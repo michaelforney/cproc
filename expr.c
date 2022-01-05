@@ -74,7 +74,7 @@ delexpr(struct expr *e)
 }
 
 static struct expr *
-mkconstexpr(struct type *t, uint64_t n)
+mkconstexpr(struct type *t, unsigned long long n)
 {
 	struct expr *e;
 
@@ -666,7 +666,7 @@ designator(struct scope *s, struct type *t, unsigned long long *offset)
 {
 	char *name;
 	struct member *m;
-	uint64_t i;
+	unsigned long long i;
 
 	for (;;) {
 		switch (tok.kind) {
@@ -1175,7 +1175,7 @@ constexpr(struct scope *s)
 	return eval(condexpr(s), EVALARITH);
 }
 
-uint64_t
+unsigned long long
 intconstexpr(struct scope *s, bool allowneg)
 {
 	struct expr *e;
@@ -1183,7 +1183,7 @@ intconstexpr(struct scope *s, bool allowneg)
 	e = constexpr(s);
 	if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 		error(&tok.loc, "not an integer constant expression");
-	if (!allowneg && e->type->u.basic.issigned && e->u.constant.u > INT64_MAX)
+	if (!allowneg && e->type->u.basic.issigned && e->u.constant.u >> 63)
 		error(&tok.loc, "integer constant expression cannot be negative");
 	return e->u.constant.u;
 }

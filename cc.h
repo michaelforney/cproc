@@ -329,8 +329,8 @@ struct expr {
 			struct decl *decl;
 		} ident;
 		union {
-			uint64_t u;
-			int64_t i;
+			unsigned long long u;
+			long long i;
 			double f;
 		} constant;
 		struct stringlit string;
@@ -474,7 +474,7 @@ struct type *stringconcat(struct stringlit *, _Bool);
 struct expr *expr(struct scope *);
 struct expr *assignexpr(struct scope *);
 struct expr *constexpr(struct scope *);
-uint64_t intconstexpr(struct scope *, _Bool);
+unsigned long long intconstexpr(struct scope *, _Bool);
 void delexpr(struct expr *);
 
 struct expr *exprconvert(struct expr *, struct type *);
@@ -509,15 +509,15 @@ struct switchcases {
 	struct block *defaultlabel;
 };
 
-void switchcase(struct switchcases *, uint64_t, struct block *);
+void switchcase(struct switchcases *, unsigned long long, struct block *);
 
 struct block *mkblock(char *);
 
 struct value *mkglobal(char *, _Bool);
 char *globalname(struct value *);
 
-struct value *mkintconst(uint64_t);
-uint64_t intconstvalue(struct value *);
+struct value *mkintconst(unsigned long long);
+unsigned long long intconstvalue(struct value *);
 
 struct func *mkfunc(struct decl *, char *, struct type *, struct scope *);
 void delfunc(struct func *);
