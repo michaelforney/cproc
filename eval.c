@@ -10,20 +10,18 @@ static void
 cast(struct expr *expr)
 {
 	unsigned size;
+	uint64_t m;
 
 	size = expr->type->size;
-	if (expr->type->prop & PROPFLOAT)
-		size |= F;
-	else if (expr->type->prop & PROPINT && expr->type->u.basic.issigned)
-		size |= S;
-	switch (size) {
-	case 1:   expr->u.constant.u = (uint8_t)expr->u.constant.u; break;
-	case 1|S: expr->u.constant.u = (expr->u.constant.u & UINT8_MAX ^ INT8_MIN) - INT8_MIN; break;
-	case 2:   expr->u.constant.u = (uint16_t)expr->u.constant.u; break;
-	case 2|S: expr->u.constant.u = (expr->u.constant.u & UINT16_MAX ^ INT16_MIN) - INT16_MIN; break;
-	case 4:   expr->u.constant.u = (uint32_t)expr->u.constant.u; break;
-	case 4|S: expr->u.constant.u = (expr->u.constant.u & UINT32_MAX ^ INT32_MIN) - INT32_MIN; break;
-	case 4|F: expr->u.constant.f = (float)expr->u.constant.f; break;
+	if (expr->type->prop & PROPFLOAT) {
+		if (size == 4)
+			expr->u.constant.f = (float)expr->u.constant.f;
+	} else if (expr->type->prop & PROPINT) {
+		expr->u.constant.u &= UINT64_MAX >> (8 - size) * 8;
+		if (expr->type->u.basic.issigned) {
+			m = 1ull << size * 8 - 1;
+			expr->u.constant.u = (expr->u.constant.u ^ m) - m;
+		}
 	}
 }
 
