@@ -27,6 +27,21 @@ cast(struct expr *expr)
 }
 
 static void
+unary(struct expr *expr, enum tokenkind op, struct expr *l)
+{
+	expr->kind = EXPRCONST;
+	if (l->type->prop & PROPFLOAT)
+		op |= F;
+	switch (op) {
+	case TSUB:      expr->u.constant.u = -l->u.constant.u; break;
+	case TSUB|F:    expr->u.constant.f = -l->u.constant.f; break;
+	default:
+		fatal("internal error; unknown unary expression");
+	}
+	cast(expr);
+}
+
+static void
 binary(struct expr *expr, enum tokenkind op, struct expr *l, struct expr *r)
 {
 	expr->kind = EXPRCONST;
@@ -111,19 +126,28 @@ eval(struct expr *expr, enum evalkind kind)
 		break;
 	case EXPRUNARY:
 		l = eval(expr->base, kind);
-		if (expr->op != TBAND)
-			break;
-		switch (l->kind) {
-		case EXPRUNARY:
-			if (l->op == TMUL)
-				expr = eval(l->base, kind);
-			break;
-		case EXPRSTRING:
-			if (kind != EVALINIT)
+		switch (expr->op) {
+		case TBAND:
+			switch (l->kind) {
+			case EXPRUNARY:
+				if (l->op == TMUL)
+					expr = eval(l->base, kind);
 				break;
-			l->u.ident.decl = stringdecl(l);
-			l->kind = EXPRIDENT;
-			expr->base = l;
+			case EXPRSTRING:
+				if (kind != EVALINIT)
+					break;
+				l->u.ident.decl = stringdecl(l);
+				l->kind = EXPRIDENT;
+				expr->base = l;
+				break;
+			}
+			break;
+		case TMUL:
+			break;
+		default:
+			if (l->kind != EXPRCONST)
+				break;
+			unary(expr, expr->op, l);
 			break;
 		}
 		break;

@@ -972,7 +972,8 @@ unaryexpr(struct scope *s)
 			error(&tok.loc, "operand of unary '-' operator must have arithmetic type");
 		if (e->type->prop & PROPINT)
 			e = exprpromote(e);
-		e = mkbinaryexpr(&tok.loc, TSUB, mkconstexpr(&typeint, 0), e);
+		e = mkexpr(EXPRUNARY, e->type, e);
+		e->op = op;
 		break;
 	case TBNOT:
 		next();

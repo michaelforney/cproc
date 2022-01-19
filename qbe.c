@@ -801,6 +801,9 @@ funcexpr(struct func *f, struct expr *e)
 		case TMUL:
 			r = funcexpr(f, e->base);
 			return funcload(f, e->type, (struct lvalue){r});
+		case TSUB:
+			r = funcexpr(f, e->base);
+			return funcinst(f, ISUB, qbetype(e->type).base, mkintconst(0), r);
 		}
 		fatal("internal error; unknown unary expression");
 		break;
