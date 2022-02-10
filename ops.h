@@ -84,9 +84,13 @@ OP(IEXTUB,   "extub")
 OP(IEXTS,    "exts")
 OP(ITRUNCD,  "truncd")
 OP(ISTOSI,   "stosi")
+OP(ISTOUI,   "stoui")
 OP(IDTOSI,   "dtosi")
+OP(IDTOUI,   "dtoui")
 OP(ISWTOF,   "swtof")
+OP(IUWTOF,   "uwtof")
 OP(ISLTOF,   "sltof")
+OP(IULTOF,   "ultof")
 
 /* cast and copy */
 OP(ICAST,    "cast")

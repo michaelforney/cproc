@@ -398,77 +398,6 @@ funcload(struct func *f, struct type *t, struct lvalue lval)
 	return funcbits(f, t, v, lval.bits);
 }
 
-/* TODO: move these conversions to QBE */
-static struct value *
-utof(struct func *f, int dst, int src, struct value *v)
-{
-	struct value *odd, *big;
-	struct block *join;
-
-	if (src == 'w') {
-		v = funcinst(f, IEXTUW, 'l', v, NULL);
-		return funcinst(f, ISLTOF, dst, v, NULL);
-	}
-
-	join = mkblock("utof_join");
-	join->phi.blk[0] = mkblock("utof_small");
-	join->phi.blk[1] = mkblock("utof_big");
-
-	big = funcinst(f, ICSLTL, 'w', v, mkintconst(0));
-	funcjnz(f, big, NULL, join->phi.blk[1], join->phi.blk[0]);
-
-	funclabel(f, join->phi.blk[0]);
-	join->phi.val[0] = funcinst(f, ISLTOF, dst, v, NULL);
-	funcjmp(f, join);
-
-	funclabel(f, join->phi.blk[1]);
-	odd = funcinst(f, IAND, 'l', v, mkintconst(1));
-	v = funcinst(f, ISHR, 'l', v, mkintconst(1));
-	v = funcinst(f, IOR, 'l', v, odd);  /* round to odd */
-	v = funcinst(f, ISLTOF, dst, v, NULL);
-	join->phi.val[1] = funcinst(f, IADD, dst, v, v);
-
-	funclabel(f, join);
-	functemp(f, &join->phi.res);
-	join->phi.class = dst;
-	return &join->phi.res;
-}
-
-static struct value *
-ftou(struct func *f, int dst, int src, struct value *v)
-{
-	struct value *big, *maxflt, *maxint;
-	struct block *join;
-	enum instkind op = src == 's' ? ISTOSI : IDTOSI;
-
-	if (dst == 'w')
-		return funcinst(f, op, 'l', v, NULL);
-
-	join = mkblock("ftou_join");
-	join->phi.blk[0] = mkblock("ftou_small");
-	join->phi.blk[1] = mkblock("ftou_big");
-
-	maxflt = mkfltconst(src == 's' ? VALUE_FLTCONST : VALUE_DBLCONST, 0x1p63);
-	maxint = mkintconst(1ull<<63);
-
-	big = funcinst(f, src == 's' ? ICGES : ICGED, 'w', v, maxflt);
-	funcjnz(f, big, NULL, join->phi.blk[1], join->phi.blk[0]);
-
-	funclabel(f, join->phi.blk[0]);
-	join->phi.val[0] = funcinst(f, op, dst, v, NULL);
-	funcjmp(f, join);
-
-	funclabel(f, join->phi.blk[1]);
-	v = funcinst(f, ISUB, src, v, maxflt);
-	v = funcinst(f, op, dst, v, NULL);
-	join->phi.val[1] = funcinst(f, IXOR, dst, v, maxint);
-
-	funclabel(f, join);
-	functemp(f, &join->phi.res);
-	join->phi.class = dst;
-	return &join->phi.res;
-}
-
 static struct value *
 convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 {
@@ -515,16 +444,18 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 			default: fatal("internal error; unknown integer conversion");
 			}
 		} else {
-			if (!dst->u.basic.issigned)
-				return ftou(f, class, src->size == 8 ? 'd' : 's', l);
-			op = src->size == 8 ? IDTOSI : ISTOSI;
+			if (dst->u.basic.issigned)
+				op = src->size == 8 ? IDTOSI : ISTOSI;
+			else
+				op = src->size == 8 ? IDTOUI : ISTOUI;
 		}
 	} else {
 		class = dst->size == 8 ? 'd' : 's';
 		if (src->prop & PROPINT) {
-			if (!src->u.basic.issigned)
-				return utof(f, class, src->size == 8 ? 'l' : 'w', l);
-			op = src->size == 8 ? ISLTOF : ISWTOF;
+			if (src->u.basic.issigned)
+				op = src->size == 8 ? ISLTOF : ISWTOF;
+			else
+				op = src->size == 8 ? IULTOF : IUWTOF;
 		} else {
 			assert(src->prop & PROPFLOAT);
 			if (src->size == dst->size)

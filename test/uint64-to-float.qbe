@@ -3,18 +3,6 @@ function s $f() {
 @start.1
 @body.2
 	%.1 =l call $g()
-	%.2 =w csltl %.1, 0
-	jnz %.2, @utof_big.5, @utof_small.4
-@utof_small.4
-	%.3 =s sltof %.1
-	jmp @utof_join.3
-@utof_big.5
-	%.4 =l and %.1, 1
-	%.5 =l shr %.1, 1
-	%.6 =l or %.5, %.4
-	%.7 =s sltof %.6
-	%.8 =s add %.7, %.7
-@utof_join.3
-	%.9 =s phi @utof_small.4 %.3, @utof_big.5 %.8
-	ret %.9
+	%.2 =s ultof %.1
+	ret %.2
 }

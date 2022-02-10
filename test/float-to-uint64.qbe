@@ -3,16 +3,6 @@ function l $f() {
 @start.1
 @body.2
 	%.1 =s call $g()
-	%.2 =w cges %.1, s_9.2233720368547758e+18
-	jnz %.2, @ftou_big.5, @ftou_small.4
-@ftou_small.4
-	%.3 =l stosi %.1
-	jmp @ftou_join.3
-@ftou_big.5
-	%.4 =s sub %.1, s_9.2233720368547758e+18
-	%.5 =l stosi %.4
-	%.6 =l xor %.5, 9223372036854775808
-@ftou_join.3
-	%.7 =l phi @ftou_small.4 %.3, @ftou_big.5 %.6
-	ret %.7
+	%.2 =l stoui %.1
+	ret %.2
 }

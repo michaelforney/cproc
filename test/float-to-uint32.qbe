@@ -3,6 +3,6 @@ function w $f() {
 @start.1
 @body.2
 	%.1 =s call $g()
-	%.2 =l stosi %.1
+	%.2 =w stoui %.1
 	ret %.2
 }
