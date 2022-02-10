@@ -23,10 +23,8 @@ The POSIX driver depends on POSIX.1-2008 interfaces, and the `Makefile`
 requires a POSIX-compatible make(1).
 
 At runtime, you will need QBE, an assembler, and a linker for the
-target system. Currently, my personal [QBE branch] is recommended, since
-it may address some issues that have not yet made it upstream. Since
-the preprocessor is not yet implemented, an external one is currently
-required as well.
+target system. Since the preprocessor is not yet implemented, an
+external one is currently required as well.
 
 ## Supported targets
 
@@ -122,7 +120,6 @@ Patches are greatly appreciated. Send them to the mailing list
 [c]: https://github.com/andrewchambers/c
 [lacc]: https://github.com/larmel/lacc
 [scc]: http://www.simple-cc.org/
-[QBE branch]: https://git.sr.ht/~mcf/qbe
 [5.2.1.1]: http://port70.net/~nsz/c/c11/n1570.html#5.2.1.1
 [6.4.6p3]: http://port70.net/~nsz/c/c11/n1570.html#6.4.6p3
 [#1]: https://todo.sr.ht/~mcf/cproc/1
