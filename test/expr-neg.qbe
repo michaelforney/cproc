@@ -1,0 +1,10 @@
+export
+function d $f(d %.1) {
+@start.1
+	%.2 =l alloc8 8
+	stored %.1, %.2
+@body.2
+	%.3 =d loadd %.2
+	%.4 =d neg %.3
+	ret %.4
+}
