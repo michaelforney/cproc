@@ -1,6 +1,7 @@
 /* arithmetic and bits */
 OP(IADD,     "add")
 OP(ISUB,     "sub")
+OP(INEG,     "neg")
 OP(IDIV,     "div")
 OP(IMUL,     "mul")
 OP(IUDIV,    "udiv")
