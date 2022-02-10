@@ -352,6 +352,7 @@ inttype(unsigned long long val, bool decimal, char *end)
 			return t;
 	}
 	error(&tok.loc, "no suitable type for constant '%s'", tok.lit);
+	return NULL;
 }
 
 static int

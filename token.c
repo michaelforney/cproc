@@ -182,7 +182,7 @@ tokencheck(const struct token *t, enum tokenkind kind, const char *msg)
 	return t->lit;
 }
 
-_Noreturn void error(const struct location *loc, const char *fmt, ...)
+void error(const struct location *loc, const char *fmt, ...)
 {
 	va_list ap;
 
