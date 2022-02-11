@@ -169,7 +169,7 @@ cat >config.mk <<EOF
 PREFIX=$prefix
 BINDIR=$bindir
 CC=${CC:-cc}
-CFLAGS=${CFLAGS:--std=c99 -Wall -Wpedantic -Wno-parentheses -Wno-switch -g -pipe}
+CFLAGS=${CFLAGS:--std=c99 -Wall -Wpedantic -Wno-parentheses -Wno-switch -Wno-maybe-uninitialized -g -pipe}
 LDFLAGS=$LDFLAGS
 EOF
 echo done
