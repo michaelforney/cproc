@@ -1197,9 +1197,15 @@ emitfunc(struct func *f, bool global)
 	struct block *b;
 	struct inst **inst, **instend;
 	struct param *p;
+	struct value *v;
 
-	if (f->end->jump.kind == JUMP_NONE)
-		funcret(f, strcmp(f->name, "main") == 0 ? mkintconst(0) : NULL);
+	if (f->end->jump.kind == JUMP_NONE) {
+		v = NULL;
+		/* implicitly return 0 from main if we reach the end of the function */
+		if (strcmp(f->name, "main") == 0 && f->type->base == &typeint)
+			v = mkintconst(0);
+		funcret(f, v);
+	}
 	if (global)
 		puts("export");
 	fputs("function ", stdout);
