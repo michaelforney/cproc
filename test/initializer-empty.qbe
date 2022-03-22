@@ -1,0 +1,8 @@
+export data $x = align 4 { z 4 }
+export
+function $f() {
+@start.1
+	%.1 =l alloc4 4
+@body.2
+	ret
+}

@@ -947,26 +947,25 @@ decl(struct scope *s, struct func *f)
 				error(&tok.loc, "specified alignment of object '%s' is less strict than is required by type", name);
 			if (d->align < align)
 				d->align = align;
+			init = NULL;
 			if (consume(TASSIGN)) {
 				if (f && d->linkage != LINKNONE)
 					error(&tok.loc, "object '%s' with block scope and %s linkage cannot have initializer", name, d->linkage == LINKEXTERN ? "external" : "internal");
 				if (d->defined)
 					error(&tok.loc, "object '%s' redefined", name);
 				init = parseinit(s, d->type);
-			} else {
-				init = NULL;
+			} else if (d->linkage != LINKNONE) {
+				if (!(sc & SCEXTERN) && !d->defined && !d->tentative.next)
+					listinsert(tentativedefns.prev, &d->tentative);
+				break;
 			}
-			if (init || d->linkage == LINKNONE) {
-				if (d->linkage != LINKNONE || sc & SCSTATIC)
-					emitdata(d, init);
-				else
-					funcinit(f, d, init);
-				d->defined = true;
-				if (d->tentative.next)
-					listremove(&d->tentative);
-			} else if (!(sc & SCEXTERN) && !d->defined && !d->tentative.next) {
-				listinsert(tentativedefns.prev, &d->tentative);
-			}
+			if (d->linkage != LINKNONE || sc & SCSTATIC)
+				emitdata(d, init);
+			else
+				funcinit(f, d, init);
+			d->defined = true;
+			if (d->tentative.next)
+				listremove(&d->tentative);
 			break;
 		case DECLFUNC:
 			if (align)

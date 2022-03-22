@@ -216,7 +216,7 @@ parseinit(struct scope *s, struct type *t)
 	p.sub->iscur = false;
 	p.init = NULL;
 	p.last = &p.init;
-	if (t->incomplete && !(t->kind == TYPEARRAY && t->u.array.length == 0))
+	if (t->incomplete && t->kind != TYPEARRAY)
 		error(&tok.loc, "initializer specified for incomplete type");
 	for (;;) {
 		if (p.cur) {
@@ -228,6 +228,11 @@ parseinit(struct scope *s, struct type *t)
 				focus(&p);
 		}
 		if (consume(TLBRACE)) {
+			if (consume(TRBRACE)){
+				if (p.sub->type->incomplete)
+					error(&tok.loc, "array of unknown size has empty initializer");
+				goto next;
+			}
 			if (p.cur == p.sub) {
 				if (p.cur->type->prop & PROPSCALAR)
 					error(&tok.loc, "nested braces around scalar initializer");
@@ -271,8 +276,9 @@ parseinit(struct scope *s, struct type *t)
 			bits = (struct bitfield){0};
 		initadd(&p, mkinit(p.sub->offset, p.sub->offset + p.sub->type->size, bits, expr));
 		for (;;) {
-			if (p.sub->type->kind == TYPEARRAY && p.sub->type->incomplete)
+			if (p.sub->type->incomplete)
 				p.sub->type->incomplete = false;
+		next:
 			if (!p.cur)
 				return p.init;
 			if (tok.kind == TCOMMA) {
