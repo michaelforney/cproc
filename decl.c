@@ -1014,7 +1014,8 @@ decl(struct scope *s, struct func *f)
 	}
 }
 
-struct decl *stringdecl(struct expr *expr)
+struct decl *
+stringdecl(struct expr *expr)
 {
 	static struct map *strings;
 	struct mapkey key;
