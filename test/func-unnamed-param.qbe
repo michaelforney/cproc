@@ -1,0 +1,6 @@
+export
+function $f(w %.1) {
+@start.1
+@body.2
+	ret
+}
