@@ -352,7 +352,8 @@ line:
 	} else if (strcmp(name, "error") == 0) {
 		error(&tok.loc, "#error directive is not implemented");
 	} else if (strcmp(name, "pragma") == 0) {
-		error(&tok.loc, "#pragma directive is not implemented");
+		while (tok.kind != TNEWLINE && tok.kind != TEOF)
+			next();
 	} else {
 		error(&tok.loc, "invalid preprocessor directive #%s", name);
 	}
