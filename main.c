@@ -2,12 +2,11 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdnoreturn.h>
 #include "util.h"
 #include "arg.h"
 #include "cc.h"
 
-static noreturn void
+static void
 usage(void)
 {
 	fprintf(stderr, "usage: %s [input]\n", argv0);

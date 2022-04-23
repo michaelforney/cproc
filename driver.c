@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdnoreturn.h>
 #include <string.h>
 
 #include <fcntl.h>
@@ -294,7 +293,7 @@ kill:
 	}
 }
 
-static noreturn void
+static void
 buildexe(struct input *inputs, size_t ninputs, char *output)
 {
 	struct stageinfo *s = &stages[LINK];
