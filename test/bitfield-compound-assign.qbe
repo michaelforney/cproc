@@ -2,20 +2,19 @@ export
 function $f() {
 @start.1
 @body.2
-	%.1 =l mul 0, 1
-	%.2 =l add $s, %.1
-	%.3 =w loadw %.2
-	%.4 =w shl %.3, 19
-	%.5 =w sar %.4, 23
-	%.6 =w add %.5, 3
-	%.7 =w shl %.6, 4
-	%.8 =w shl %.7, 19
-	%.9 =w sar %.8, 23
-	%.10 =w and %.7, 8176
-	%.11 =w loadw %.2
-	%.12 =w and %.11, 18446744073709543439
-	%.13 =w or %.10, %.12
-	storew %.13, %.2
+	%.1 =l add $s, 0
+	%.2 =w loadw %.1
+	%.3 =w shl %.2, 19
+	%.4 =w sar %.3, 23
+	%.5 =w add %.4, 3
+	%.6 =w shl %.5, 4
+	%.7 =w shl %.6, 19
+	%.8 =w sar %.7, 23
+	%.9 =w and %.6, 8176
+	%.10 =w loadw %.1
+	%.11 =w and %.10, 18446744073709543439
+	%.12 =w or %.9, %.11
+	storew %.12, %.1
 	ret
 }
 export data $s = align 4 { z 4 }

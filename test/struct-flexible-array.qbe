@@ -6,12 +6,11 @@ function w $f(l %.1) {
 	storel %.1, %.2
 @body.2
 	%.3 =l loadl %.2
-	%.4 =l mul 4, 1
-	%.5 =l add %.3, %.4
-	%.6 =l extsw 2
-	%.7 =l mul %.6, 2
-	%.8 =l add %.5, %.7
-	%.9 =w loadsh %.8
-	%.10 =w extsh %.9
-	ret %.10
+	%.4 =l add %.3, 4
+	%.5 =l extsw 2
+	%.6 =l mul %.5, 2
+	%.7 =l add %.4, %.6
+	%.8 =w loadsh %.7
+	%.9 =w extsh %.8
+	ret %.9
 }

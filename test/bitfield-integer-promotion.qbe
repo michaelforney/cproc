@@ -3,12 +3,11 @@ function w $main() {
 @start.1
 @body.2
 	%.1 =w neg 1
-	%.2 =l mul 0, 1
-	%.3 =l add $s, %.2
-	%.4 =w loadw %.3
-	%.5 =w shl %.4, 30
-	%.6 =w shr %.5, 30
-	%.7 =w csgtw %.1, %.6
-	ret %.7
+	%.2 =l add $s, 0
+	%.3 =w loadw %.2
+	%.4 =w shl %.3, 30
+	%.5 =w shr %.4, 30
+	%.6 =w csgtw %.1, %.5
+	ret %.6
 }
 export data $s = align 4 { z 4 }

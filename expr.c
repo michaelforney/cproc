@@ -907,12 +907,11 @@ postfixexpr(struct scope *s, struct expr *r)
 			if (tok.kind != TIDENT)
 				error(&tok.loc, "expected identifier after '%s' operator", tokstr[op]);
 			lvalue = op == TARROW || r->base->lvalue;
-			r = exprconvert(r, mkpointertype(&typechar, QUALNONE));
 			offset = 0;
 			m = typemember(t, tok.lit, &offset);
 			if (!m)
 				error(&tok.loc, "struct/union has no member named '%s'", tok.lit);
-			r = mkbinaryexpr(&tok.loc, TADD, r, mkconstexpr(&typeulong, offset));
+			r = mkbinaryexpr(&tok.loc, TADD, exprconvert(r, &typeulong), mkconstexpr(&typeulong, offset));
 			r = exprconvert(r, mkpointertype(m->type, tq | m->qual));
 			r = mkunaryexpr(TMUL, r);
 			r->lvalue = lvalue;

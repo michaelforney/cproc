@@ -3,12 +3,11 @@ export
 function w $main() {
 @start.1
 @body.2
-	%.1 =l mul 0, 1
-	%.2 =l add $s, %.1
-	%.3 =w loadsh %.2
-	%.4 =w shl %.3, 25
-	%.5 =w sar %.4, 25
-	%.6 =w extsh %.5
-	%.7 =w csgtw %.6, 0
-	ret %.7
+	%.1 =l add $s, 0
+	%.2 =w loadsh %.1
+	%.3 =w shl %.2, 25
+	%.4 =w sar %.3, 25
+	%.5 =w extsh %.4
+	%.6 =w csgtw %.5, 0
+	ret %.6
 }
