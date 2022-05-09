@@ -156,6 +156,59 @@ bitfieldwidth(struct expr *e)
 	return e->type->size * 8 - e->u.bitfield.bits.before - e->u.bitfield.bits.after;
 }
 
+static struct expr *
+exprconvert(struct expr *e, struct type *t)
+{
+	if (typecompatible(e->type, t))
+		return e;
+	return mkexpr(EXPRCAST, t, e);
+}
+
+static bool
+nullpointer(struct expr *e)
+{
+	if (e->kind != EXPRCONST)
+		return false;
+	if (!(e->type->prop & PROPINT) && (e->type->kind != TYPEPOINTER || e->type->base != &typevoid))
+		return false;
+	return e->u.constant.u == 0;
+}
+
+struct expr *
+exprassign(struct expr *e, struct type *t)
+{
+	struct type *et;
+
+	et = e->type;
+	switch (t->kind) {
+	case TYPEBOOL:
+		if (!(et->prop & PROPARITH) && et->kind != TYPEPOINTER)
+			error(&tok.loc, "assignment to _Bool must be from arithmetic or pointer type");
+		break;
+	case TYPEPOINTER:
+		if (nullpointer(e))
+			break;
+		if (et->kind != TYPEPOINTER)
+			error(&tok.loc, "assignment to pointer must be from pointer or null pointer constant");
+		if (t->base != &typevoid && et->base != &typevoid && !typecompatible(t->base, et->base))
+			error(&tok.loc, "base types of pointer assignment must be compatible or void");
+		if ((et->qual & t->qual) != et->qual)
+			error(&tok.loc, "assignment to pointer discards qualifiers");
+		break;
+	case TYPESTRUCT:
+	case TYPEUNION:
+		if (!typecompatible(t, et))
+			error(&tok.loc, "assignment to %s type must be from compatible type", tokstr[t->kind]);
+		break;
+	default:
+		assert(t->prop & PROPARITH);
+		if (!(et->prop & PROPARITH))
+			error(&tok.loc, "assignment to arithmetic type must be from arithmetic type");
+		break;
+	}
+	return exprconvert(e, t);
+}
+
 struct expr *
 exprpromote(struct expr *e)
 {
@@ -175,16 +228,6 @@ commonreal(struct expr **e1, struct expr **e2)
 	*e2 = exprconvert(*e2, t);
 
 	return t;
-}
-
-static bool
-nullpointer(struct expr *e)
-{
-	if (e->kind != EXPRCONST)
-		return false;
-	if (!(e->type->prop & PROPINT) && (e->type->kind != TYPEPOINTER || e->type->base != &typevoid))
-		return false;
-	return e->u.constant.u == 0;
 }
 
 static struct expr *
@@ -708,7 +751,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 
 	switch (kind) {
 	case BUILTINALLOCA:
-		e = exprconvert(assignexpr(s), &typeulong);
+		e = exprassign(assignexpr(s), &typeulong);
 		e = mkexpr(EXPRBUILTIN, mkpointertype(&typevoid, QUALNONE), e);
 		e->u.builtin.kind = BUILTINALLOCA;
 		break;
@@ -786,7 +829,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e = assignexpr(s);
 		if (!typesame(e->type, typeadjvalist))
 			error(&tok.loc, "va_end argument must have type va_list");
-		e = exprconvert(e, &typevoid);
+		e = mkexpr(EXPRCAST, &typevoid, e);
 		break;
 	case BUILTINVASTART:
 		e = mkexpr(EXPRBUILTIN, &typevoid, assignexpr(s));
@@ -881,7 +924,7 @@ postfixexpr(struct scope *s, struct expr *r)
 				if (!t->u.func.isprototype || (t->u.func.isvararg && !p))
 					*end = exprpromote(*end);
 				else
-					*end = exprconvert(*end, p->type);
+					*end = exprassign(*end, p->type);
 				end = &(*end)->next;
 				++e->u.call.nargs;
 				if (p)
@@ -1035,10 +1078,11 @@ unaryexpr(struct scope *s)
 static struct expr *
 castexpr(struct scope *s)
 {
-	struct type *t;
+	struct type *t, *ct;
 	enum typequal tq;
 	struct expr *r, *e, **end;
 
+	ct = NULL;
 	end = &r;
 	while (consume(TLPAREN)) {
 		tq = QUALNONE;
@@ -1046,8 +1090,8 @@ castexpr(struct scope *s)
 		if (!t) {
 			e = expr(s);
 			expect(TRPAREN, "after expression to match '('");
-			*end = postfixexpr(s, e);
-			return r;
+			e = postfixexpr(s, e);
+			goto done;
 		}
 		expect(TRPAREN, "after type name");
 		if (tok.kind == TLBRACE) {
@@ -1055,17 +1099,22 @@ castexpr(struct scope *s)
 			e->qual = tq;
 			e->lvalue = true;
 			e->u.compound.init = parseinit(s, t);
-			e = decay(e);
-			*end = postfixexpr(s, e);
-			return r;
+			e = postfixexpr(s, decay(e));
+			goto done;
 		}
+		if (t != &typevoid && !(t->prop & PROPSCALAR))
+			error(&tok.loc, "cast type must be scalar");
 		e = mkexpr(EXPRCAST, t, NULL);
-		/* XXX check types 6.5.4 */
 		*end = e;
 		end = &e->base;
+		ct = t;
 	}
-	*end = unaryexpr(s);
+	e = unaryexpr(s);
 
+done:
+	if (ct && ct != &typevoid && !(e->type->prop & PROPSCALAR))
+		error(&tok.loc, "cast operand must have scalar type");
+	*end = e;
 	return r;
 }
 
@@ -1268,12 +1317,4 @@ expr(struct scope *s)
 	if (!r->next)
 		return r;
 	return mkexpr(EXPRCOMMA, e->type, r);
-}
-
-struct expr *
-exprconvert(struct expr *e, struct type *t)
-{
-	if (typecompatible(e->type, t))
-		return e;
-	return mkexpr(EXPRCAST, t, e);
 }

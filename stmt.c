@@ -296,7 +296,7 @@ stmt(struct func *f, struct scope *s)
 		next();
 		t = functype(f);
 		if (t->base != &typevoid) {
-			e = exprconvert(expr(s), t->base);
+			e = exprassign(expr(s), t->base);
 			v = funcexpr(f, e);
 			delexpr(e);
 		} else {

@@ -477,7 +477,7 @@ struct expr *constexpr(struct scope *);
 unsigned long long intconstexpr(struct scope *, _Bool);
 void delexpr(struct expr *);
 
-struct expr *exprconvert(struct expr *, struct type *);
+struct expr *exprassign(struct expr *, struct type *);
 struct expr *exprpromote(struct expr *);
 
 /* eval */
