@@ -403,7 +403,7 @@ decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc,
 		}
 	} else {
 		n = utf8dec(&c, s, 4);
-		if (n == -1)
+		if (n == (size_t)-1)
 			error(loc, "%s contains invalid UTF-8", desc);
 		s += n;
 	}
