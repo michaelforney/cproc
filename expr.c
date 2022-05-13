@@ -98,8 +98,9 @@ decay(struct expr *e)
 	tq = e->qual;
 	switch (t->kind) {
 	case TYPEARRAY:
+		assert(tq == QUALNONE);
 		e = mkunaryexpr(TBAND, e);
-		e->type = mkpointertype(t->base, tq);
+		e->type = mkpointertype(t->base, t->qual);
 		e->decayed = true;
 		break;
 	case TYPEFUNC:
