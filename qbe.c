@@ -422,14 +422,18 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 			case 2: op = ICNEW, l = funcinst(f, IEXTUH, 'w', l, NULL); break;
 			case 4: op = ICNEW; break;
 			case 8: op = ICNEL; break;
-			default: fatal("internal error; unknown integer conversion");
+			default:
+				fatal("internal error; unknown integer conversion");
+				return NULL;  /* unreachable */
 			}
 		} else {
 			assert(src->prop & PROPFLOAT);
 			switch (src->size) {
 			case 4: op = ICNES, r = mkfltconst(VALUE_FLTCONST, 0); break;
 			case 8: op = ICNED, r = mkfltconst(VALUE_DBLCONST, 0); break;
-			default: fatal("internal error; unknown floating point conversion");
+			default:
+				fatal("internal error; unknown floating point conversion");
+				return NULL;  /* unreachable */
 			}
 		}
 	} else if (dst->prop & PROPINT) {
@@ -441,7 +445,9 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 			case 4: op = src->u.basic.issigned ? IEXTSW : IEXTUW; break;
 			case 2: op = src->u.basic.issigned ? IEXTSH : IEXTUH; break;
 			case 1: op = src->u.basic.issigned ? IEXTSB : IEXTUB; break;
-			default: fatal("internal error; unknown integer conversion");
+			default:
+				fatal("internal error; unknown integer conversion");
+				return NULL;  /* unreachable */
 			}
 		} else {
 			if (dst->u.basic.issigned)
@@ -692,14 +698,16 @@ funcexpr(struct func *f, struct expr *e)
 		lval = funclval(f, e->base);
 		l = funcload(f, e->base->type, lval);
 		t = e->type;
-		if (t->kind == TYPEPOINTER)
+		if (t->kind == TYPEPOINTER) {
 			r = mkintconst(t->base->size);
-		else if (t->prop & PROPINT)
+		} else if (t->prop & PROPINT) {
 			r = mkintconst(1);
-		else if (t->prop & PROPFLOAT)
+		} else if (t->prop & PROPFLOAT) {
 			r = mkfltconst(t->size == 4 ? VALUE_FLTCONST : VALUE_DBLCONST, 1);
-		else
+		} else {
 			fatal("not a scalar");
+			return NULL;  /* unreachable */
+		}
 		v = funcinst(f, e->op == TINC ? IADD : ISUB, qbetype(t).base, l, r);
 		v = funcstore(f, e->type, e->qual, lval, v);
 		return e->u.incdec.post ? l : v;

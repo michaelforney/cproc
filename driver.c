@@ -394,6 +394,7 @@ main(int argc, char *argv[])
 		qbearch = "rv64";
 	} else {
 		fatal("unsupported target '%s'", target);
+		return 1;  /* unreachable */
 	}
 	arrayaddptr(&stages[COMPILE].cmd, "-t");
 	arrayaddptr(&stages[COMPILE].cmd, arch);
