@@ -7,7 +7,7 @@ const struct target *targ;
 
 static const struct target alltargs[] = {
 	{
-		.name = "x86_64",
+		.name = "x86_64-sysv",
 		.typewchar = &typeint,
 		.typevalist = &(struct type){
 			.kind = TYPEARRAY,
