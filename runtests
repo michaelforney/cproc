@@ -17,7 +17,7 @@ for test ; do
 	name=${test%.c}
 	case $name in
 	*+*) arch=${name##*+} ;;
-	*) arch=x86_64 ;;
+	*) arch=x86_64-sysv ;;
 	esac
 	if [ -f "$name.qbe" ] ; then
 		want=$name.qbe

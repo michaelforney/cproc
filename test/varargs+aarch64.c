@@ -1,1 +1,1 @@
-varargs+x86_64.c
+varargs+x86_64-sysv.c
