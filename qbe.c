@@ -246,9 +246,12 @@ static struct value *
 funcinst(struct func *f, int op, int class, struct value *arg0, struct value *arg1)
 {
 	struct inst *inst;
+	struct block *b;
 
-	if (f->end->jump.kind)
-		return NULL;
+	if (f->end->jump.kind) {
+		b = mkblock("dead");
+		funclabel(f, b);
+	}
 	inst = mkinst(f, op, class, arg0, arg1);
 	arrayaddptr(&f->end->insts, inst);
 	return &inst->res;
