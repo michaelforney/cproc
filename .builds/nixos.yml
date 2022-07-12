@@ -9,7 +9,7 @@ packages:
 - nixpkgs.gnumake
 tasks:
 - build: |
-    PATH=$HOME/qbe/obj:$PATH
+    PATH=$HOME/qbe:$PATH
     make -C qbe
     cd cproc
     ./configure --with-ldso=

@@ -2,12 +2,10 @@ image: freebsd/12.x
 sources:
 - https://git.sr.ht/~mcf/cproc
 - git://c9x.me/qbe.git
-packages:
-- gmake
 tasks:
 - build: |
-    PATH=$HOME/qbe/obj:$PATH
-    gmake -C qbe
+    PATH=$HOME/qbe:$PATH
+    make -C qbe
     cd cproc
     ./configure
     make all check bootstrap

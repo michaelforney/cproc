@@ -9,7 +9,7 @@ sources:
 - https://git.sr.ht/~mcf/qbe
 tasks:
 - build: |
-    PATH=$HOME/qbe/obj:$PATH
+    PATH=$HOME/qbe:$PATH
     cd qbe
     cat >config.h <<EOF
     #define Defasm Gaself
