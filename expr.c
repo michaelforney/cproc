@@ -958,7 +958,7 @@ postfixexpr(struct scope *s, struct expr *r)
 			if (!m)
 				error(&tok.loc, "struct/union has no member named '%s'", tok.lit);
 			r = mkbinaryexpr(&tok.loc, TADD, exprconvert(r, &typeulong), mkconstexpr(&typeulong, offset));
-			r = exprconvert(r, mkpointertype(m->type, tq | m->qual));
+			r->type = mkpointertype(m->type, tq | m->qual);
 			r = mkunaryexpr(TMUL, r);
 			r->lvalue = lvalue;
 			if (m->bits.before || m->bits.after) {
