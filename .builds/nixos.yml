@@ -10,7 +10,7 @@ packages:
 tasks:
 - build: |
     PATH=$HOME/qbe:$PATH
-    make -C qbe
+    make -C qbe CC=cc
     cd cproc
     ./configure --with-ldso=
     make all check bootstrap
