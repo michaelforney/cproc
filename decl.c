@@ -83,7 +83,7 @@ storageclass(enum storageclass *sc)
 	case TTYPEDEF:       new = SCTYPEDEF;     break;
 	case TEXTERN:        new = SCEXTERN;      break;
 	case TSTATIC:        new = SCSTATIC;      break;
-	case T_THREAD_LOCAL: new = SCTHREADLOCAL; break;
+	case TTHREAD_LOCAL:  new = SCTHREADLOCAL; break;
 	case TAUTO:          new = SCAUTO;        break;
 	case TREGISTER:      new = SCREGISTER;    break;
 	default: return 0;
@@ -323,7 +323,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			ts |= SPECUNSIGNED;
 			next();
 			break;
-		case T_BOOL:
+		case TBOOL:
 			t = &typebool;
 			++ntypes;
 			next();
@@ -351,9 +351,9 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			++ntypes;
 			next();
 			break;
-		case T__TYPEOF__:
+		case TTYPEOF:
 			next();
-			expect(TLPAREN, "after '__typeof__'");
+			expect(TLPAREN, "after 'typeof'");
 			t = typename(s, &tq);
 			if (!t) {
 				e = expr(s);
@@ -368,7 +368,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			break;
 
 		/* 6.7.5 Alignment specifier */
-		case T_ALIGNAS:
+		case TALIGNAS:
 			if (!align)
 				error(&tok.loc, "alignment specifier not allowed in this declaration");
 			next();
@@ -749,9 +749,9 @@ staticassert(struct scope *s)
 	struct stringlit msg;
 	unsigned long long c;
 
-	if (!consume(T_STATIC_ASSERT))
+	if (!consume(TSTATIC_ASSERT))
 		return false;
-	expect(TLPAREN, "after _Static_assert");
+	expect(TLPAREN, "after static_assert");
 	c = intconstexpr(s, true);
 	if (consume(TCOMMA)) {
 		tokencheck(&tok, TSTRINGLIT, "after static assertion expression");
