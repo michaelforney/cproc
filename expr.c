@@ -688,6 +688,12 @@ primaryexpr(struct scope *s)
 		}
 		next();
 		break;
+	case TTRUE:
+	case TFALSE:
+		e = mkexpr(EXPRCONST, &typebool, NULL);
+		e->u.constant.u = tok.kind == TTRUE;
+		next();
+		break;
 	case TLPAREN:
 		next();
 		e = expr(s);
