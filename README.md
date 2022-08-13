@@ -96,7 +96,7 @@ use it for general discussion, questions, patches, or bug reports
 
 ## Issue tracker
 
-Please report any issues to https://todo.sr.ht/~mcf/cproc.
+Please report any issues to [~mcf/cproc@todo.sr.ht].
 
 ## Contributing
 
@@ -123,4 +123,5 @@ Patches are greatly appreciated. Send them to the mailing list
 [#35]: https://todo.sr.ht/~mcf/cproc/35
 [#44]: https://todo.sr.ht/~mcf/cproc/44
 [~mcf/cproc@lists.sr.ht]: https://lists.sr.ht/~mcf/cproc
+[~mcf/cproc@todo.sr.ht]: https://todo.sr.ht/~mcf/cproc
 [GitHub mirror]: https://github.com/michaelforney/cproc
