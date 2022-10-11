@@ -1,0 +1,125 @@
+.Dd $Mdocdate$
+.Dt CPROC 1
+.Os
+.Sh NAME
+.Nm cproc
+.Nd C11 compiler
+.Sh SYNOPSIS
+.Nm
+.Op options
+.Ar sources...
+.Sh DESCRIPTION
+.Nm
+is a C11 compiler using QBE as backend.
+It supports ISO C11, some features from the upcoming C23, and some
+GNU C extensions.
+.Pp
+When invoked without any options,
+.Nm
+will preprocess, compile, and link
+.Ar sources...
+and generate an executable
+.Pa a.out
+file.
+.Pp
+The following options are available:
+.Bl -tag -width Ds
+.It Fl c
+Compile sources to object files rather than linking them.
+.It Fl D Ar macro Ns Op = Ns Ar value
+Define
+.Ar macro
+to
+.Ar value
+as if by a preprocessor
+.Em #define .
+If
+.Ar value
+is not given,
+.Ar macro
+is defined to 1.
+.It Fl E
+Preprocess the input files and print the output rather than compiling.
+.It Fl I Ar path
+Append
+.Ar path
+to the list of directories to be searched for headers.
+.It Fl L Ar path
+Append
+.Ar path
+to the list of directories to be searched for libraries.
+.It Fl l Ar library
+Link
+.Ar library
+to the executable.
+If
+.Ar library
+is a relative path, it will be searched through the compiler search
+paths.
+.It Fl o Ar output
+Write the output to
+.Ar output .
+By default, output is written to 
+.Pa a.out .
+Or, if
+.Fl c
+is used, the output file is determined by replacing the source file
+extension with
+.Pa .o .
+Or, if
+.Fl E
+or
+.Fl emit-qbe
+is used, the output is written to standard output.
+.It Fl s
+Strip the symbol table from the generated executable.
+.It Fl U Ar macro
+Undefine a pre-defined macro.
+.It Fl v
+Print the commands run as part of the compile pipeline.
+.It Fl x Ar format
+Force
+.Nm
+to interpret subsequent source files as
+.Ar format .
+By default,
+.Nm
+will determine source code language from the known file extensions.
+This option forces a different
+.Ar format
+which can be one of
+.Dq none ,
+.Dq c ,
+.Dq c-header ,
+.Dq cpp-output ,
+.Dq qbe ,
+.Dq assembler ,
+.Dq assembler-with-cpp .
+.It Fl Wa,args... , Fl Wl,args... , Fl Wp,args...
+For each of these options, pass additional
+.Ar args...
+to the assembler, linker, or preprocessor respectively.
+The list of arguments is delimited by commas.
+.Pp
+For example, 
+.Fl Wl,--gc-sections
+will forward the option
+.Fl -gc-sections
+to the linker.
+.It Fl static
+Link the executable statically.
+.It Fl nostdlib
+Do not use standard library and startup files when linking.
+.It Fl nostdinc
+Do not search default compiler include paths when compiling.
+.It Fl pthread
+This is a short hand of
+.Fl lpthread .
+.It Fl g , Fl O , Fl pipe , Fl pedantic
+These options are available for compatibility with most common compilers but
+are currently ineffective.
+.El
+.Sh AUTHORS
+.Nm
+was written by
+.An Michael Forney Aq Mt mforney@mforney.org .
