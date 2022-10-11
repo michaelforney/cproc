@@ -1,0 +1,124 @@
+.Dd $Mdocdate$
+.Dt CPROC 1
+.Os
+.Sh NAME
+.Nm cproc
+.Nd C11 compiler
+.Sh SYNOPSIS
+.Nm
+.Op options
+.Ar sources...
+.Sh DESCRIPTION
+.Nm
+is a C11 compiler using QBE as backend. It supports C standard version 11 and
+various features from C23 and some GNU extensions.
+.Pp
+When invoked without any options,
+.Nm
+will preprocess, compile and link
+.Ar sources...
+and generate an executable
+.Pa a.out
+file.
+.Pp
+The following options are available:
+.Bl -tag -width Ds
+.It Fl c
+Compile sources as object file rather than linking them.
+.It Fl D Ar macro
+Define
+.Ar macro
+constant as preprocessor
+.Em #define .
+The macro expansion can be in the form of an assignment such as
+.Fl DFOO=example
+in which case the macro
+.Ar FOO
+will expand to
+.Ar example
+during preprocessing. If no assignment is set, the macro is only available as
+boolean condition.
+.It Fl E
+Preprocess the input files and print the output rather than compiling.
+.It Fl I Ar path
+Append the directory pointed by
+.Ar path
+to the compiler list of directories to be searched for header files.
+.It Fl L Ar path
+Append the directory pointed by
+.Ar path
+to the compiler list of directories to be searched when linking libraries.
+.It Fl l Ar library
+Link
+.Ar library
+to the final generated target. If
+.Ar library
+isn't an absolute path, it will be searched through the compiler search paths.
+.It Fl o Ar output
+Depending on other options,
+.Nm
+can output the generated content through the standard output rather than an
+output file. This option emits the generated content to
+.Ar output
+when applicable. For example, the
+.Fl E
+option emits the preprocessor content on standard output by default. Using
+.Nm
+.Fl E
+.Fl o Ar preproc.c
+will eventually generate the preprocessed content to
+.Ar preproc.c
+file.
+.It Fl s
+Strip symbol table from the generated executable.
+.It Fl U Ar macro
+Undefine a macro while preprocessing source file.
+.It Fl v
+Turn out verbose message while operating.
+.It Fl x Ar syntax
+Force
+.Nm
+to interpret source files as
+.Ar syntax .
+By default
+.Nm
+will determine source code language from the known file extensions. This option
+force a different 
+.Ar syntax
+which can be one of
+.Dq none ,
+.Dq c ,
+.Dq c-header ,
+.Dq cpp-output ,
+.Dq qbe ,
+.Dq assembler ,
+.Dq assembler-with-cpp .
+.It Fl Wa,args... , Fl Wl,args... , Fl Wp,args...
+For each of these options, pass additional
+.Ar args...
+to the assembler, linker or preprocessor respectively. The list of arguments
+must not contain any whitespace and should be separated by commas instead.
+.Pp
+Examples:
+.Nm
+.Fl Wl,-E
+.It Fl emit-qbe
+Emit QBE code.
+.It Fl static
+Do not use dynamic linking and use static linking if available.
+.It Fl nostdlib
+Do not use standard library and startup files when linking.
+.It Fl nostdinc
+Do not search default compiler include paths when compiling.
+.It 
+.It Fl pthread
+This is a short hand of
+.Fl lpthread .
+.It Fl g , Fl O , Fl pipe , Fl pedantic
+These options are available for compatibility with most common compilers but
+are currently ineffective.
+.El
+.Sh AUTHORS
+.Nm
+was written by
+.An Michael Forney Aq Mt mforney@mforney.org .

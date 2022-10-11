@@ -2,6 +2,7 @@
 
 PREFIX=/usr/local
 BINDIR=$(PREFIX)/bin
+MANDIR=$(PREFIX)/share/man
 BACKEND=qbe
 
 objdir=.
@@ -92,6 +93,8 @@ check: all
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp $(objdir)/cproc $(objdir)/cproc-qbe $(DESTDIR)$(BINDIR)
+	mkdir -p $(DESTDIR)$(MANDIR)/man1
+	cp doc/cproc.1 $(DESTDIR)$(MANDIR)/man1
 
 .PHONY: qbe
 qbe:
