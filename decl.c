@@ -372,14 +372,14 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			if (!align)
 				error(&tok.loc, "alignment specifier not allowed in this declaration");
 			next();
-			expect(TLPAREN, "after '_Alignas'");
+			expect(TLPAREN, "after 'alignas'");
 			other = typename(s, NULL);
 			i = other ? other->align : intconstexpr(s, false);
 			if (i & (i - 1))
 				error(&tok.loc, "invalid alignment: %d", i);
 			if (i > *align)
 				*align = i;
-			expect(TRPAREN, "to close '_Alignas' specifier");
+			expect(TRPAREN, "to close 'alignas' specifier");
 			break;
 
 		default:
@@ -900,7 +900,7 @@ decl(struct scope *s, struct func *f)
 		return false;
 	if (f) {
 		if (sc == SCTHREADLOCAL)
-			error(&tok.loc, "block scope declaration containing '_Thread_local' must contain 'static' or 'extern'");
+			error(&tok.loc, "block scope declaration containing 'thread_local' must contain 'static' or 'extern'");
 	} else {
 		/* 6.9p2 */
 		if (sc & SCAUTO)

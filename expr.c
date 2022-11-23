@@ -184,7 +184,7 @@ exprassign(struct expr *e, struct type *t)
 	switch (t->kind) {
 	case TYPEBOOL:
 		if (!(et->prop & PROPARITH) && et->kind != TYPEPOINTER)
-			error(&tok.loc, "assignment to _Bool must be from arithmetic or pointer type");
+			error(&tok.loc, "assignment to bool must be from arithmetic or pointer type");
 		break;
 	case TYPEPOINTER:
 		if (nullpointer(e))
@@ -1056,7 +1056,7 @@ unaryexpr(struct scope *s)
 			t = NULL;
 			e = unaryexpr(s);
 		} else {
-			error(&tok.loc, "expected ')' after '_Alignof'");
+			error(&tok.loc, "expected ')' after 'alignof'");
 			return NULL;  /* unreachable */
 		}
 		if (!t) {
