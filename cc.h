@@ -271,15 +271,19 @@ struct decl {
 	char *asmname;
 	_Bool defined;
 
-	/* link in list of tentative object definitions */
-	struct list tentative;
-	/* alignment of object storage (may be stricter than type requires) */
-	int align;
-
-	/* the function might have an "inline definition" (C11 6.7.4p7) */
-	_Bool inlinedefn;
-
-	enum builtinkind builtin;
+	union {
+		struct {
+			/* link in list of tentative object definitions */
+			struct list tentative;
+			/* alignment of object storage (may be stricter than type requires) */
+			int align;
+		} obj;
+		struct {
+			/* the function might have an "inline definition" (C11 6.7.4p7) */
+			_Bool inlinedefn;
+		} func;
+		enum builtinkind builtin;
+	} u;
 };
 
 struct scope {

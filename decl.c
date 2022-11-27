@@ -947,8 +947,8 @@ decl(struct scope *s, struct func *f)
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			if (align && align < t->align)
 				error(&tok.loc, "specified alignment of object '%s' is less strict than is required by type", name);
-			if (d->align < align)
-				d->align = align;
+			if (d->u.obj.align < align)
+				d->u.obj.align = align;
 			init = NULL;
 			if (consume(TASSIGN)) {
 				if (f && d->linkage != LINKNONE)
@@ -957,8 +957,8 @@ decl(struct scope *s, struct func *f)
 					error(&tok.loc, "object '%s' redefined", name);
 				init = parseinit(s, d->type);
 			} else if (d->linkage != LINKNONE) {
-				if (!(sc & SCEXTERN) && !d->defined && !d->tentative.next)
-					listinsert(tentativedefns.prev, &d->tentative);
+				if (!(sc & SCEXTERN) && !d->defined && !d->u.obj.tentative.next)
+					listinsert(tentativedefns.prev, &d->u.obj.tentative);
 				break;
 			}
 			if (d->linkage != LINKNONE || sc & SCSTATIC)
@@ -966,8 +966,8 @@ decl(struct scope *s, struct func *f)
 			else
 				funcinit(f, d, init);
 			d->defined = true;
-			if (d->tentative.next)
-				listremove(&d->tentative);
+			if (d->u.obj.tentative.next)
+				listremove(&d->u.obj.tentative);
 			break;
 		case DECLFUNC:
 			if (align)
@@ -989,7 +989,7 @@ decl(struct scope *s, struct func *f)
 				}
 			}
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
-			d->inlinedefn = d->linkage == LINKEXTERN && fs & FUNCINLINE && !(sc & SCEXTERN) && (!prior || prior->inlinedefn);
+			d->u.func.inlinedefn = d->linkage == LINKEXTERN && fs & FUNCINLINE && !(sc & SCEXTERN) && (!prior || prior->u.func.inlinedefn);
 			if (tok.kind == TLBRACE) {
 				if (!allowfunc)
 					error(&tok.loc, "function definition not allowed");
@@ -999,7 +999,7 @@ decl(struct scope *s, struct func *f)
 				f = mkfunc(d, name, t, s);
 				stmt(f, s);
 				/* XXX: need to keep track of function in case a later declaration specifies extern */
-				if (!d->inlinedefn)
+				if (!d->u.func.inlinedefn)
 					emitfunc(f, d->linkage == LINKEXTERN);
 				s = delscope(s);
 				delfunc(f);
@@ -1044,5 +1044,5 @@ emittentativedefns(void)
 	struct list *l;
 
 	for (l = tentativedefns.next; l != &tentativedefns; l = l->next)
-		emitdata(listelement(l, struct decl, tentative), NULL);
+		emitdata(listelement(l, struct decl, u.obj.tentative), NULL);
 }

@@ -256,29 +256,31 @@ funcalloc(struct func *f, struct decl *d)
 	enum instkind op;
 	struct inst *inst;
 	unsigned long long size;
+	int align;
 
 	assert(!d->type->incomplete);
 	assert(d->type->size > 0);
-	if (!d->align)
-		d->align = d->type->align;
-	else if (d->align < d->type->align)
-		error(&tok.loc, "object requires alignment %d, which is stricter than %d", d->type->align, d->align);
+	align = d->u.obj.align;
+	if (!align)
+		align = d->type->align;
+	else if (align < d->type->align)
+		error(&tok.loc, "object requires alignment %d, which is stricter than %d", d->type->align, align);
 	size = d->type->size;
-	switch (d->align) {
+	switch (align) {
 	case 1:
 	case 2:
 	case 4:  op = IALLOC4; break;
 	case 8:  op = IALLOC8; break;
-	default: size += d->align - 16; /* fallthrough */
+	default: size += align - 16; /* fallthrough */
 	case 16: op = IALLOC16; break;
 	}
 	inst = mkinst(f, op, ptrclass, mkintconst(size), NULL);
 	arrayaddptr(&f->start->insts, inst);
-	if (d->align > 16) {
+	if (align > 16) {
 		/* TODO: implement alloc32 in QBE and use that instead */
-		inst = mkinst(f, IADD, ptrclass, &inst->res, mkintconst(d->align - 16));
+		inst = mkinst(f, IADD, ptrclass, &inst->res, mkintconst(align - 16));
 		arrayaddptr(&f->start->insts, inst);
-		inst = mkinst(f, IAND, ptrclass, &inst->res, mkintconst(-d->align));
+		inst = mkinst(f, IAND, ptrclass, &inst->res, mkintconst(-align));
 		arrayaddptr(&f->start->insts, inst);
 	}
 	d->value = &inst->res;
@@ -1321,18 +1323,20 @@ emitdata(struct decl *d, struct init *init)
 	struct type *t;
 	unsigned long long offset = 0, start, end, bits = 0;
 	size_t i;
+	int align;
 
-	if (!d->align)
-		d->align = d->type->align;
-	else if (d->align < d->type->align)
-		error(&tok.loc, "object requires alignment %d, which is stricter than %d", d->type->align, d->align);
+	align = d->u.obj.align;
+	if (!align)
+		align = d->type->align;
+	else if (align < d->type->align)
+		error(&tok.loc, "object requires alignment %d, which is stricter than %d", d->type->align, align);
 	for (cur = init; cur; cur = cur->next)
 		cur->expr = eval(cur->expr, EVALINIT);
 	if (d->linkage == LINKEXTERN)
 		fputs("export ", stdout);
 	fputs("data ", stdout);
 	emitvalue(d->value);
-	printf(" = align %d { ", d->align);
+	printf(" = align %d { ", align);
 
 	while (init) {
 		cur = init;

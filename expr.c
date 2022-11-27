@@ -906,7 +906,7 @@ postfixexpr(struct scope *s, struct expr *r)
 		case TLPAREN:  /* function call */
 			next();
 			if (r->kind == EXPRIDENT && r->u.ident.decl->kind == DECLBUILTIN) {
-				e = builtinfunc(s, r->u.ident.decl->builtin);
+				e = builtinfunc(s, r->u.ident.decl->u.builtin);
 				expect(TRPAREN, "after builtin parameters");
 				break;
 			}

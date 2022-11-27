@@ -14,19 +14,19 @@ scopeinit(void)
 		char *name;
 		struct decl decl;
 	} builtins[] = {
-		{"__builtin_alloca",     {.kind = DECLBUILTIN, .builtin = BUILTINALLOCA}},
-		{"__builtin_constant_p", {.kind = DECLBUILTIN, .builtin = BUILTINCONSTANTP}},
-		{"__builtin_expect",     {.kind = DECLBUILTIN, .builtin = BUILTINEXPECT}},
-		{"__builtin_inff",       {.kind = DECLBUILTIN, .builtin = BUILTININFF}},
-		{"__builtin_nanf",       {.kind = DECLBUILTIN, .builtin = BUILTINNANF}},
-		{"__builtin_offsetof",   {.kind = DECLBUILTIN, .builtin = BUILTINOFFSETOF}},
+		{"__builtin_alloca",     {.kind = DECLBUILTIN, .u.builtin = BUILTINALLOCA}},
+		{"__builtin_constant_p", {.kind = DECLBUILTIN, .u.builtin = BUILTINCONSTANTP}},
+		{"__builtin_expect",     {.kind = DECLBUILTIN, .u.builtin = BUILTINEXPECT}},
+		{"__builtin_inff",       {.kind = DECLBUILTIN, .u.builtin = BUILTININFF}},
+		{"__builtin_nanf",       {.kind = DECLBUILTIN, .u.builtin = BUILTINNANF}},
+		{"__builtin_offsetof",   {.kind = DECLBUILTIN, .u.builtin = BUILTINOFFSETOF}},
 		{"__builtin_types_compatible_p",
-			{.kind = DECLBUILTIN, .builtin = BUILTINTYPESCOMPATIBLEP}},
-		{"__builtin_unreachable", {.kind = DECLBUILTIN, .builtin = BUILTINUNREACHABLE}},
-		{"__builtin_va_arg",     {.kind = DECLBUILTIN, .builtin = BUILTINVAARG}},
-		{"__builtin_va_copy",    {.kind = DECLBUILTIN, .builtin = BUILTINVACOPY}},
-		{"__builtin_va_end",     {.kind = DECLBUILTIN, .builtin = BUILTINVAEND}},
-		{"__builtin_va_start",   {.kind = DECLBUILTIN, .builtin = BUILTINVASTART}},
+			{.kind = DECLBUILTIN, .u.builtin = BUILTINTYPESCOMPATIBLEP}},
+		{"__builtin_unreachable", {.kind = DECLBUILTIN, .u.builtin = BUILTINUNREACHABLE}},
+		{"__builtin_va_arg",     {.kind = DECLBUILTIN, .u.builtin = BUILTINVAARG}},
+		{"__builtin_va_copy",    {.kind = DECLBUILTIN, .u.builtin = BUILTINVACOPY}},
+		{"__builtin_va_end",     {.kind = DECLBUILTIN, .u.builtin = BUILTINVAEND}},
+		{"__builtin_va_start",   {.kind = DECLBUILTIN, .u.builtin = BUILTINVASTART}},
 	};
 	static struct decl valist;
 	struct builtin *b;
