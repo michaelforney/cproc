@@ -69,6 +69,8 @@ mkdecl(enum declkind k, struct type *t, enum typequal tq, enum linkage linkage)
 	d->linkage = linkage;
 	d->type = t;
 	d->qual = tq;
+	if (k == DECLOBJECT)
+		d->u.obj.align = t->align;
 
 	return d;
 }
@@ -944,9 +946,9 @@ decl(struct scope *s, struct func *f)
 				error(&tok.loc, "typedef '%s' redefined with different type", name);
 			break;
 		case DECLOBJECT:
-			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			if (align && align < t->align)
-				error(&tok.loc, "specified alignment of object '%s' is less strict than is required by type", name);
+				error(&tok.loc, "object '%s' requires alignment %d, which is stricter than specified alignment %d", name, t->align, align);
+			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			if (d->u.obj.align < align)
 				d->u.obj.align = align;
 			init = NULL;

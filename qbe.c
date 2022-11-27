@@ -260,12 +260,8 @@ funcalloc(struct func *f, struct decl *d)
 
 	assert(!d->type->incomplete);
 	assert(d->type->size > 0);
-	align = d->u.obj.align;
-	if (!align)
-		align = d->type->align;
-	else if (align < d->type->align)
-		error(&tok.loc, "object requires alignment %d, which is stricter than %d", d->type->align, align);
 	size = d->type->size;
+	align = d->u.obj.align;
 	switch (align) {
 	case 1:
 	case 2:
@@ -1326,10 +1322,6 @@ emitdata(struct decl *d, struct init *init)
 	int align;
 
 	align = d->u.obj.align;
-	if (!align)
-		align = d->type->align;
-	else if (align < d->type->align)
-		error(&tok.loc, "object requires alignment %d, which is stricter than %d", d->type->align, align);
 	for (cur = init; cur; cur = cur->next)
 		cur->expr = eval(cur->expr, EVALINIT);
 	if (d->linkage == LINKEXTERN)
