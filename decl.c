@@ -833,7 +833,6 @@ declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struc
 	struct decl *d;
 	enum linkage linkage;
 	const char *kindstr = kind == DECLFUNC ? "function" : "object";
-	char *priorname;
 
 	if (prior) {
 		if (prior->linkage == LINKNONE)
@@ -843,7 +842,7 @@ declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struc
 			error(&tok.loc, "%s '%s' redeclared with different linkage", kindstr, name);
 		if (!typecompatible(t, prior->type) || tq != prior->qual)
 			error(&tok.loc, "%s '%s' redeclared with incompatible type", kindstr, name);
-		if (asmname && strcmp(globalname(prior->value), asmname) != 0)
+		if (asmname && (!prior->asmname || strcmp(prior->asmname, asmname) != 0))
 			error(&tok.loc, "%s '%s' redeclared with different assembler name", kindstr, name);
 		prior->type = typecomposite(t, prior->type);
 		return prior;
@@ -862,18 +861,21 @@ declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struc
 				error(&tok.loc, "%s '%s' redeclared with different linkage", kindstr, name);
 			if (!typecompatible(t, prior->type) || tq != prior->qual)
 				error(&tok.loc, "%s '%s' redeclared with incompatible type", kindstr, name);
-			priorname = globalname(prior->value);
 			if (!asmname)
-				asmname = priorname;
-			else if (strcmp(priorname, asmname) != 0)
+				asmname = prior->asmname;
+			else if (!prior->asmname || strcmp(prior->asmname, asmname) != 0)
 				error(&tok.loc, "%s '%s' redeclared with different assembler name", kindstr, name);
 			t = typecomposite(t, prior->type);
 		}
 	}
 	d = mkdecl(kind, t, tq, linkage);
 	scopeputdecl(s, name, d);
-	if (kind == DECLFUNC || linkage != LINKNONE || sc & SCSTATIC)
-		d->value = mkglobal(asmname ? asmname : name, linkage == LINKNONE && !asmname);
+	if (kind == DECLFUNC || linkage != LINKNONE || sc & SCSTATIC) {
+		if (asmname)
+			name = asmname;
+		d->value = mkglobal(name, linkage == LINKNONE && !asmname);
+		d->asmname = asmname;
+	}
 	return d;
 }
 

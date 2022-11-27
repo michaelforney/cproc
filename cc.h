@@ -268,6 +268,7 @@ struct decl {
 	struct type *type;
 	enum typequal qual;
 	struct value *value;
+	char *asmname;
 	_Bool defined;
 
 	/* link in list of tentative object definitions */
@@ -523,7 +524,6 @@ void switchcase(struct switchcases *, unsigned long long, struct block *);
 struct block *mkblock(char *);
 
 struct value *mkglobal(char *, _Bool);
-char *globalname(struct value *);
 
 struct value *mkintconst(unsigned long long);
 unsigned long long intconstvalue(struct value *);

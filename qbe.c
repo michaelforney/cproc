@@ -140,13 +140,6 @@ mkglobal(char *name, bool private)
 	return v;
 }
 
-char *
-globalname(struct value *v)
-{
-	assert(v->kind == VALUE_GLOBAL && !v->id);
-	return v->u.name;
-}
-
 struct value *
 mkintconst(unsigned long long n)
 {
