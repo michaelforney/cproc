@@ -61,11 +61,11 @@ You may also want to customize your environment or `config.mk` with the
 appropriate `CC`, `CFLAGS` and `LDFLAGS`.
 
 If you don't have QBE installed, you can build it from the included
-submodule (NOTE: BSD users will need to use gmake here), then add it to
-your PATH so that the driver will be able to run it.
+submodule, then add it to your PATH so that the driver will be able to
+run it.
 
 	make qbe
-	PATH=$PWD/qbe/obj:$PATH
+	PATH=$PWD/qbe:$PATH
 
 Once this is done, you can build with
 
