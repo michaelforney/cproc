@@ -12,4 +12,4 @@ tasks:
 triggers:
 - action: email
   condition: failure
-  to: "<~mcf/cproc@lists.sr.ht>"
+  to: "<~mcf/cproc-builds@lists.sr.ht>"
