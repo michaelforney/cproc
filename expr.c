@@ -1232,7 +1232,7 @@ condexpr(struct scope *s)
 }
 
 struct expr *
-constexpr(struct scope *s)
+evalexpr(struct scope *s)
 {
 	return eval(condexpr(s), EVALARITH);
 }
@@ -1242,7 +1242,7 @@ intconstexpr(struct scope *s, bool allowneg)
 {
 	struct expr *e;
 
-	e = constexpr(s);
+	e = evalexpr(s);
 	if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 		error(&tok.loc, "not an integer constant expression");
 	if (!allowneg && e->type->u.basic.issigned && e->u.constant.u >> 63)

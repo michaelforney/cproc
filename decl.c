@@ -216,7 +216,7 @@ tagspec(struct scope *s)
 			name = tok.lit;
 			next();
 			if (consume(TASSIGN)) {
-				e = constexpr(s);
+				e = evalexpr(s);
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "expected integer constant expression");
 				i = e->u.constant.u;
