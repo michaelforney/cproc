@@ -80,7 +80,6 @@ specified in `config.h`.
 - Digraph sequences ([6.4.6p3], will not be implemented).
 - Variable-length arrays ([#1]).
 - `volatile`-qualified types ([#7]).
-- `_Thread_local` storage-class specifier ([#5]).
 - `long double` type ([#3]).
 - Inline assembly ([#5]).
 - Preprocessor ([#6]).

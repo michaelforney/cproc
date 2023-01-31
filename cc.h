@@ -541,7 +541,7 @@ void switchcase(struct switchcases *, unsigned long long, struct block *);
 
 struct block *mkblock(char *);
 
-struct value *mkglobal(char *, bool);
+struct value *mkglobal(char *, bool, bool);
 
 struct value *mkintconst(unsigned long long);
 unsigned long long intconstvalue(struct value *);

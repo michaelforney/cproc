@@ -941,7 +941,7 @@ declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struc
 	if (kind == DECLFUNC || linkage != LINKNONE || sc & SCSTATIC) {
 		if (asmname)
 			name = asmname;
-		d->value = mkglobal(name, linkage == LINKNONE && !asmname);
+		d->value = mkglobal(name, linkage == LINKNONE && !asmname, sc & SCTHREADLOCAL);
 		d->asmname = asmname;
 	}
 	return d;
@@ -981,8 +981,6 @@ decl(struct scope *s, struct func *f)
 		if (sc & SCREGISTER)
 			error(&tok.loc, "external declaration must not contain 'register'");
 	}
-	if (sc & SCTHREADLOCAL)
-		error(&tok.loc, "'_Thread_local' is not yet supported");
 	if (consume(TSEMICOLON)) {
 		/* XXX 6.7p2 error unless in function parameter/struct/union, or tag/enum members are declared */
 		return true;
@@ -1029,7 +1027,7 @@ decl(struct scope *s, struct func *f)
 					error(&tok.loc, "object '%s' redefined", name);
 				init = parseinit(s, d->type);
 				hasinit = true;
-			} else if (d->linkage != LINKNONE) {
+			} else if (d->linkage != LINKNONE && (!(sc & SCTHREADLOCAL) || sc & SCEXTERN)) {
 				if (!(sc & SCEXTERN) && !d->defined && !d->tentative) {
 					d->tentative = true;
 					*tentativedefnsend = d;
@@ -1096,7 +1094,7 @@ stringdecl(struct expr *expr)
 	d = *entry;
 	if (!d) {
 		d = mkdecl(NULL, DECLOBJECT, expr->type, QUALNONE, LINKNONE);
-		d->value = mkglobal("string", true);
+		d->value = mkglobal("string", true, false);
 		emitdata(d, mkinit(0, expr->type->size, (struct bitfield){0}, expr));
 		*entry = d;
 	}

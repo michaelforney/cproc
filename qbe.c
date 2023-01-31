@@ -20,6 +20,7 @@ struct value {
 		VALUE_LABEL,
 	} kind;
 	unsigned id;
+	bool threadlocal;
 	union {
 		char *name;
 		unsigned long long i;
@@ -128,7 +129,7 @@ mkblock(char *name)
 }
 
 struct value *
-mkglobal(char *name, bool private)
+mkglobal(char *name, bool private, bool threadlocal)
 {
 	static unsigned id;
 	struct value *v;
@@ -137,6 +138,7 @@ mkglobal(char *name, bool private)
 	v->kind = VALUE_GLOBAL;
 	v->u.name = name;
 	v->id = private ? ++id : 0;
+	v->threadlocal = threadlocal;
 
 	return v;
 }
@@ -501,7 +503,7 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 
 	t = mkarraytype(&typechar, QUALCONST, strlen(name) + 1);
 	d = mkdecl("__func__", DECLOBJECT, t, QUALNONE, LINKNONE);
-	d->value = mkglobal(d->name, true);
+	d->value = mkglobal(d->name, true, false);
 	scopeputdecl(s, d);
 	f->namedecl = d;
 
@@ -1125,6 +1127,8 @@ emitinst(struct inst **instp, struct inst **instend)
 	}
 	fputs(instname[inst->kind], stdout);
 	putchar(' ');
+	if (inst->arg[0]->kind == VALUE_GLOBAL && inst->arg[0]->threadlocal)
+		fputs("thread ", stdout);
 	emitvalue(inst->arg[0]);
 	++instp;
 	op = inst->kind;
@@ -1152,6 +1156,8 @@ emitinst(struct inst **instp, struct inst **instend)
 	default:
 		if (inst->arg[1]) {
 			fputs(", ", stdout);
+			if (inst->arg[1]->kind == VALUE_GLOBAL && inst->arg[1]->threadlocal)
+				fputs("thread ", stdout);
 			emitvalue(inst->arg[1]);
 		}
 	}
@@ -1322,6 +1328,8 @@ emitdata(struct decl *d, struct init *init)
 	align = d->u.obj.align;
 	for (cur = init; cur; cur = cur->next)
 		cur->expr = eval(cur->expr);
+	if (d->value->threadlocal)
+		fputs("thread ", stdout);
 	if (d->linkage == LINKEXTERN)
 		fputs("export ", stdout);
 	fputs("data ", stdout);

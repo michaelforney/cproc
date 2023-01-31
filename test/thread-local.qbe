@@ -1,0 +1,23 @@
+thread export data $a = align 4 { w 1, }
+thread data $b = align 4 { w 2, }
+thread export data $c = align 4 { w 3, }
+thread export data $d = align 4 { z 4 }
+thread data $e = align 4 { z 4 }
+thread data $.Lx.2 = align 4 { w 6, }
+export
+function w $main() {
+@start.1
+@body.2
+	%.1 =w loadw thread $a
+	%.2 =w loadw thread $b
+	%.3 =w add %.1, %.2
+	%.4 =w loadw thread $c
+	%.5 =w add %.3, %.4
+	%.6 =w loadw thread $d
+	%.7 =w add %.5, %.6
+	%.8 =w loadw thread $e
+	%.9 =w add %.7, %.8
+	%.10 =w loadw thread $.Lx.2
+	%.11 =w sub %.9, %.10
+	ret %.11
+}
