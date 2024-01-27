@@ -20,7 +20,7 @@ patch directories in the [oasis package tree] for any patches used.
 
 On musl systems, you must define `long double` to match `double` (as
 below) to avoid errors in unused `static inline` functions in musl's
-`math.h`. Note: this is a hack and won't be ABI-incompatible with musl;
+`math.h`. Note: this is a hack and won't be ABI-compatible with musl;
 things will break if any functions with `long double` get called.
 
 ```diff
