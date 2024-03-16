@@ -91,12 +91,13 @@ mkarraytype(struct type *base, enum typequal qual, unsigned long long len)
 static int
 typerank(struct type *t)
 {
+	if (t->kind == TYPEENUM)
+		t = t->base;
 	assert(t->prop & PROPINT);
 	switch (t->kind) {
 	case TYPEBOOL:  return 1;
 	case TYPECHAR:  return 2;
 	case TYPESHORT: return 3;
-	case TYPEENUM:
 	case TYPEINT:   return 4;
 	case TYPELONG:  return 5;
 	case TYPELLONG: return 6;
@@ -114,11 +115,13 @@ typecompatible(struct type *t1, struct type *t2)
 	if (t1 == t2)
 		return true;
 	if (t1->kind != t2->kind) {
-		/* enum types are compatible with 'int', but not with
-		   each other (unless they are the same type) */
-		return (t1->kind == TYPEENUM && t2->kind == TYPEINT ||
-		        t1->kind == TYPEINT && t2->kind == TYPEENUM) &&
-		       t1->u.basic.issigned == t2->u.basic.issigned;
+		/*
+		enum types are compatible with their underlying
+		type, but not with each other (unless they are the
+		same type)
+		*/
+		return t1->kind == TYPEENUM && t2 == t1->base ||
+		       t2->kind == TYPEENUM && t1 == t2->base;
 	}
 	switch (t1->kind) {
 	case TYPEPOINTER:

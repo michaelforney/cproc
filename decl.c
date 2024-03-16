@@ -177,9 +177,8 @@ tagspec(struct scope *s)
 			error(&tok.loc, "redeclaration of tag '%s' with different kind", tag);
 	} else {
 		if (kind == TYPEENUM) {
-			t = xmalloc(sizeof(*t));
-			*t = typeuint;
-			t->kind = kind;
+			t = mktype(kind, PROPSCALAR|PROPARITH|PROPREAL|PROPINT);
+			t->base = &typeuint;
 		} else {
 			t = mktype(kind, 0);
 			t->size = 0;
@@ -223,7 +222,7 @@ tagspec(struct scope *s)
 				if (e->type->u.basic.issigned && i >= 1ull << 63) {
 					if (i < -1ull << 31)
 						goto invalid;
-					t->u.basic.issigned = true;
+					t->base = &typeint;
 				} else if (i >= 1ull << 32) {
 					goto invalid;
 				}
@@ -237,13 +236,15 @@ tagspec(struct scope *s)
 				large = true;
 				d->type = &typeuint;
 			}
-			if (large && t->u.basic.issigned)
+			if (large && t->base->u.basic.issigned)
 				error(&tok.loc, "neither 'int' nor 'unsigned' can represent all enumerator values");
 			scopeputdecl(s, name, d);
 			if (!consume(TCOMMA))
 				break;
 		}
 		expect(TRBRACE, "to close enum specifier");
+		t->size = t->base->size;
+		t->align = t->base->align;
 		t->incomplete = false;
 	}
 
