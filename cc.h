@@ -542,7 +542,7 @@ void funcjnz(struct func *, struct value *, struct type *, struct block *, struc
 void funcret(struct func *, struct value *);
 struct gotolabel *funcgoto(struct func *, char *);
 void funcswitch(struct func *, struct value *, struct switchcases *, struct block *);
-void funcinit(struct func *, struct decl *, struct init *);
+void funcinit(struct func *, struct decl *, struct init *, _Bool);
 
 void emitfunc(struct func *, _Bool);
 void emitdata(struct decl *,  struct init *);

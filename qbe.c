@@ -498,7 +498,7 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 			d->value = p->value;
 		} else {
 			v = typecompatible(p->type, pt) ? p->value : convert(f, pt, p->type, p->value);
-			funcinit(f, d, NULL);
+			funcalloc(f, d);
 			funcstore(f, p->type, QUALNONE, (struct lvalue){d->value}, v);
 		}
 		scopeputdecl(s, p->name, d);
@@ -640,7 +640,7 @@ funclval(struct func *f, struct expr *e)
 		break;
 	case EXPRCOMPOUND:
 		d = mkdecl(DECLOBJECT, e->type, e->qual, LINKNONE);
-		funcinit(f, d, e->u.compound.init);
+		funcinit(f, d, e->u.compound.init, true);
 		lval.addr = d->value;
 		break;
 	case EXPRUNARY:
@@ -931,7 +931,7 @@ zero(struct func *func, struct value *addr, int align, unsigned long long offset
 }
 
 void
-funcinit(struct func *func, struct decl *d, struct init *init)
+funcinit(struct func *func, struct decl *d, struct init *init, bool hasinit)
 {
 	struct lvalue dst;
 	struct value *src, *v;
@@ -939,7 +939,7 @@ funcinit(struct func *func, struct decl *d, struct init *init)
 	size_t i, w;
 
 	funcalloc(func, d);
-	if (!init)
+	if (!hasinit)
 		return;
 	for (; init; init = init->next) {
 		zero(func, d->value, d->type->align, offset, init->start);

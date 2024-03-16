@@ -4,5 +4,8 @@ function $f() {
 @start.1
 	%.1 =l alloc8 16
 @body.2
+	storel 0, %.1
+	%.2 =l add %.1, 8
+	storel 0, %.2
 	ret
 }

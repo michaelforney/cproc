@@ -890,6 +890,7 @@ decl(struct scope *s, struct func *f)
 	enum storageclass sc;
 	enum funcspec fs;
 	struct init *init;
+	bool hasinit;
 	struct param *p;
 	char *name, *asmname;
 	int allowfunc = !f;
@@ -952,12 +953,14 @@ decl(struct scope *s, struct func *f)
 			if (d->u.obj.align < align)
 				d->u.obj.align = align;
 			init = NULL;
+			hasinit = false;
 			if (consume(TASSIGN)) {
 				if (f && d->linkage != LINKNONE)
 					error(&tok.loc, "object '%s' with block scope and %s linkage cannot have initializer", name, d->linkage == LINKEXTERN ? "external" : "internal");
 				if (d->defined)
 					error(&tok.loc, "object '%s' redefined", name);
 				init = parseinit(s, d->type);
+				hasinit = true;
 			} else if (d->linkage != LINKNONE) {
 				if (!(sc & SCEXTERN) && !d->defined && !d->u.obj.tentative.next)
 					listinsert(tentativedefns.prev, &d->u.obj.tentative);
@@ -966,7 +969,7 @@ decl(struct scope *s, struct func *f)
 			if (d->linkage != LINKNONE || sc & SCSTATIC)
 				emitdata(d, init);
 			else
-				funcinit(f, d, init);
+				funcinit(f, d, init, hasinit);
 			d->defined = true;
 			if (d->u.obj.tentative.next)
 				listremove(&d->u.obj.tentative);
