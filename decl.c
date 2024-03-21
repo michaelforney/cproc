@@ -143,18 +143,25 @@ funcspec(enum funcspec *fs)
 }
 
 static void structdecl(struct scope *, struct structbuilder *);
+static struct qualtype declspecs(struct scope *, enum storageclass *, enum funcspec *, int *);
 
 static struct type *
 tagspec(struct scope *s)
 {
-	struct type *t;
+	static struct type *const inttypes[][2] = {
+		{&typeuint, &typeint},
+		{&typeulong, &typelong},
+		{&typeullong, &typellong},
+	};
+	struct type *t, *et;
 	char *tag, *name;
 	enum typekind kind;
-	struct decl *d;
+	struct decl *d, *enumconsts;
 	struct expr *e;
 	struct structbuilder b;
-	unsigned long long i;
-	bool large;
+	unsigned long long value, max, min;
+	bool sign;
+	int i;
 
 	switch (tok.kind) {
 	case TSTRUCT: kind = TYPESTRUCT; break;
@@ -163,22 +170,27 @@ tagspec(struct scope *s)
 	default: fatal("internal error: unknown tag kind");
 	}
 	next();
-	if (tok.kind == TLBRACE) {
-		tag = NULL;
-		t = NULL;
-	} else {
-		tag = expect(TIDENT, "or '{' after struct/union");
-		t = scopegettag(s, tag, false);
-		if (s->parent && !t && tok.kind != TLBRACE && (kind == TYPEENUM || tok.kind != TSEMICOLON))
-			t = scopegettag(s->parent, tag, true);
+	tag = NULL;
+	t = NULL;
+	et = NULL;
+	if (tok.kind == TIDENT) {
+		tag = tok.lit;
+		next();
 	}
+	if (kind == TYPEENUM && consume(TCOLON)) {
+		et = declspecs(s, NULL, NULL, NULL).type;
+		if (!et)
+			error(&tok.loc, "no type in enum type specifier");
+	}
+	if (tag)
+		t = scopegettag(s, tag, tok.kind != TLBRACE && tok.kind != TSEMICOLON);
 	if (t) {
 		if (t->kind != kind)
 			error(&tok.loc, "redeclaration of tag '%s' with different kind", tag);
 	} else {
 		if (kind == TYPEENUM) {
 			t = mktype(kind, PROPSCALAR|PROPARITH|PROPREAL|PROPINT);
-			t->base = &typeuint;
+			t->base = et;
 		} else {
 			t = mktype(kind, 0);
 			t->size = 0;
@@ -207,46 +219,85 @@ tagspec(struct scope *s)
 			error(&tok.loc, "struct/union has no members");
 		next();
 		t->size = ALIGNUP(t->size, t->align);
-		t->incomplete = false;
 		break;
 	case TYPEENUM:
-		large = false;
-		for (i = 0; tok.kind == TIDENT; ++i) {
+		enumconsts = NULL;
+		if (et) {
+			t->size = t->base->size;
+			t->align = t->base->align;
+			t->u.basic.issigned = t->base->u.basic.issigned;
+			t->incomplete = false;
+			et = t;
+		} else {
+			et = &typeint;
+		}
+		max = 0;
+		min = 0;
+		for (value = 0; tok.kind == TIDENT; ++value) {
 			name = tok.lit;
 			next();
 			if (consume(TASSIGN)) {
 				e = evalexpr(s);
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "expected integer constant expression");
-				i = e->u.constant.u;
-				if (e->type->u.basic.issigned && i >= 1ull << 63) {
-					if (i < -1ull << 31)
-						goto invalid;
-					t->base = &typeint;
-				} else if (i >= 1ull << 32) {
+				value = e->u.constant.u;
+				if (!t->base)
+					et = typehasint(&typeint, value, e->type->u.basic.issigned) ? &typeint : e->type;
+				else if (!typehasint(et, value, e->type->u.basic.issigned))
 					goto invalid;
+			} else if (value == 0 && !et->u.basic.issigned || value == 1ull << 63 && et->u.basic.issigned) {
+				error(&tok.loc, "no %ssigned integer type can represent enumerator value", et->u.basic.issigned ? "" : "un");
+			} else if (!typehasint(et, value, et->u.basic.issigned)) {
+				if (t->base) {
+				invalid:
+					/* fixed underlying type */
+					error(&tok.loc, "enumerator '%s' value cannot be represented in underlying type", name);
 				}
-			} else if (i == 1ull << 32) {
-			invalid:
-				error(&tok.loc, "enumerator '%s' value cannot be represented as 'int' or 'unsigned int'", name);
+				sign = et->u.basic.issigned;
+				for (i = 0; i < LEN(inttypes); ++i) {
+					et = inttypes[i][sign];
+					if (typehasint(et, value, sign))
+						break;
+				}
+				assert(i < LEN(inttypes));
 			}
-			d = mkdecl(DECLCONST, &typeint, QUALNONE, LINKNONE);
-			d->value = mkintconst(i);
-			if (i >= 1ull << 31 && i < 1ull << 63) {
-				large = true;
-				d->type = &typeuint;
+			d = mkdecl(DECLCONST, et, QUALNONE, LINKNONE);
+			d->value = mkintconst(value);
+			d->u.enumconst.next = enumconsts;
+			enumconsts = d;
+			if (et->u.basic.issigned && value >= 1ull << 63) {
+				if (-value > min)
+					min = -value;
+			} else if (value > max) {
+				max = value;
 			}
-			if (large && t->base->u.basic.issigned)
-				error(&tok.loc, "neither 'int' nor 'unsigned' can represent all enumerator values");
 			scopeputdecl(s, name, d);
 			if (!consume(TCOMMA))
 				break;
 		}
 		expect(TRBRACE, "to close enum specifier");
-		t->size = t->base->size;
-		t->align = t->base->align;
-		t->incomplete = false;
+		if (!t->base) {
+			if (min <= 0x80000000 && max <= 0x7fffffff) {
+				t->base = min ? &typeint : &typeuint;
+			} else {
+				sign = min > 0;
+				for (i = 0; i < LEN(inttypes); ++i) {
+					et = inttypes[i][sign];
+					if (typehasint(et, max, false) && typehasint(et, -min, true))
+						break;
+				}
+				if (i == LEN(inttypes))
+					error(&tok.loc, "no integer type can represent all enumerator values");
+				t->base = et;
+				for (d = enumconsts; d; d = d->u.enumconst.next)
+					d->type = t;
+			}
+			t->size = t->base->size;
+			t->align = t->base->align;
+			t->u.basic.issigned = t->base->u.basic.issigned;
+		}
 	}
+	t->incomplete = false;
 
 	return t;
 }

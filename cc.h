@@ -282,6 +282,9 @@ struct decl {
 			/* the function might have an "inline definition" (C11 6.7.4p7) */
 			_Bool inlinedefn;
 		} func;
+		struct {
+			struct decl *next;
+		} enumconst;
 		enum builtinkind builtin;
 	} u;
 };
@@ -431,6 +434,7 @@ struct type *typepromote(struct type *, unsigned);
 struct type *typeadjust(struct type *);
 enum typeprop typeprop(struct type *);
 struct member *typemember(struct type *, const char *, unsigned long long *);
+_Bool typehasint(struct type *, unsigned long long, _Bool);
 
 struct param *mkparam(char *, struct type *, enum typequal);
 

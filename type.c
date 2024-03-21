@@ -261,6 +261,15 @@ typemember(struct type *t, const char *name, unsigned long long *offset)
 	return NULL;
 }
 
+bool
+typehasint(struct type *t, unsigned long long i, bool sign)
+{
+	assert(t->prop & PROPINT);
+	if (sign && i >= -1ull << 63)
+		return t->u.basic.issigned && i >= -1ull << (t->size << 3) - 1;
+	return i <= 0xffffffffffffffffull >> (8 - t->size << 3) + t->u.basic.issigned;
+}
+
 struct param *
 mkparam(char *name, struct type *t, enum typequal tq)
 {
