@@ -420,6 +420,20 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			++ntypes;
 			expect(TRPAREN, "to close 'typeof'");
 			break;
+		case TTYPEOF_UNQUAL:
+			next();
+			expect(TLPAREN, "after 'typeof_unqual'");
+			t = typename(s, NULL);
+			if (!t) {
+				e = expr(s);
+				if (e->decayed)
+					e = e->base;
+				t = e->type;
+				delexpr(e);
+			}
+			++ntypes;
+			expect(TRPAREN, "to close 'typeof_unqual'");
+			break;
 
 		/* 6.7.5 Alignment specifier */
 		case TALIGNAS:
