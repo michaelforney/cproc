@@ -175,6 +175,8 @@ nullpointer(struct expr *e)
 {
 	if (e->kind != EXPRCONST)
 		return false;
+	if (e->type->kind == TYPENULLPTR)
+		return true;
 	if (!(e->type->prop & PROPINT) && (e->type->kind != TYPEPOINTER || e->type->base != &typevoid))
 		return false;
 	return e->u.constant.u == 0;
@@ -188,8 +190,8 @@ exprassign(struct expr *e, struct type *t)
 	et = e->type;
 	switch (t->kind) {
 	case TYPEBOOL:
-		if (!(et->prop & PROPARITH) && et->kind != TYPEPOINTER)
-			error(&tok.loc, "assignment to bool must be from arithmetic or pointer type");
+		if (!(et->prop & PROPARITH) && et->kind != TYPEPOINTER && et->kind != TYPENULLPTR)
+			error(&tok.loc, "assignment to bool must be from arithmetic, pointer, or nullptr_t type");
 		break;
 	case TYPEPOINTER:
 		if (nullpointer(e))
@@ -200,6 +202,10 @@ exprassign(struct expr *e, struct type *t)
 			error(&tok.loc, "base types of pointer assignment must be compatible or void");
 		if ((et->qual & t->qual) != et->qual)
 			error(&tok.loc, "assignment to pointer discards qualifiers");
+		break;
+	case TYPENULLPTR:
+		if (!nullpointer(e))
+			error(&tok.loc, "assignment to nullptr_t must be from null pointer constant or expression with type nullptr_t");
 		break;
 	case TYPESTRUCT:
 	case TYPEUNION:
@@ -697,6 +703,11 @@ primaryexpr(struct scope *s)
 	case TFALSE:
 		e = mkexpr(EXPRCONST, &typebool, NULL);
 		e->u.constant.u = tok.kind == TTRUE;
+		next();
+		break;
+	case TNULLPTR:
+		e = mkexpr(EXPRCONST, &typenullptr, NULL);
+		e->u.constant.u = 0;
 		next();
 		break;
 	case TLPAREN:
