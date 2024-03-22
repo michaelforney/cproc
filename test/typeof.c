@@ -1,9 +1,9 @@
 int f(char *);
-__typeof__(f) f, g;
+typeof(f) f, g;
 
-__typeof__(g(0)) x;
+typeof(g(0)) x;
 int x;
 
 typedef int *t;
-const __typeof__(t) y;
+const typeof(t) y;
 int *const y;

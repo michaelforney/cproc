@@ -2,7 +2,7 @@ void f(void) {
 	struct {
 		unsigned short u[6];
 		unsigned U[6];
-		__typeof__(L' ') L[6];
+		typeof(L' ') L[6];
 	} x = {
 		.u[0] = u'x',
 		.u[4] = u'y',

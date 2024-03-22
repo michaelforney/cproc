@@ -418,7 +418,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 				delexpr(e);
 			}
 			++ntypes;
-			expect(TRPAREN, "to close '__typeof__'");
+			expect(TRPAREN, "to close 'typeof'");
 			break;
 
 		/* 6.7.5 Alignment specifier */

@@ -13,7 +13,7 @@ struct {
 };
 
 struct {
-	__typeof__(L' ') s[5];
+	typeof(L' ') s[5];
 } L = {
 	.s = L"aα€😐",
 	.s[3] = L'😃',
