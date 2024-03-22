@@ -5,12 +5,6 @@ may be implemented in the future.
 
 ## Implemented
 
-### `__typeof__`
-
-`__typeof__(E)` is a type specifier for the type of expression `E`. Arrays
-and function designator expressions do not decay into pointers, just
-like when used with `sizeof`.
-
 ### `__asm__` labels
 
 A declarator can be followed by `__asm__("somelabel")` to specify the
@@ -32,30 +26,6 @@ rules. The name may contain characters not allowed in regular identifiers.
 - **`__builtin_va_list`**: Built-in suitable for implementing the `va_list` type.
 - **`__builtin_va_start`**: Built-in suitable for implementing the `va_start` macro.
 
-### Enumerator values outside the range of `int`
-
-ISO C requires that enumerator values be in the range of `int`. GNU C
-allows any integer value, at the cost of enumerator constants possibly
-having different types inside and outside the `enum` specifier.
-
-In the following example, `A` has type `unsigned` inside the `enum`
-specifier, and `long` outside, so both of the assertions fail.
-
-```c
-enum E {
-    A = 0x80000000,
-    B = sizeof(A),
-    C = A < -1,
-    D = -1,
-};
-_Static_assert(B == sizeof(A), "sizeof(A) changed");
-_Static_assert(C == A < -1, "signedness of typeof(A) changed");
-```
-
-As a compromise, we allow enumerator values larger than `INT_MAX` and
-less than or equal to `UINT_MAX`, but only if no other enumerators have
-a negative value. This way, enumerator constants have a fixed type.
-
 ## Missing
 
 ### Statement expressions
@@ -68,19 +38,6 @@ the statement expression.
 ### Empty declarations
 
 GNU C allows empty top-level declarations (i.e. `;`).
-
-### Empty initializer list
-
-GNU C allows empty initializer lists when initializing an object,
-for example
-
-```c
-struct {
-	int a, b;
-} s = {};
-```
-
-This behaves exactly the same as `{0}`.
 
 ### Missing operand in conditional expression
 
