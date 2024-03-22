@@ -6,7 +6,7 @@ packages:
 - qemu-user-binfmt
 sources:
 - https://git.sr.ht/~mcf/cproc
-- https://git.sr.ht/~mcf/qbe
+- git://c9x.me/qbe.git
 tasks:
 - build: |
     PATH=$HOME/qbe:$PATH
