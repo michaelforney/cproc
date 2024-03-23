@@ -1,0 +1,25 @@
+export
+function $f(w %.1) {
+@start.1
+	%.2 =l alloc4 4
+	storew %.1, %.2
+@body.2
+	ret
+@dead.5
+	%.3 =w loadw %.2
+	jmp @switch_cond.3
+@switch_case.6
+	jmp @switch_join.4
+@switch_cond.3
+	%.4 =w ceqw %.3, 0
+	jnz %.4, @switch_case.6, @switch_ne.7
+@switch_ne.7
+	%.5 =w cultw %.3, 0
+	jnz %.5, @switch_lt.8, @switch_gt.9
+@switch_lt.8
+	jmp @switch_join.4
+@switch_gt.9
+	jmp @switch_join.4
+@switch_join.4
+	ret
+}
