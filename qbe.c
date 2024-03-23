@@ -1323,7 +1323,7 @@ emitdata(struct decl *d, struct init *init)
 
 	align = d->u.obj.align;
 	for (cur = init; cur; cur = cur->next)
-		cur->expr = eval(cur->expr, EVALINIT);
+		cur->expr = eval(cur->expr);
 	if (d->linkage == LINKEXTERN)
 		fputs("export ", stdout);
 	fputs("data ", stdout);

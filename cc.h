@@ -247,6 +247,12 @@ enum linkage {
 	LINKEXTERN,
 };
 
+enum storageduration {
+	SDSTATIC,
+	SDTHREAD,
+	SDAUTO,
+};
+
 enum builtinkind {
 	BUILTINALLOCA,
 	BUILTINCONSTANTP,
@@ -360,6 +366,7 @@ struct expr {
 			struct bitfield bits;
 		} bitfield;
 		struct {
+			enum storageduration storage;
 			struct init *init;
 		} compound;
 		struct {
@@ -502,12 +509,7 @@ struct expr *exprpromote(struct expr *);
 
 /* eval */
 
-enum evalkind {
-	EVALARITH,  /* arithmetic constant expression */
-	EVALINIT,   /* initializer constant expression */
-};
-
-struct expr *eval(struct expr *, enum evalkind);
+struct expr *eval(struct expr *);
 
 /* init */
 

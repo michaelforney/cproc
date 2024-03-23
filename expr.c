@@ -271,11 +271,11 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 			e = l, l = r, r = e;
 		if (l->type->kind != TYPEPOINTER)
 			error(loc, "invalid operands to '%s' operator", tokstr[op]);
-		if (nullpointer(eval(r, EVALARITH))) {
+		if (nullpointer(eval(r))) {
 			r = exprconvert(r, l->type);
 			break;
 		}
-		if (nullpointer(eval(l, EVALARITH))) {
+		if (nullpointer(eval(l))) {
 			l = exprconvert(l, r->type);
 			break;
 		}
@@ -781,7 +781,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->u.builtin.kind = BUILTINALLOCA;
 		break;
 	case BUILTINCONSTANTP:
-		e = mkconstexpr(&typeint, eval(condexpr(s), EVALARITH)->kind == EXPRCONST);
+		e = mkconstexpr(&typeint, eval(condexpr(s))->kind == EXPRCONST);
 		break;
 	case BUILTINEXPECT:
 		/* just a no-op for now */
@@ -1126,6 +1126,7 @@ castexpr(struct scope *s)
 			e->qual = tq;
 			e->lvalue = true;
 			e->u.compound.init = parseinit(s, t);
+			e->u.compound.storage = s == &filescope ? SDSTATIC : SDAUTO;
 			e = postfixexpr(s, decay(e));
 			goto done;
 		}
@@ -1216,8 +1217,8 @@ condexpr(struct scope *s)
 	} else if (lt == &typevoid && rt == &typevoid) {
 		t = &typevoid;
 	} else {
-		l = eval(l, EVALARITH);
-		r = eval(r, EVALARITH);
+		l = eval(l);
+		r = eval(r);
 		if (nullpointer(l) && rt->kind == TYPEPOINTER) {
 			t = rt;
 		} else if (nullpointer(r) && lt->kind == TYPEPOINTER) {
@@ -1239,7 +1240,7 @@ condexpr(struct scope *s)
 			error(&tok.loc, "invalid operands to conditional operator");
 		}
 	}
-	e = eval(e, EVALARITH);
+	e = eval(e);
 	if (e->kind == EXPRCONST && e->type->prop & PROPINT)
 		return exprconvert(e->u.constant.u ? l : r, t);
 	e = mkexpr(EXPRCOND, t, e);
@@ -1251,7 +1252,7 @@ condexpr(struct scope *s)
 struct expr *
 evalexpr(struct scope *s)
 {
-	return eval(condexpr(s), EVALARITH);
+	return eval(condexpr(s));
 }
 
 unsigned long long

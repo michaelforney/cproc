@@ -625,7 +625,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				error(&tok.loc, "VLAs are not yet supported");
 			t = mkarraytype(NULL, tq, 0);
 			if (tok.kind != TRBRACK) {
-				e = eval(assignexpr(s), EVALARITH);
+				e = eval(assignexpr(s));
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "VLAs are not yet supported");
 				i = e->u.constant.u;

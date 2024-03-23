@@ -101,7 +101,7 @@ binary(struct expr *expr, enum tokenkind op, struct expr *l, struct expr *r)
 #undef S
 
 struct expr *
-eval(struct expr *expr, enum evalkind kind)
+eval(struct expr *expr)
 {
 	struct expr *l, *r, *c;
 	struct decl *d;
@@ -116,7 +116,7 @@ eval(struct expr *expr, enum evalkind kind)
 		expr->u.constant.u = intconstvalue(expr->u.ident.decl->value);
 		break;
 	case EXPRCOMPOUND:
-		if (kind != EVALINIT)
+		if (expr->u.compound.storage != SDSTATIC)
 			break;
 		d = mkdecl(DECLOBJECT, t, expr->qual, LINKNONE);
 		d->value = mkglobal(NULL, true);
@@ -125,17 +125,15 @@ eval(struct expr *expr, enum evalkind kind)
 		expr->u.ident.decl = d;
 		break;
 	case EXPRUNARY:
-		l = eval(expr->base, kind);
+		l = eval(expr->base);
 		switch (expr->op) {
 		case TBAND:
 			switch (l->kind) {
 			case EXPRUNARY:
 				if (l->op == TMUL)
-					expr = eval(l->base, kind);
+					expr = eval(l->base);
 				break;
 			case EXPRSTRING:
-				if (kind != EVALINIT)
-					break;
 				l->u.ident.decl = stringdecl(l);
 				l->kind = EXPRIDENT;
 				expr->base = l;
@@ -152,7 +150,7 @@ eval(struct expr *expr, enum evalkind kind)
 		}
 		break;
 	case EXPRCAST:
-		l = eval(expr->base, kind);
+		l = eval(expr->base);
 		if (l->kind == EXPRCONST) {
 			expr->kind = EXPRCONST;
 			if (l->type->prop & PROPINT && t->prop & PROPFLOAT) {
@@ -186,8 +184,8 @@ eval(struct expr *expr, enum evalkind kind)
 		}
 		break;
 	case EXPRBINARY:
-		l = eval(expr->u.binary.l, kind);
-		r = eval(expr->u.binary.r, kind);
+		l = eval(expr->u.binary.l);
+		r = eval(expr->u.binary.r);
 		expr->u.binary.l = l;
 		expr->u.binary.r = r;
 		switch (expr->op) {
