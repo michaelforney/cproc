@@ -531,11 +531,12 @@ stringconcat(struct stringlit *str, bool forceutf8)
 		len += strlen(src) - 2;
 		next();
 	} while (tok.kind == TSTRINGLIT);
-	if (forceutf8 || kind == '8')
-		kind = 0;
+	if (forceutf8)
+		kind = '8';
 	++len;  /* null byte */
 	switch (kind) {
 	case 0: t = &typechar; break;
+	case '8': t = &typeuchar; break;
 	case 'u': t = &typeushort; break;
 	case 'U': t = &typeuint; break;
 	case 'L': t = targ->typewchar; break;
