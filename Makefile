@@ -96,11 +96,6 @@ install: all
 	mkdir -p $(DESTDIR)$(MANDIR)/man1
 	cp cproc.1 $(DESTDIR)$(MANDIR)/man1
 
-.PHONY: qbe
-qbe:
-	git submodule update --init qbe
-	$(MAKE) -C qbe
-
 .PHONY: clean
 clean:
 	rm -rf cproc $(DRIVER_OBJ) cproc-qbe $(OBJ) stage2 stage3
