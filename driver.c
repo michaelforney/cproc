@@ -384,8 +384,13 @@ main(int argc, char *argv[])
 	arrayaddbuf(&stages[LINK].cmd, linkcmd, sizeof(linkcmd));
 
 	if (hasprefix(target, "x86_64-") || hasprefix(target, "amd64-")) {
-		arch = "x86_64-sysv";
-		qbearch = "amd64_sysv";
+		if (strstr(target, "msys")) {
+			arch = "x86_64-sysv";
+			qbearch = "amd64_win";
+		} else {
+			arch = "x86_64-sysv";
+			qbearch = "amd64_sysv";
+		}
 	} else if (hasprefix(target, "aarch64-")) {
 		arch = "aarch64";
 		qbearch = "arm64";
