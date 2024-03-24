@@ -88,3 +88,29 @@ attr(struct attr *a, enum attrkind allowed)
 		;
 	return true;
 }
+
+static bool
+gnuattrspec(struct attr *a, enum attrkind allowed)
+{
+	if (!consume(T__ATTRIBUTE__))
+		return false;
+	while (parseattr(a, allowed, PREFIXGNU) || consume(TCOMMA))
+		;
+	expect(TLPAREN, "after '__attribute__' to begin attribute specifier");
+	expect(TLPAREN, "after '__attribute__' to begin attribute specifier");
+	while (parseattr(a, allowed, PREFIXGNU) || consume(TCOMMA))
+		;
+	expect(TRPAREN, "to end attribute specifier");
+	expect(TRPAREN, "to end attribute specifier");
+	return true;
+}
+
+bool
+gnuattr(struct attr *a, enum attrkind allowed)
+{
+	if (!gnuattrspec(a, allowed))
+		return false;
+	while (gnuattrspec(a, allowed))
+		;
+	return true;
+}

@@ -171,6 +171,7 @@ tagspec(struct scope *s)
 	}
 	next();
 	attr(NULL, 0);
+	gnuattr(NULL, 0);
 	tag = NULL;
 	t = NULL;
 	et = NULL;
@@ -452,6 +453,10 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			expect(TRPAREN, "to close 'alignas' specifier");
 			break;
 
+		case T__ATTRIBUTE__:
+			gnuattr(NULL, 0);
+			break;
+
 		default:
 			goto done;
 		}
@@ -660,7 +665,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 			if (!allowattr)
 				error(&tok.loc, "attribute not allowed after parenthesized declarator");
 			/* attribute applies to identifier if ptr->prev == result, otherwise type ptr->prev */
-			attr(NULL, 0);
+			gnuattr(NULL, 0);
 		attr:
 			break;
 		default:

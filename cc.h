@@ -481,6 +481,7 @@ struct attr {
 };
 
 _Bool attr(struct attr *, enum attrkind);
+_Bool gnuattr(struct attr *, enum attrkind);
 
 /* decl */
 
