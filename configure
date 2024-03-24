@@ -122,9 +122,13 @@ case "$target" in
 	endfiles='"-l", "c", "-l", ":crtn.o"'
 	defines='"-D", "__builtin_stdarg_start(ap, last)=__builtin_va_start(ap, last)"'
 	;;
-*-*msys*)
+*-msys*)
 	startfiles='"-l", ":crt0.o"'
 	endfiles='"-l", "c", "-l", "msys-2.0", "-l", "kernel32"'
+	;;
+*-windows-msvc*)
+	startfiles='"-l", ":crt0.o"'
+	endfiles='"-l", "c"'
 	;;
 *)
 	fail "unknown target '$target', please create config.h manually"

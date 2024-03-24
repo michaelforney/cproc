@@ -1,0 +1,21 @@
+on: push
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    #- uses: msys2/setup-msys2@v2
+    #  with:
+    #    msystem: msys
+    #    install: gcc make diffutils
+    - uses: actions/checkout@v4
+    - run: |
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $vctools = & $vswhere -latest -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        Get-ChildItem -Recurse $vctools
+#mount
+#./configure --host=x86_64-windows-msvc CC=cl
+#gcc line.c
+#./a.exe | od -t ax1
+#od -t ax1 b
+#od -t ax1 c
+#od -t ax1 test/basic.c
