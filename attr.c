@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -48,6 +49,28 @@ parseattr(struct attr *a, enum attrkind allowed, enum attrprefix prefix)
 	switch (prefix) {
 	case PREFIXGNU:
 		prefixname = "GNU ";
+		if (strcmp(name, "aligned") == 0) {
+			kind = ATTRALIGNED;
+			if (consume(TLPAREN)) {
+				unsigned long long i;
+
+				i = intconstexpr(&filescope, false);
+				if (!i || i & i - 1 || i > INT_MAX)
+					error(&tok.loc, "invalid alignment %llu", i);
+				if (a)
+					a->align = i;
+				expect(TRPAREN, "after alignment");
+			} else {
+				if (a)
+					a->align = 16;
+			}
+		} else if (strcmp(name, "constructor") == 0) {
+			kind = ATTRCONSTRUCTOR;
+		} else if (strcmp(name, "destructor") == 0) {
+			kind = ATTRDESTRUCTOR;
+		} else if (strcmp(name, "packed") == 0) {
+			kind = ATTRPACKED;
+		}
 		break;
 	}
 	if (kind) {

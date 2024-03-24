@@ -473,11 +473,15 @@ void targinit(const char *);
 /* attr */
 
 enum attrkind {
-	ATTRNONE,
+	ATTRALIGNED     = 1<<0,
+	ATTRCONSTRUCTOR = 1<<1,
+	ATTRDESTRUCTOR  = 1<<2,
+	ATTRPACKED      = 1<<3,
 };
 
 struct attr {
 	enum attrkind kind;
+	int align;
 };
 
 _Bool attr(struct attr *, enum attrkind);
