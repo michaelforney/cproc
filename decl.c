@@ -857,7 +857,7 @@ staticassert(struct scope *s)
 		tokencheck(&tok, TSTRINGLIT, "after static assertion expression");
 		stringconcat(&msg, true);
 		if (!c)
-			error(&tok.loc, "static assertion failed: %.*s", (int)(msg.size - 1), msg.data);
+			error(&tok.loc, "static assertion failed: %.*s", (int)(msg.size - 1), (char *)msg.data);
 	} else if (!c) {
 		error(&tok.loc, "static assertion failed");
 	}
