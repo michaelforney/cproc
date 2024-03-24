@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -446,8 +447,8 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			expect(TLPAREN, "after 'alignas'");
 			other = typename(s, NULL);
 			i = other ? other->align : intconstexpr(s, false);
-			if (i & (i - 1))
-				error(&tok.loc, "invalid alignment: %d", i);
+			if (i & i - 1 || i > INT_MAX)
+				error(&tok.loc, "invalid alignment: %llu", i);
 			if (i > *align)
 				*align = i;
 			expect(TRPAREN, "to close 'alignas' specifier");
