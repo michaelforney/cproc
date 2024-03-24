@@ -57,6 +57,7 @@ struct structbuilder {
 	struct type *type;
 	struct member **last;
 	unsigned bits;  /* number of bits remaining in the last byte */
+	bool pack;
 };
 
 struct decl *
@@ -159,20 +160,24 @@ tagspec(struct scope *s)
 	enum typekind kind;
 	struct decl *d, *enumconsts;
 	struct expr *e;
+	struct attr a;
+	enum attrkind allowedattr;
 	struct structbuilder b;
 	unsigned long long value, max, min;
 	bool sign;
 	int i;
 
+	allowedattr = 0;
 	switch (tok.kind) {
-	case TSTRUCT: kind = TYPESTRUCT; break;
-	case TUNION:  kind = TYPEUNION;  break;
-	case TENUM:   kind = TYPEENUM;   break;
+	case TSTRUCT: kind = TYPESTRUCT, allowedattr |= ATTRPACKED; break;
+	case TUNION:  kind = TYPEUNION; break;
+	case TENUM:   kind = TYPEENUM; break;
 	default: fatal("internal error: unknown tag kind");
 	}
 	next();
-	attr(NULL, 0);
-	gnuattr(NULL, 0);
+	a.kind = 0;
+	attr(&a, allowedattr);
+	gnuattr(&a, allowedattr);
 	tag = NULL;
 	t = NULL;
 	et = NULL;
@@ -216,12 +221,14 @@ tagspec(struct scope *s)
 		b.type = t;
 		b.last = &t->u.structunion.members;
 		b.bits = 0;
+		b.pack = a.kind & ATTRPACKED;
 		do structdecl(s, &b);
 		while (tok.kind != TRBRACE);
 		if (!t->u.structunion.members)
 			error(&tok.loc, "struct/union has no members");
 		next();
-		t->size = ALIGNUP(t->size, t->align);
+		if (!b.pack)
+			t->size = ALIGNUP(t->size, t->align);
 		break;
 	case TYPEENUM:
 		enumconsts = NULL;
@@ -795,7 +802,7 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 		if (align < mt.type->align) {
 			if (align)
 				error(&tok.loc, "specified alignment of struct member is less strict than is required by type");
-			align = mt.type->align;
+			align = b->pack ? 1 : mt.type->align;
 		}
 		if (t->kind == TYPESTRUCT) {
 			m->offset = ALIGNUP(t->size, align);
@@ -811,6 +818,8 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 			error(&tok.loc, "bit-field has invalid type");
 		if (align)
 			error(&tok.loc, "alignment specified for bit-field");
+		if (b->pack)
+			error(&tok.loc, "bit-field in packed struct is not supported");
 		if (!width && name)
 			error(&tok.loc, "bit-field with zero width must not have declarator");
 		if (width > mt.type->size * 8)
