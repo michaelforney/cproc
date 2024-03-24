@@ -1,0 +1,20 @@
+on: push
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: msys
+        install: gcc make diffutils
+    - uses: actions/checkout@v4
+    - shell: msys2 {0}
+      run: |
+        mount
+        ./configure
+        gcc line.c
+        ./a.exe | od -t ax1
+        od -t ax1 b
+        od -t ax1 c
+        od -t ax1 test/basic.c
+        make all check bootstrap
