@@ -280,8 +280,9 @@ again:
 	switch (s->chr) {
 	case ' ':
 	case '\t':
-	case '\f':
 	case '\v':
+	case '\f':
+	case '\r':
 		s->sawspace = true;
 		nextchar(s);
 		goto again;
