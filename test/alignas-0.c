@@ -1,3 +1,3 @@
-_Alignas(0) int x;
-_Alignas(8) _Alignas(0) int y;
-_Alignas(0) _Alignas(16) int z;
+alignas(0) int x;
+alignas(8) alignas(0) int y;
+alignas(0) alignas(16) int z;
