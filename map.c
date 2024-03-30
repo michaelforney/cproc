@@ -1,20 +1,20 @@
 #include <assert.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
 
-static uint64_t
+static unsigned long
 hash(const void *ptr, size_t len)
 {
-	extern int siphash(const uint8_t *, const size_t, const uint8_t *, uint8_t *, const size_t);
-	static const uint8_t k[16] = {0};  /* XXX: we don't have a way to get entropy in standard C */
-	uint64_t r;
+	unsigned long h;
+	const unsigned char *pos, *end;
 
-	siphash(ptr, len, k, (uint8_t *)&r, sizeof(r));
-
-	return r;
+	/* FNV-1a */
+	h = 0x811c9dc5;
+	for (pos = ptr, end = pos + len; pos != end; ++pos)
+		h = (h ^ *pos) * 0x1000193;
+	return h;
 }
 
 void

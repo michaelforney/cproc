@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 #include "util.h"
 
 #define MAXH (sizeof(void *) * 8 * 3 / 2)

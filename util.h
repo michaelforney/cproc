@@ -48,7 +48,7 @@ struct map {
 };
 
 struct mapkey {
-	uint64_t hash;
+	unsigned long hash;
 	const void *str;
 	size_t len;
 };
