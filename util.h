@@ -11,7 +11,7 @@ struct treenode {
 	unsigned long long key;
 	void *child[2];
 	int height;
-	_Bool new;  /* set by treeinsert if this node was newly allocated */
+	bool new;  /* set by treeinsert if this node was newly allocated */
 };
 
 extern char *argv0;
