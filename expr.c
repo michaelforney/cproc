@@ -540,6 +540,7 @@ stringconcat(struct stringlit *str, bool forceutf8)
 	case 'u': t = &typeushort; break;
 	case 'U': t = &typeuint; break;
 	case 'L': t = targ->typewchar; break;
+	default: assert(0);
 	}
 	switch (t->size) {
 	case 1:
@@ -554,6 +555,8 @@ stringconcat(struct stringlit *str, bool forceutf8)
 		width = sizeof(uint_least32_t);
 		encodechar = encodechar32;
 		break;
+	default:
+		assert(0);
 	}
 	buf = xreallocarray(NULL, len, width);
 	str->data = buf;
@@ -1238,6 +1241,7 @@ condexpr(struct scope *s)
 			t = mkpointertype(t, tq);
 		} else {
 			error(&tok.loc, "invalid operands to conditional operator");
+			return NULL;  /* unreachable */
 		}
 	}
 	e = eval(e);
