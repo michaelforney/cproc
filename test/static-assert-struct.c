@@ -1,4 +1,4 @@
 struct s {
 	int x;
-	_Static_assert(1, "");
+	static_assert(1, "");
 };

@@ -1,3 +1,3 @@
 void f(void) {
-	_Alignas(16) char x[4];
+	alignas(16) char x[4];
 }

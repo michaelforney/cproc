@@ -7,6 +7,6 @@ union u {
 	char c;
 };
 int s1 = sizeof(struct s);
-int s2 = _Alignof(struct s);
+int s2 = alignof(struct s);
 int u1 = sizeof(union u);
-int u2 = _Alignof(union u);
+int u2 = alignof(union u);

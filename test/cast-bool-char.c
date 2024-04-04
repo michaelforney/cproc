@@ -1,3 +1,3 @@
 int main(void) {
-	return (_Bool)(unsigned char)256;
+	return (bool)(unsigned char)256;
 }
