@@ -43,6 +43,7 @@ void
 targinit(const char *name)
 {
 	size_t i;
+	enum typequal qual;
 
 	if (!name) {
 		/* TODO: provide a way to set this default */
@@ -55,5 +56,6 @@ targinit(const char *name)
 	if (!targ)
 		fatal("unknown target '%s'", name);
 	typechar.u.basic.issigned = targ->signedchar;
-	typeadjvalist = typeadjust(targ->typevalist);
+	qual = QUALNONE;
+	typeadjvalist = typeadjust(targ->typevalist, &qual);
 }

@@ -647,12 +647,11 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 			if (allowattr && attr(NULL, 0))
 				goto attr;
 			next();
-			tq = QUALNONE;
-			while (consume(TSTATIC) || typequal(&tq))
+			t = mkarraytype(NULL, QUALNONE, 0);
+			while (consume(TSTATIC) || typequal(&t->u.array.ptrqual))
 				;
 			if (tok.kind == TMUL)
 				error(&tok.loc, "VLAs are not yet supported");
-			t = mkarraytype(NULL, tq, 0);
 			if (tok.kind != TRBRACK) {
 				e = eval(assignexpr(s));
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
@@ -732,8 +731,9 @@ parameter(struct scope *s)
 	if (sc && sc != SCREGISTER)
 		error(&tok.loc, "parameter declaration has invalid storage-class specifier");
 	t = declarator(s, t, &name, true);
+	t.type = typeadjust(t.type, &t.qual);
 
-	return mkparam(name, typeadjust(t.type), t.qual);
+	return mkparam(name, t.type, t.qual);
 }
 
 static bool
@@ -755,7 +755,7 @@ paramdecl(struct scope *s, struct param *params)
 			;
 		if (!p)
 			error(&tok.loc, "old-style function declarator has no parameter named '%s'", name);
-		p->type = typeadjust(t.type);
+		p->type = typeadjust(t.type, &t.qual);
 		p->qual = t.qual;
 		if (tok.kind == TSEMICOLON)
 			break;

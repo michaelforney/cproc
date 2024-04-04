@@ -80,6 +80,7 @@ mkarraytype(struct type *base, enum typequal qual, unsigned long long len)
 	t->base = base;
 	t->qual = qual;
 	t->u.array.length = len;
+	t->u.array.ptrqual = QUALNONE;
 	t->incomplete = !len;
 	if (t->base) {
 		t->align = t->base->align;
@@ -225,13 +226,18 @@ typecommonreal(struct type *t1, unsigned w1, struct type *t2, unsigned w2)
 
 /* function parameter type adjustment (C11 6.7.6.3p7) */
 struct type *
-typeadjust(struct type *t)
+typeadjust(struct type *t, enum typequal *tq)
 {
+	enum typequal ptrqual;
+
 	switch (t->kind) {
 	case TYPEARRAY:
-		t = mkpointertype(t->base, t->qual);
+		ptrqual = t->u.array.ptrqual;
+		t = mkpointertype(t->base, *tq | t->qual);
+		*tq = ptrqual;
 		break;
 	case TYPEFUNC:
+		assert(*tq == QUALNONE);
 		t = mkpointertype(t, QUALNONE);
 		break;
 	}
