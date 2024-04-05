@@ -221,6 +221,8 @@ struct type {
 		struct {
 			unsigned long long length;
 			enum typequal ptrqual;
+			struct value *size;
+			struct expr *lenexpr;
 		} array;
 		struct {
 			bool isprototype, isvararg, isnoreturn, paraminfo;

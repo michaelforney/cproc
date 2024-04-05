@@ -259,7 +259,18 @@ funcalloc(struct func *f, struct decl *d)
 	int align;
 
 	assert(!d->type->incomplete);
-	assert(d->type->size > 0);
+
+	struct value *dynsize;
+	/* VLA, so output the size */
+	if (d->type->size == 0) {
+		assert(d->type->kind == TYPEARRAY);
+		struct value *size = funcexpr(f, d->type->u.array.lenexpr);
+		inst = mkinst(f, IEXTUW, ptrclass, size, NULL);
+		dynsize = &inst->res;
+		d->type->u.array.size = dynsize;
+		arrayaddptr(&f->end->insts, inst);
+	}
+
 	size = d->type->size;
 	align = d->u.obj.align;
 	switch (align) {
@@ -270,8 +281,12 @@ funcalloc(struct func *f, struct decl *d)
 	default: size += align - 16; /* fallthrough */
 	case 16: op = IALLOC16; break;
 	}
-	inst = mkinst(f, op, ptrclass, mkintconst(size), NULL);
-	arrayaddptr(&f->start->insts, inst);
+	inst = mkinst(f, op, ptrclass, size ? mkintconst(size) : dynsize, NULL);
+	if (size)
+		arrayaddptr(&f->start->insts, inst);
+	else
+		arrayaddptr(&f->end->insts, inst);
+
 	if (align > 16) {
 		/* TODO: implement alloc32 in QBE and use that instead */
 		inst = mkinst(f, IADD, ptrclass, &inst->res, mkintconst(align - 16));
@@ -737,6 +752,10 @@ funcexpr(struct func *f, struct expr *e)
 		case TSUB:
 			r = funcexpr(f, e->base);
 			return funcinst(f, INEG, qbetype(e->type).base, r, NULL);
+		case TSIZEOF:
+			r = funcexpr(f, e->base);
+			assert(e->base->kind == EXPRIDENT);
+			return e->base->u.ident.decl->type->u.array.size;
 		}
 		fatal("internal error; unknown unary expression");
 		break;

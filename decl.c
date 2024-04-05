@@ -654,13 +654,17 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				error(&tok.loc, "VLAs are not yet supported");
 			if (tok.kind != TRBRACK) {
 				e = eval(assignexpr(s));
-				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
-					error(&tok.loc, "VLAs are not yet supported");
-				i = e->u.constant.u;
-				if (e->type->u.basic.issigned && i >> 63)
-					error(&tok.loc, "array length must be non-negative");
-				delexpr(e);
-				t->u.array.length = i;
+				if (!(e->type->prop & PROPINT))
+					error(&tok.loc, "expected integer expression for array length");
+				if (e->kind != EXPRCONST)
+					t->u.array.lenexpr = e;
+				else {
+					i = e->u.constant.u;
+					if (e->type->u.basic.issigned && i >> 63)
+						error(&tok.loc, "array length must be non-negative");
+					delexpr(e);
+					t->u.array.length = i;
+				}
 				t->incomplete = false;
 			}
 			expect(TRBRACK, "after array length");

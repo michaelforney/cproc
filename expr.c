@@ -123,6 +123,10 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 	struct expr *expr;
 
 	switch (op) {
+	case TSIZEOF:
+		expr = mkexpr(EXPRUNARY, &typeulong, base);
+		expr->op = op;
+		return expr;
 	case TBAND:
 		if (base->decayed) {
 			expr = base;
@@ -1096,7 +1100,10 @@ unaryexpr(struct scope *s)
 			error(&tok.loc, "%s operator applied to incomplete type", tokstr[op]);
 		if (t->kind == TYPEFUNC)
 			error(&tok.loc, "%s operator applied to function type", tokstr[op]);
-		e = mkconstexpr(&typeulong, op == TSIZEOF ? t->size : t->align);
+		if (t->kind == TYPEARRAY && t->size == 0 && op == TSIZEOF)
+			e = mkunaryexpr(TSIZEOF, e);
+		else
+			e = mkconstexpr(&typeulong, op == TSIZEOF ? t->size : t->align);
 		break;
 	default:
 		e = postfixexpr(s, NULL);
