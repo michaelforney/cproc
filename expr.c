@@ -598,6 +598,10 @@ generic(struct scope *s)
 			t = typename(s, &qual);
 			if (!t)
 				error(&tok.loc, "expected typename for generic association");
+			if (t->kind == TYPEFUNC)
+				error(&tok.loc, "generic association must have object type");
+			if (t->incomplete)
+				error(&tok.loc, "generic association must have complete type");
 			expect(TCOLON, "after type name");
 			e = assignexpr(s);
 			if (typecompatible(t, want) && qual == QUALNONE) {
