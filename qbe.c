@@ -1063,7 +1063,7 @@ emittype(struct type *t)
 	static unsigned id;
 	struct member *m, *other;
 	struct type *sub;
-	unsigned long long i, off;
+	unsigned long long off;
 
 	if (t->value || t->kind != TYPESTRUCT && t->kind != TYPEUNION)
 		return;
@@ -1096,11 +1096,11 @@ emittype(struct type *t)
 		} else {
 			fputs("{ ", stdout);
 		}
-		for (i = 1, sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
-			i *= sub->u.array.length;
+		for (sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
+			;
 		emitclass(qbetype(sub).data, sub->value);
-		if (i > 1)
-			printf(" %llu", i);
+		if (m->type->size > sub->size)
+			printf(" %llu", m->type->size / sub->size);
 		if (t->kind == TYPESTRUCT) {
 			fputs(", ", stdout);
 			/* skip subsequent members contained within the same storage unit */
