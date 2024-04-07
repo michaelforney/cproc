@@ -276,11 +276,10 @@ funcalloc(struct func *f, struct decl *d)
 
 	assert(!d->type->incomplete);
 
-	struct value *dynsize;
 	/* VLA, so output the size */
-	if (d->type->size == 0) {
+	if (d->type->u.array.size == NULL && d->type->size == 0) {
 		assert(d->type->kind == TYPEARRAY);
-		dynsize = calcvla(f, d->type);
+		calcvla(f, d->type);
 	}
 
 	size = d->type->size;
@@ -293,7 +292,7 @@ funcalloc(struct func *f, struct decl *d)
 	default: size += align - 16; /* fallthrough */
 	case 16: op = IALLOC16; break;
 	}
-	inst = mkinst(f, op, ptrclass, size ? mkintconst(size) : dynsize, NULL);
+	inst = mkinst(f, op, ptrclass, size ? mkintconst(size) : d->type->u.array.size, NULL);
 	if (size)
 		arrayaddptr(&f->start->insts, inst);
 	else
