@@ -655,7 +655,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 			if (tok.kind != TRBRACK) {
 				e = eval(assignexpr(s));
 				if (!(e->type->prop & PROPINT))
-					error(&tok.loc, "expected integer expression for array length");
+					error(&tok.loc, "array length expression must have integer type");
 				if (e->kind != EXPRCONST)
 					t->u.array.lenexpr = exprconvert(e, &typeulong);
 				else {
