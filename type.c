@@ -79,7 +79,7 @@ mkarraytype(struct type *base, enum typequal qual, unsigned long long len)
 	t = mktype(TYPEARRAY, 0);
 	t->base = base;
 	t->qual = qual;
-	t->u.array.length = len;
+	t->u.array.length = NULL;
 	t->u.array.ptrqual = QUALNONE;
 	t->incomplete = !len;
 	if (t->base) {
@@ -129,7 +129,7 @@ typecompatible(struct type *t1, struct type *t2)
 	case TYPEPOINTER:
 		goto derived;
 	case TYPEARRAY:
-		if (t1->u.array.length && t2->u.array.length && t1->u.array.length != t2->u.array.length)
+		if (!t1->incomplete && !t2->incomplete && t1->size != t2->size)
 			return false;
 		goto derived;
 	case TYPEFUNC:

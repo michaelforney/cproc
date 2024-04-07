@@ -255,13 +255,17 @@ calcvla(struct func *f, struct type *t)
 {
 	struct value *out;
 
-	out = t->u.array.lenexpr ? funcexpr(f, t->u.array.lenexpr) : mkintconst(t->u.array.length);
-	if (t->base->kind == TYPEARRAY) {
-		struct value *subsize = calcvla(f, t->base);
-		out = funcinst(f, IMUL, 'l', subsize, out);
-	}
+	if (t->u.array.length) {
+		out = funcexpr(f, t->u.array.length);
+		if (t->base->kind == TYPEARRAY) {
+			struct value *subsize = calcvla(f, t->base);
+			out = funcinst(f, IMUL, 'l', subsize, out);
+		}
 
-    t->u.array.size = out;
+		t->u.array.size = out;
+	} else {
+		out = mkintconst(t->size);
+	}
 
 	return out;
 }
@@ -1113,7 +1117,7 @@ emittype(struct type *t)
 	static unsigned id;
 	struct member *m, *other;
 	struct type *sub;
-	unsigned long long i, off;
+	unsigned long long off;
 
 	if (t->value || t->kind != TYPESTRUCT && t->kind != TYPEUNION)
 		return;
@@ -1146,11 +1150,11 @@ emittype(struct type *t)
 		} else {
 			fputs("{ ", stdout);
 		}
-		for (i = 1, sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
-			i *= sub->u.array.length;
+		for (sub = m->type; sub->kind == TYPEARRAY; sub = sub->base)
+			;
 		emitclass(qbetype(sub).data, sub->value);
-		if (i > 1)
-			printf(" %llu", i);
+		if (m->type->size > sub->size)
+			printf(" %llu", m->type->size / sub->size);
 		if (t->kind == TYPESTRUCT) {
 			fputs(", ", stdout);
 			/* skip subsequent members contained within the same storage unit */

@@ -12,7 +12,7 @@ static const struct target alltargs[] = {
 		.typevalist = &(struct type){
 			.kind = TYPEARRAY,
 			.align = 8, .size = 24,
-			.u.array = {1}, .base = &(struct type){
+			.base = &(struct type){
 				.kind = TYPESTRUCT,
 				.align = 8, .size = 24,
 			},

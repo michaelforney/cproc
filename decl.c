@@ -507,10 +507,6 @@ done:
 	}
 	if (!t && (tq || sc && *sc || fs && *fs))
 		error(&tok.loc, "declaration has no type specifier");
-	if (t && tq && t->kind == TYPEARRAY) {
-		t = mkarraytype(t->base, t->qual | tq, t->u.array.length);
-		tq = QUALNONE;
-	}
 	/*
 	TODO: consider delaying attribute parsing to declarator(),
 	so we can tell the difference between the start of an
@@ -546,7 +542,6 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 	struct type *t;
 	struct param **p;
 	struct expr *e;
-	unsigned long long i;
 	enum typequal tq;
 	bool allowattr;
 
@@ -653,18 +648,10 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 			if (tok.kind == TMUL)
 				error(&tok.loc, "VLAs are not yet supported");
 			if (tok.kind != TRBRACK) {
-				e = eval(assignexpr(s));
+				e = assignexpr(s);
 				if (!(e->type->prop & PROPINT))
 					error(&tok.loc, "array length expression must have integer type");
-				if (e->kind != EXPRCONST) {
-					t->u.array.lenexpr = exprconvert(e, &typeulong);
-				} else {
-					i = e->u.constant.u;
-					if (e->type->u.basic.issigned && i >> 63)
-						error(&tok.loc, "array length must be non-negative");
-					delexpr(e);
-					t->u.array.length = i;
-				}
+				t->u.array.length = exprconvert(e, &typeulong);
 				t->incomplete = false;
 			}
 			expect(TRBRACK, "after array length");
@@ -689,6 +676,7 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 {
 	struct type *t;
 	enum typequal tq;
+	struct expr *e;
 	struct list result = {&result, &result}, *l, *prev;
 
 	declaratortypes(s, &result, name, allowabstract);
@@ -711,7 +699,17 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 			if (base.type->kind == TYPEFUNC)
 				error(&tok.loc, "array element has function type");
 			t->align = base.type->align;
-			t->size = base.type->size * t->u.array.length;  /* XXX: overflow? */
+			t->size = 0;
+			if (t->u.array.length) {
+				e = eval(t->u.array.length);
+				if (e->kind == EXPRCONST) {
+					if (e->type->u.basic.issigned && e->u.constant.u >> 63)
+						error(&tok.loc, "array length must be non-negative");
+					if (e->u.constant.u > ULLONG_MAX / base.type->size)
+						error(&tok.loc, "array length is too large");
+					t->size = base.type->size * e->u.constant.u;
+				}
+			}
 			break;
 		}
 		base.type = t;
