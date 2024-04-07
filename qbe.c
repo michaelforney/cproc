@@ -752,7 +752,10 @@ funcexpr(struct func *f, struct expr *e)
 		case TSIZEOF:
 			r = funcexpr(f, e->base);
 			assert(e->base->kind == EXPRIDENT);
-			return e->base->u.ident.decl->type->u.array.size;
+			return funcinst(f, IMUL, 'l',
+					e->base->u.ident.decl->type->u.array.size,
+					mkintconst(e->base->u.ident.decl->type->base->size)
+					);
 		}
 		fatal("internal error; unknown unary expression");
 		break;
