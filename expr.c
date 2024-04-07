@@ -1071,6 +1071,7 @@ unaryexpr(struct scope *s)
 		next();
 		if (consume(TLPAREN)) {
 			t = typename(s, NULL);
+			e = NULL;
 			if (t) {
 				expect(TRPAREN, "after type name");
 				/* might be part of a compound literal */
@@ -1100,10 +1101,12 @@ unaryexpr(struct scope *s)
 			error(&tok.loc, "%s operator applied to incomplete type", tokstr[op]);
 		if (t->kind == TYPEFUNC)
 			error(&tok.loc, "%s operator applied to function type", tokstr[op]);
-		if (t->kind == TYPEARRAY && t->size == 0 && op == TSIZEOF)
-			e = mkunaryexpr(TSIZEOF, e);
-		else
+		if (t->kind == TYPEARRAY && t->size == 0 && op == TSIZEOF) {
+			e = mkexpr(EXPRSIZEOF, &typeulong, e);
+			e->u.szof.t = e ? t : e->base->type;
+		} else {
 			e = mkconstexpr(&typeulong, op == TSIZEOF ? t->size : t->align);
+		}
 		break;
 	default:
 		e = postfixexpr(s, NULL);

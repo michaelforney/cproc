@@ -331,6 +331,7 @@ enum exprkind {
 
 	EXPRBUILTIN,
 	EXPRTEMP,
+	EXPRSIZEOF,
 };
 
 struct stringlit {
@@ -387,6 +388,9 @@ struct expr {
 		struct {
 			enum builtinkind kind;
 		} builtin;
+		struct {
+			struct type *t;
+		} szof;
 		struct value *temp;
 	} u;
 };
