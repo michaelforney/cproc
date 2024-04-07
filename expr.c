@@ -166,7 +166,7 @@ bitfieldwidth(struct expr *e)
 	return e->type->size * 8 - e->u.bitfield.bits.before - e->u.bitfield.bits.after;
 }
 
-static struct expr *
+struct expr *
 exprconvert(struct expr *e, struct type *t)
 {
 	if (typecompatible(e->type, t))

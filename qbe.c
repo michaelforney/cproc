@@ -264,11 +264,8 @@ funcalloc(struct func *f, struct decl *d)
 	/* VLA, so output the size */
 	if (d->type->size == 0) {
 		assert(d->type->kind == TYPEARRAY);
-		struct value *size = funcexpr(f, d->type->u.array.lenexpr);
-		inst = mkinst(f, IEXTUW, ptrclass, size, NULL);
-		dynsize = &inst->res;
+		dynsize = funcexpr(f, d->type->u.array.lenexpr);
 		d->type->u.array.size = dynsize;
-		arrayaddptr(&f->end->insts, inst);
 	}
 
 	size = d->type->size;

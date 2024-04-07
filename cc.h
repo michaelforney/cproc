@@ -526,6 +526,7 @@ void delexpr(struct expr *);
 
 struct expr *exprassign(struct expr *, struct type *);
 struct expr *exprpromote(struct expr *);
+struct expr *exprconvert(struct expr *, struct type *);
 
 /* eval */
 

@@ -657,7 +657,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				if (!(e->type->prop & PROPINT))
 					error(&tok.loc, "expected integer expression for array length");
 				if (e->kind != EXPRCONST)
-					t->u.array.lenexpr = e;
+					t->u.array.lenexpr = exprconvert(e, &typeulong);
 				else {
 					i = e->u.constant.u;
 					if (e->type->u.basic.issigned && i >> 63)
