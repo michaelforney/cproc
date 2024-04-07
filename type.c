@@ -79,7 +79,7 @@ mkarraytype(struct type *base, enum typequal qual, unsigned long long len)
 	t = mktype(TYPEARRAY, 0);
 	t->base = base;
 	t->qual = qual;
-	t->u.array.length = len;
+	t->u.array.length = NULL;
 	t->u.array.ptrqual = QUALNONE;
 	t->incomplete = !len;
 	if (t->base) {

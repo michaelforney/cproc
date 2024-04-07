@@ -542,7 +542,6 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 	struct type *t;
 	struct param **p;
 	struct expr *e;
-	unsigned long long i;
 	enum typequal tq;
 	bool allowattr;
 
@@ -649,14 +648,10 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 			if (tok.kind == TMUL)
 				error(&tok.loc, "VLAs are not yet supported");
 			if (tok.kind != TRBRACK) {
-				e = eval(assignexpr(s));
-				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
-					error(&tok.loc, "VLAs are not yet supported");
-				i = e->u.constant.u;
-				if (e->type->u.basic.issigned && i >> 63)
-					error(&tok.loc, "array length must be non-negative");
-				delexpr(e);
-				t->u.array.length = i;
+				e = assignexpr(s);
+				if (!(e->type->prop & PROPINT))
+					error(&tok.loc, "array length expression must have integer type");
+				t->u.array.length = e;
 				t->incomplete = false;
 			}
 			expect(TRBRACK, "after array length");
@@ -681,6 +676,7 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 {
 	struct type *t;
 	enum typequal tq;
+	struct expr *e;
 	struct list result = {&result, &result}, *l, *prev;
 
 	declaratortypes(s, &result, name, allowabstract);
@@ -703,7 +699,17 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 			if (base.type->kind == TYPEFUNC)
 				error(&tok.loc, "array element has function type");
 			t->align = base.type->align;
-			t->size = base.type->size * t->u.array.length;  /* XXX: overflow? */
+			t->size = 0;
+			if (t->u.array.length) {
+				e = eval(t->u.array.length);
+				if (e->kind != EXPRCONST)
+					error(&tok.loc, "VLAs are not yet supported");
+				if (e->type->u.basic.issigned && e->u.constant.u >> 63)
+					error(&tok.loc, "array length must be non-negative");
+				if (e->u.constant.u > ULLONG_MAX / base.type->size)
+					error(&tok.loc, "array length is too large");
+				t->size = base.type->size * e->u.constant.u;
+			}
 			break;
 		}
 		base.type = t;

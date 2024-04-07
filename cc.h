@@ -219,7 +219,7 @@ struct type {
 			bool issigned, iscomplex;
 		} basic;
 		struct {
-			unsigned long long length;
+			struct expr *length;
 			enum typequal ptrqual;
 		} array;
 		struct {
