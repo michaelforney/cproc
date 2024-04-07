@@ -4,8 +4,11 @@
 #include "util.h"
 #include "cc.h"
 
-#define F (1<<8)
-#define S (2<<8)
+enum {
+	F = 1<<8,
+	S = 2<<8
+};
+
 static void
 cast(struct expr *expr)
 {
@@ -96,8 +99,6 @@ binary(struct expr *expr, enum tokenkind op, struct expr *l, struct expr *r)
 	}
 	cast(expr);
 }
-#undef F
-#undef S
 
 struct expr *
 eval(struct expr *expr)
