@@ -507,10 +507,6 @@ done:
 	}
 	if (!t && (tq || sc && *sc || fs && *fs))
 		error(&tok.loc, "declaration has no type specifier");
-	if (t && tq && t->kind == TYPEARRAY) {
-		t = mkarraytype(t->base, t->qual | tq, t->u.array.length);
-		tq = QUALNONE;
-	}
 	/*
 	TODO: consider delaying attribute parsing to declarator(),
 	so we can tell the difference between the start of an
