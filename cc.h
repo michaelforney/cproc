@@ -518,7 +518,7 @@ struct type *stringconcat(struct stringlit *, bool);
 
 struct expr *expr(struct scope *);
 struct expr *assignexpr(struct scope *);
-struct expr *evalexpr(struct scope *);
+struct expr *condexpr(struct scope *);
 unsigned long long intconstexpr(struct scope *, bool);
 void delexpr(struct expr *);
 

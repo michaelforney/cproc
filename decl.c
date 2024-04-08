@@ -247,7 +247,7 @@ tagspec(struct scope *s)
 			next();
 			attr(NULL, 0);
 			if (consume(TASSIGN)) {
-				e = evalexpr(s);
+				e = eval(condexpr(s));
 				if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 					error(&tok.loc, "expected integer constant expression");
 				value = e->u.constant.u;
