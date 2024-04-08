@@ -686,6 +686,7 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 		tq = t->qual;
 		t->base = base.type;
 		t->qual = base.qual;
+		t->prop |= base.type->prop & PROPVM;
 		switch (t->kind) {
 		case TYPEFUNC:
 			if (base.type->kind == TYPEFUNC)
@@ -708,6 +709,8 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 					if (e->u.constant.u > ULLONG_MAX / base.type->size)
 						error(&tok.loc, "array length is too large");
 					t->size = base.type->size * e->u.constant.u;
+				} else {
+					t->prop |= PROPVM;
 				}
 			}
 			break;

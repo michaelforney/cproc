@@ -67,6 +67,8 @@ mkpointertype(struct type *base, enum typequal qual)
 	t->qual = qual;
 	t->size = 8;
 	t->align = 8;
+	if (base)
+		t->prop |= base->prop & PROPVM;
 
 	return t;
 }

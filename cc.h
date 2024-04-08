@@ -178,7 +178,8 @@ enum typeprop {
 	PROPREAL    = 1<<2,
 	PROPARITH   = 1<<3,
 	PROPSCALAR  = 1<<4,
-	PROPFLOAT   = 1<<5
+	PROPFLOAT   = 1<<5,
+	PROPVM      = 1<<6  /* variably-modified type */
 };
 
 struct param {
