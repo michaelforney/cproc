@@ -39,6 +39,7 @@ enum instkind {
 #include "ops.h"
 #undef OP
 
+	IBLITSIZE,
 	IARG,
 	IVARARG,
 };
@@ -299,35 +300,6 @@ funcbits(struct func *f, struct type *t, struct value *v, struct bitfield b)
 	return v;
 }
 
-static void
-funccopy(struct func *f, struct value *dst, struct value *src, unsigned long long size, int align)
-{
-	enum instkind load, store;
-	int class;
-	struct value *tmp, *inc;
-	unsigned long long off;
-
-	assert((align & align - 1) == 0);
-	class = 'w';
-	switch (align) {
-	case 1: load = ILOADUB, store = ISTOREB; break;
-	case 2: load = ILOADUH, store = ISTOREH; break;
-	case 4: load = ILOADW, store = ISTOREW; break;
-	default: load = ILOADL, store = ISTOREL, align = 8, class = 'l'; break;
-	}
-	inc = mkintconst(align);
-	off = 0;
-	for (;;) {
-		tmp = funcinst(f, load, class, src, NULL);
-		funcinst(f, store, 0, tmp, dst);
-		off += align;
-		if (off >= size)
-			break;
-		src = funcinst(f, IADD, ptrclass, src, inc);
-		dst = funcinst(f, IADD, ptrclass, dst, inc);
-	}
-}
-
 static struct value *
 funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, struct value *v)
 {
@@ -348,7 +320,8 @@ funcstore(struct func *f, struct type *t, enum typequal tq, struct lvalue lval, 
 	case TYPESTRUCT:
 	case TYPEUNION:
 	case TYPEARRAY:
-		funccopy(f, lval.addr, v, t->size, t->align);
+		funcinst(f, IBLIT, 0, v, lval.addr);
+		funcinst(f, IBLITSIZE, 0, mkintconst(t->size), NULL);
 		break;
 	case TYPEPOINTER:
 		t = &typeulong;
@@ -1153,6 +1126,14 @@ emitinst(struct inst **instp, struct inst **instend)
 			emitvalue(inst->arg[0]);
 		}
 		putchar(')');
+		break;
+	case IBLIT:
+		fputs(", ", stdout);
+		emitvalue(inst->arg[1]);
+		inst = *instp++;
+		assert(inst->kind == IBLITSIZE);
+		fputs(", ", stdout);
+		emitvalue(inst->arg[0]);
 		break;
 	default:
 		if (inst->arg[1]) {

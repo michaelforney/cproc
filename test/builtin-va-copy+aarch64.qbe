@@ -4,19 +4,6 @@ export
 function $f() {
 @start.1
 @body.2
-	%.1 =l loadl $.Lb.3
-	storel %.1, $.La.2
-	%.2 =l add $.Lb.3, 8
-	%.3 =l add $.La.2, 8
-	%.4 =l loadl %.2
-	storel %.4, %.3
-	%.5 =l add %.2, 8
-	%.6 =l add %.3, 8
-	%.7 =l loadl %.5
-	storel %.7, %.6
-	%.8 =l add %.5, 8
-	%.9 =l add %.6, 8
-	%.10 =l loadl %.8
-	storel %.10, %.9
+	blit $.Lb.3, $.La.2, 32
 	ret
 }

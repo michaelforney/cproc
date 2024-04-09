@@ -4,16 +4,7 @@ export
 function $f1() {
 @start.1
 @body.2
-	%.1 =l loadl $.Lb.3
-	storel %.1, $.La.2
-	%.2 =l add $.Lb.3, 8
-	%.3 =l add $.La.2, 8
-	%.4 =l loadl %.2
-	storel %.4, %.3
-	%.5 =l add %.2, 8
-	%.6 =l add %.3, 8
-	%.7 =l loadl %.5
-	storel %.7, %.6
+	blit $.Lb.3, $.La.2, 24
 	ret
 }
 data $.La.5 = align 8 { z 24 }
@@ -24,16 +15,7 @@ function $f2(l %.1) {
 	storel %.1, %.2
 @body.4
 	%.3 =l loadl %.2
-	%.4 =l loadl %.3
-	storel %.4, $.La.5
-	%.5 =l add %.3, 8
-	%.6 =l add $.La.5, 8
-	%.7 =l loadl %.5
-	storel %.7, %.6
-	%.8 =l add %.5, 8
-	%.9 =l add %.6, 8
-	%.10 =l loadl %.8
-	storel %.10, %.9
+	blit %.3, $.La.5, 24
 	ret
 }
 export
@@ -46,15 +28,6 @@ function $f3(l %.1, l %.3) {
 @body.6
 	%.5 =l loadl %.4
 	%.6 =l loadl %.2
-	%.7 =l loadl %.5
-	storel %.7, %.6
-	%.8 =l add %.5, 8
-	%.9 =l add %.6, 8
-	%.10 =l loadl %.8
-	storel %.10, %.9
-	%.11 =l add %.8, 8
-	%.12 =l add %.9, 8
-	%.13 =l loadl %.11
-	storel %.13, %.12
+	blit %.5, %.6, 24
 	ret
 }
