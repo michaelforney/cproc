@@ -738,8 +738,6 @@ primaryexpr(struct scope *s)
 	return e;
 }
 
-static struct expr *condexpr(struct scope *);
-
 /* TODO: merge with init.c:designator() */
 static void
 designator(struct scope *s, struct type *t, unsigned long long *offset)
@@ -1211,7 +1209,7 @@ binaryexpr(struct scope *s, struct expr *l, int i)
 	return l;
 }
 
-static struct expr *
+struct expr *
 condexpr(struct scope *s)
 {
 	struct expr *e, *l, *r;
@@ -1267,18 +1265,12 @@ condexpr(struct scope *s)
 	return e;
 }
 
-struct expr *
-evalexpr(struct scope *s)
-{
-	return eval(condexpr(s));
-}
-
 unsigned long long
 intconstexpr(struct scope *s, bool allowneg)
 {
 	struct expr *e;
 
-	e = evalexpr(s);
+	e = eval(condexpr(s));
 	if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 		error(&tok.loc, "not an integer constant expression");
 	if (!allowneg && e->type->u.basic.issigned && e->u.constant.u >> 63)
