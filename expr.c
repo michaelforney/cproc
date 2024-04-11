@@ -1105,7 +1105,7 @@ unaryexpr(struct scope *s)
 			error(&tok.loc, "%s operator applied to function type", tokstr[op]);
 		if (t->kind == TYPEARRAY && t->size == 0 && op == TSIZEOF) {
 			e = mkexpr(EXPRSIZEOF, &typeulong, e);
-			e->u.szof.t = e ? t : e->base->type;
+			e->u.szof.type = e ? t : e->base->type;
 		} else {
 			e = mkconstexpr(&typeulong, op == TSIZEOF ? t->size : t->align);
 		}

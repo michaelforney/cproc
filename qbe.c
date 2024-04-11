@@ -935,7 +935,7 @@ funcexpr(struct func *f, struct expr *e)
 		assert(e->u.temp);
 		return e->u.temp;
 	case EXPRSIZEOF:
-		t = e->u.szof.t;
+		t = e->u.szof.type;
 		basetype = t;
 
 		while (basetype->kind == TYPEARRAY)

@@ -390,7 +390,7 @@ struct expr {
 			enum builtinkind kind;
 		} builtin;
 		struct {
-			struct type *t;
+			struct type *type;
 		} szof;
 		struct value *temp;
 	} u;
