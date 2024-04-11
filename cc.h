@@ -278,6 +278,7 @@ struct decl {
 	struct type *type;
 	enum typequal qual;
 	struct value *value;
+	struct expr *expr;
 	char *asmname;
 	bool defined;
 

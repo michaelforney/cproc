@@ -13,6 +13,7 @@ static struct list tentativedefns = {&tentativedefns, &tentativedefns};
 struct qualtype {
 	struct type *type;
 	enum typequal qual;
+	struct expr *expr;
 };
 
 enum storageclass {
@@ -323,6 +324,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 	enum typequal tq = QUALNONE;
 	int ntypes = 0;
 	unsigned long long i;
+	struct expr *typeofexpr = NULL;
 
 	t = NULL;
 	if (sc)
@@ -425,7 +427,8 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 					e = e->base;
 				t = e->type;
 				tq |= e->qual;
-				delexpr(e);
+				if (t->prop & PROPVM)
+					typeofexpr = e;
 			}
 			++ntypes;
 			expect(TRPAREN, "to close 'typeof'");
@@ -439,7 +442,8 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 				if (e->decayed)
 					e = e->base;
 				t = e->type;
-				delexpr(e);
+				if (t->prop & PROPVM)
+					typeofexpr = e;
 			}
 			++ntypes;
 			expect(TRPAREN, "to close 'typeof_unqual'");
@@ -514,7 +518,7 @@ done:
 	*/
 	attr(NULL, 0);
 
-	return (struct qualtype){t, tq};
+	return (struct qualtype){t, tq, typeofexpr};
 }
 
 /* 6.7.6 Declarators */
@@ -1066,6 +1070,7 @@ decl(struct scope *s, struct func *f)
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			if (d->u.obj.align < align)
 				d->u.obj.align = align;
+			d->expr = base.expr;
 			init = NULL;
 			hasinit = false;
 			if (consume(TASSIGN)) {

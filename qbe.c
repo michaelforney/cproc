@@ -255,16 +255,20 @@ calcvla(struct func *f, struct type *t)
 {
 	struct value *out;
 
-	if (t->u.array.length) {
-		out = funcexpr(f, t->u.array.length);
-		if (t->base->kind == TYPEARRAY) {
-			struct value *subsize = calcvla(f, t->base);
-			out = funcinst(f, IMUL, 'l', subsize, out);
-		}
+	if (t->kind == TYPEARRAY) {
+		if (!t->u.array.size && t->u.array.length) {
+			out = funcexpr(f, t->u.array.length);
+			if (t->base->kind == TYPEARRAY) {
+				struct value *subsize = calcvla(f, t->base);
+				out = funcinst(f, IMUL, 'l', subsize, out);
+			}
 
-		t->u.array.size = out;
+			t->u.array.size = out;
+		} else {
+			out = mkintconst(t->size);
+		}
 	} else {
-		out = mkintconst(t->size);
+		calcvla(f, t->base);
 	}
 
 	return out;
@@ -280,9 +284,8 @@ funcalloc(struct func *f, struct decl *d)
 
 	assert(!d->type->incomplete);
 
-	/* VLA, so output the size */
-	if (d->type->u.array.size == NULL && d->type->size == 0) {
-		assert(d->type->kind == TYPEARRAY);
+	/* VM, so calculate the size */
+	if (d->type->prop & PROPVM) {
 		calcvla(f, d->type);
 	}
 
@@ -992,6 +995,8 @@ funcinit(struct func *func, struct decl *d, struct init *init, bool hasinit)
 	unsigned long long offset = 0, max = 0;
 	size_t i, w;
 
+	if (d->expr)
+		funcexpr(func, d->expr);
 	funcalloc(func, d);
 	if (!hasinit)
 		return;
