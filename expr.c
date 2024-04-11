@@ -123,10 +123,6 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 	struct expr *expr;
 
 	switch (op) {
-	case TSIZEOF:
-		expr = mkexpr(EXPRUNARY, &typeulong, base);
-		expr->op = op;
-		return expr;
 	case TBAND:
 		if (base->decayed) {
 			expr = base;
