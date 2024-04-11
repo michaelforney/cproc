@@ -693,6 +693,7 @@ funcexpr(struct func *f, struct expr *e)
 	struct type *t, *functype;
 	size_t i;
 
+	calcvla(f, e->type);
 	switch (e->kind) {
 	case EXPRIDENT:
 		d = e->u.ident.decl;
