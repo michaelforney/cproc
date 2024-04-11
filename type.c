@@ -115,6 +115,7 @@ typecompatible(struct type *t1, struct type *t2)
 {
 	struct type *tmp;
 	struct param *p1, *p2;
+	struct expr *e1, *e2;
 
 	if (t1 == t2)
 		return true;
@@ -131,7 +132,11 @@ typecompatible(struct type *t1, struct type *t2)
 	case TYPEPOINTER:
 		goto derived;
 	case TYPEARRAY:
-		if (!t1->incomplete && !t2->incomplete && t1->size != t2->size)
+		if (t1->incomplete || t2->incomplete)
+			goto derived;
+		e1 = t1->u.array.length;
+		e2 = t2->u.array.length;
+		if (e1->kind == EXPRCONST && e2->kind == EXPRCONST && e1->u.constant.u != e2->u.constant.u)
 			return false;
 		goto derived;
 	case TYPEFUNC:
