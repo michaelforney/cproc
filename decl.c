@@ -655,7 +655,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				e = assignexpr(s);
 				if (!(e->type->prop & PROPINT))
 					error(&tok.loc, "array length expression must have integer type");
-				t->u.array.length = exprconvert(e, &typeulong);
+				t->u.array.length = e;
 				t->incomplete = false;
 			}
 			expect(TRBRACK, "after array length");
@@ -715,6 +715,7 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 					t->size = base.type->size * e->u.constant.u;
 				} else {
 					t->prop |= PROPVM;
+					t->u.array.length = exprconvert(e, &typeulong);
 				}
 			}
 			break;
