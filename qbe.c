@@ -250,28 +250,22 @@ funcinst(struct func *f, int op, int class, struct value *arg0, struct value *ar
 	return &inst->res;
 }
 
-static struct value *
+static void
 calcvla(struct func *f, struct type *t)
 {
-	struct value *out;
-
-	if (t->kind == TYPEARRAY) {
-		if (!t->u.array.size && t->u.array.length) {
-			out = funcexpr(f, t->u.array.length);
-			if (t->base->kind == TYPEARRAY) {
-				struct value *subsize = calcvla(f, t->base);
-				out = funcinst(f, IMUL, 'l', subsize, out);
-			}
-
-			t->u.array.size = out;
-		} else {
-			out = mkintconst(t->size);
-		}
-	} else {
+	if (!(t->prop & PROPVM))
+		return;
+	if (t->base)
 		calcvla(f, t->base);
-	}
+	assert(t->size || t->kind == TYPEARRAY);
+	if (t->size == 0 && !t->u.array.size) {
+		struct value *length, *basesize;
 
-	return out;
+		assert(t->base->size || t->base->kind == TYPEARRAY);
+		length = funcexpr(f, t->u.array.length);
+		basesize = t->base->size ? mkintconst(t->base->size) : t->base->u.array.size;
+		t->u.array.size = funcinst(f, IMUL, 'l', length, basesize);
+	}
 }
 
 static void
@@ -284,11 +278,7 @@ funcalloc(struct func *f, struct decl *d)
 
 	assert(!d->type->incomplete);
 
-	/* VM, so calculate the size */
-	if (d->type->prop & PROPVM) {
-		calcvla(f, d->type);
-	}
-
+	calcvla(f, d->type);
 	size = d->type->size;
 	align = d->u.obj.align;
 	switch (align) {
@@ -698,7 +688,7 @@ funcexpr(struct func *f, struct expr *e)
 	struct lvalue lval;
 	struct expr *arg;
 	struct block *b[3];
-	struct type *t, *functype, *basetype;
+	struct type *t, *functype;
 	size_t i;
 
 	switch (e->kind) {
@@ -936,28 +926,12 @@ funcexpr(struct func *f, struct expr *e)
 		return e->u.temp;
 	case EXPRSIZEOF:
 		t = e->u.szof.type;
-		basetype = t;
-
-		while (basetype->kind == TYPEARRAY)
-			basetype = basetype->base;
-
-		/* we have already calculated a size as part of allocating the array */
-		if (e->base && e->base->type->u.array.size) {
+		assert(t->kind == TYPEARRAY);
+		calcvla(f, t);
+		/* if the sizeof operand has VLA type, we must evaluate it */
+		if (e->base)
 			funcexpr(f, e->base);
-			return funcinst(f, IMUL, 'l',
-					e->base->type->u.array.size,
-					mkintconst(basetype->size));
-
-		/* we must calculate the size */
-		} else {
-			/* we must evaluate the operand of sizeof when it is a VLA type */
-			if (e->base)
-				funcexpr(f, e->base);
-
-			struct value *val = calcvla(f, t);
-			return funcinst(f, IMUL, 'l', val, mkintconst(basetype->size));
-		}
-
+		return t->u.array.size;
 	}
 	fatal("unimplemented expression %d", e->kind);
 	return NULL;
