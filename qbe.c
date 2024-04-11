@@ -253,14 +253,16 @@ funcinst(struct func *f, int op, int class, struct value *arg0, struct value *ar
 static void
 calcvla(struct func *f, struct type *t)
 {
+	struct value *length, *basesize;
+
 	if (!(t->prop & PROPVM))
 		return;
 	if (t->base)
 		calcvla(f, t->base);
-	assert(t->size || t->kind == TYPEARRAY);
-	if (t->size == 0 && !t->u.array.size) {
-		struct value *length, *basesize;
-
+	if (t->kind == TYPEFUNC || t->size)
+		return;
+	assert(t->kind == TYPEARRAY);
+	if (!t->u.array.size) {
 		assert(t->base->size || t->base->kind == TYPEARRAY);
 		length = funcexpr(f, t->u.array.length);
 		basesize = t->base->size ? mkintconst(t->base->size) : t->base->u.array.size;
