@@ -8,7 +8,7 @@
 #include "util.h"
 #include "cc.h"
 
-static struct list tentativedefns = {&tentativedefns, &tentativedefns};
+static struct decl *tentativedefns, **tentativedefnsend = &tentativedefns;
 
 struct qualtype {
 	struct type *type;
@@ -273,7 +273,7 @@ tagspec(struct scope *s)
 			}
 			d = mkdecl(DECLCONST, et, QUALNONE, LINKNONE);
 			d->value = mkintconst(value);
-			d->u.enumconst.next = enumconsts;
+			d->next = enumconsts;
 			enumconsts = d;
 			if (et->u.basic.issigned && value >= 1ull << 63) {
 				if (-value > min)
@@ -299,7 +299,7 @@ tagspec(struct scope *s)
 				if (i == LEN(inttypes))
 					error(&tok.loc, "no integer type can represent all enumerator values");
 				t->base = et;
-				for (d = enumconsts; d; d = d->u.enumconst.next)
+				for (d = enumconsts; d; d = d->next)
 					d->type = t;
 			}
 			t->size = t->base->size;
@@ -1073,8 +1073,11 @@ decl(struct scope *s, struct func *f)
 				init = parseinit(s, d->type);
 				hasinit = true;
 			} else if (d->linkage != LINKNONE) {
-				if (!(sc & SCEXTERN) && !d->defined && !d->u.obj.tentative.next)
-					listinsert(tentativedefns.prev, &d->u.obj.tentative);
+				if (!(sc & SCEXTERN) && !d->defined && !d->tentative) {
+					d->tentative = true;
+					*tentativedefnsend = d;
+					tentativedefnsend = &d->next;
+				}
 				break;
 			}
 			if (d->linkage != LINKNONE || sc & SCSTATIC)
@@ -1082,8 +1085,6 @@ decl(struct scope *s, struct func *f)
 			else
 				funcinit(f, d, init, hasinit);
 			d->defined = true;
-			if (d->u.obj.tentative.next)
-				listremove(&d->u.obj.tentative);
 			break;
 		case DECLFUNC:
 			if (align)
@@ -1157,8 +1158,10 @@ stringdecl(struct expr *expr)
 void
 emittentativedefns(void)
 {
-	struct list *l;
+	struct decl *d;
 
-	for (l = tentativedefns.next; l != &tentativedefns; l = l->next)
-		emitdata(listelement(l, struct decl, u.obj.tentative), NULL);
+	for (d = tentativedefns; d; d = d->next) {
+		if (!d->defined)
+			emitdata(d, NULL);
+	}
 }

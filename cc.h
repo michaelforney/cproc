@@ -278,11 +278,11 @@ struct decl {
 	struct value *value;
 	char *asmname;
 	bool defined;
+	bool tentative;
+	struct decl *next;
 
 	union {
 		struct {
-			/* link in list of tentative object definitions */
-			struct list tentative;
 			/* alignment of object storage (may be stricter than type requires) */
 			int align;
 		} obj;
@@ -290,9 +290,6 @@ struct decl {
 			/* the function might have an "inline definition" (C11 6.7.4p7) */
 			bool inlinedefn;
 		} func;
-		struct {
-			struct decl *next;
-		} enumconst;
 		enum builtinkind builtin;
 	} u;
 };
