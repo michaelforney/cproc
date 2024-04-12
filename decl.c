@@ -60,12 +60,13 @@ struct structbuilder {
 };
 
 struct decl *
-mkdecl(enum declkind k, struct type *t, enum typequal tq, enum linkage linkage)
+mkdecl(char *name, enum declkind k, struct type *t, enum typequal tq, enum linkage linkage)
 {
 	struct decl *d;
 
 	d = xmalloc(sizeof(*d));
 	memset(d, 0, sizeof(*d));
+	d->name = name;
 	d->kind = k;
 	d->linkage = linkage;
 	d->type = t;
@@ -271,7 +272,7 @@ tagspec(struct scope *s)
 				}
 				assert(i < LEN(inttypes));
 			}
-			d = mkdecl(DECLCONST, et, QUALNONE, LINKNONE);
+			d = mkdecl(name, DECLCONST, et, QUALNONE, LINKNONE);
 			d->value = mkintconst(value);
 			d->next = enumconsts;
 			enumconsts = d;
@@ -281,7 +282,7 @@ tagspec(struct scope *s)
 			} else if (value > max) {
 				max = value;
 			}
-			scopeputdecl(s, name, d);
+			scopeputdecl(s, d);
 			if (!consume(TCOMMA))
 				break;
 		}
@@ -979,8 +980,8 @@ declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struc
 			t = typecomposite(t, prior->type);
 		}
 	}
-	d = mkdecl(kind, t, tq, linkage);
-	scopeputdecl(s, name, d);
+	d = mkdecl(name, kind, t, tq, linkage);
+	scopeputdecl(s, d);
 	if (kind == DECLFUNC || linkage != LINKNONE || sc & SCSTATIC) {
 		if (asmname)
 			name = asmname;
@@ -1053,7 +1054,7 @@ decl(struct scope *s, struct func *f)
 			if (asmname)
 				error(&tok.loc, "typedef '%s' declared with assembler label", name);
 			if (!prior)
-				scopeputdecl(s, name, mkdecl(DECLTYPE, t, tq, LINKNONE));
+				scopeputdecl(s, mkdecl(name, DECLTYPE, t, tq, LINKNONE));
 			else if (!typesame(prior->type, t) || prior->qual != tq)
 				error(&tok.loc, "typedef '%s' redefined with different type", name);
 			break;
@@ -1147,7 +1148,7 @@ stringdecl(struct expr *expr)
 	entry = mapput(&strings, &key);
 	d = *entry;
 	if (!d) {
-		d = mkdecl(DECLOBJECT, expr->type, QUALNONE, LINKNONE);
+		d = mkdecl(NULL, DECLOBJECT, expr->type, QUALNONE, LINKNONE);
 		d->value = mkglobal("string", true);
 		emitdata(d, mkinit(0, expr->type->size, (struct bitfield){0}, expr));
 		*entry = d;

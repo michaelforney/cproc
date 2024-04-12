@@ -493,7 +493,7 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 		functemp(f, p->value);
 		if(!p->name)
 			continue;
-		d = mkdecl(DECLOBJECT, p->type, p->qual, LINKNONE);
+		d = mkdecl(p->name, DECLOBJECT, p->type, p->qual, LINKNONE);
 		if (p->type->value) {
 			d->value = p->value;
 		} else {
@@ -501,13 +501,13 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 			funcalloc(f, d);
 			funcstore(f, p->type, QUALNONE, (struct lvalue){d->value}, v);
 		}
-		scopeputdecl(s, p->name, d);
+		scopeputdecl(s, d);
 	}
 
 	t = mkarraytype(&typechar, QUALCONST, strlen(name) + 1);
-	d = mkdecl(DECLOBJECT, t, QUALNONE, LINKNONE);
-	d->value = mkglobal("__func__", true);
-	scopeputdecl(s, "__func__", d);
+	d = mkdecl("__func__", DECLOBJECT, t, QUALNONE, LINKNONE);
+	d->value = mkglobal(d->name, true);
+	scopeputdecl(s, d);
 	f->namedecl = d;
 
 	funclabel(f, mkblock("body"));
@@ -639,7 +639,7 @@ funclval(struct func *f, struct expr *e)
 		lval.addr = d->value;
 		break;
 	case EXPRCOMPOUND:
-		d = mkdecl(DECLOBJECT, e->type, e->qual, LINKNONE);
+		d = mkdecl(NULL, DECLOBJECT, e->type, e->qual, LINKNONE);
 		funcinit(f, d, e->u.compound.init, true);
 		lval.addr = d->value;
 		break;

@@ -271,6 +271,7 @@ enum builtinkind {
 };
 
 struct decl {
+	char *name;
 	enum declkind kind;
 	enum linkage linkage;
 	struct type *type;
@@ -487,7 +488,7 @@ bool gnuattr(struct attr *, enum attrkind);
 
 /* decl */
 
-struct decl *mkdecl(enum declkind, struct type *, enum typequal, enum linkage);
+struct decl *mkdecl(char *name, enum declkind, struct type *, enum typequal, enum linkage);
 bool decl(struct scope *, struct func *);
 struct type *typename(struct scope *, enum typequal *);
 
@@ -501,7 +502,7 @@ void scopeinit(void);
 struct scope *mkscope(struct scope *);
 struct scope *delscope(struct scope *);
 
-void scopeputdecl(struct scope *, const char *, struct decl *);
+void scopeputdecl(struct scope *, struct decl *);
 struct decl *scopegetdecl(struct scope *, const char *, bool);
 
 void scopeputtag(struct scope *, const char *, struct type *);
