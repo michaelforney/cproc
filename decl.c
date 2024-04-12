@@ -716,6 +716,7 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 				} else {
 					t->prop |= PROPVM;
 					t->u.array.length = exprconvert(e, &typeulong);
+					t->u.array.size = NULL;
 				}
 			}
 			break;
