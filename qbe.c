@@ -87,6 +87,7 @@ struct switchcase {
 struct func {
 	struct decl *decl, *namedecl;
 	char *name;
+	struct value *paramtemps;
 	struct type *type;
 	struct block *start, *end;
 	struct map gotos;
@@ -471,10 +472,9 @@ struct func *
 mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 {
 	struct func *f;
-	struct param *p;
 	struct decl *d;
 	struct type *pt;
-	struct value *v;
+	struct value *v, *pv;
 
 	f = xmalloc(sizeof(*f));
 	f->decl = decl;
@@ -486,20 +486,19 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 	emittype(t->base);
 
 	/* allocate space for parameters */
-	for (p = t->u.func.params; p; p = p->next) {
-		pt = t->u.func.isprototype ? p->type : typepromote(p->type, -1);
+	f->paramtemps = xreallocarray(NULL, t->u.func.nparam, sizeof *f->paramtemps);
+	for (d = t->u.func.params, pv = f->paramtemps; d; d = d->next, ++pv) {
+		pt = t->u.func.isprototype ? d->type : typepromote(d->type, -1);
 		emittype(pt);
-		p->value = xmalloc(sizeof(*p->value));
-		functemp(f, p->value);
-		if(!p->name)
+		functemp(f, pv);
+		if(!d->name)
 			continue;
-		d = mkdecl(p->name, DECLOBJECT, p->type, p->qual, LINKNONE);
-		if (p->type->value) {
-			d->value = p->value;
+		if (d->type->value) {
+			d->value = pv;
 		} else {
-			v = typecompatible(p->type, pt) ? p->value : convert(f, pt, p->type, p->value);
+			v = typecompatible(d->type, pt) ? pv : convert(f, pt, d->type, pv);
 			funcalloc(f, d);
-			funcstore(f, p->type, QUALNONE, (struct lvalue){d->value}, v);
+			funcstore(f, d->type, QUALNONE, (struct lvalue){d->value}, v);
 		}
 		scopeputdecl(s, d);
 	}
@@ -1198,7 +1197,7 @@ emitfunc(struct func *f, bool global)
 {
 	struct block *b;
 	struct inst **inst, **instend;
-	struct param *p;
+	struct decl *p;
 	struct value *v;
 
 	if (f->end->jump.kind == JUMP_NONE) {
@@ -1217,12 +1216,12 @@ emitfunc(struct func *f, bool global)
 	}
 	emitvalue(f->decl->value);
 	putchar('(');
-	for (p = f->type->u.func.params; p; p = p->next) {
+	for (p = f->type->u.func.params, v = f->paramtemps; p; p = p->next, ++v) {
 		if (p != f->type->u.func.params)
 			fputs(", ", stdout);
 		emitclass(qbetype(p->type).base, p->type->value);
 		putchar(' ');
-		emitvalue(p->value);
+		emitvalue(v);
 	}
 	if (f->type->u.func.isvararg)
 		fputs(", ...", stdout);

@@ -71,7 +71,7 @@ mkdecl(char *name, enum declkind k, struct type *t, enum typequal tq, enum linka
 	d->linkage = linkage;
 	d->type = t;
 	d->qual = tq;
-	if (k == DECLOBJECT)
+	if (k == DECLOBJECT && t)
 		d->u.obj.align = t->align;
 
 	return d;
@@ -519,7 +519,7 @@ done:
 }
 
 /* 6.7.6 Declarators */
-static struct param *parameter(struct scope *);
+static struct decl *parameter(struct scope *);
 
 static bool
 istypename(struct scope *s, const char *name)
@@ -541,7 +541,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 {
 	struct list *ptr;
 	struct type *t;
-	struct param **p;
+	struct decl **p;
 	struct expr *e;
 	enum typequal tq;
 	bool allowattr;
@@ -608,8 +608,9 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				if (!istypename(s, tok.lit)) {
 					/* identifier-list (K&R declaration) */
 					do {
-						*p = mkparam(tok.lit, NULL, QUALNONE);
+						*p = mkdecl(tok.lit, DECLOBJECT, NULL, QUALNONE, LINKNONE);
 						p = &(*p)->next;
+						++t->u.func.nparam;
 						next();
 					} while (consume(TCOMMA) && tok.kind == TIDENT);
 					break;
@@ -720,7 +721,7 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 	return base;
 }
 
-static struct param *
+static struct decl *
 parameter(struct scope *s)
 {
 	char *name;
@@ -735,14 +736,13 @@ parameter(struct scope *s)
 		error(&tok.loc, "parameter declaration has invalid storage-class specifier");
 	t = declarator(s, t, &name, true);
 	t.type = typeadjust(t.type, &t.qual);
-
-	return mkparam(name, t.type, t.qual);
+	return mkdecl(name, DECLOBJECT, t.type, t.qual, LINKNONE);
 }
 
 static bool
-paramdecl(struct scope *s, struct param *params)
+paramdecl(struct scope *s, struct decl *params)
 {
-	struct param *p;
+	struct decl *p;
 	struct qualtype t, base;
 	enum storageclass sc;
 	char *name;
@@ -760,6 +760,7 @@ paramdecl(struct scope *s, struct param *params)
 			error(&tok.loc, "old-style function declarator has no parameter named '%s'", name);
 		p->type = typeadjust(t.type, &t.qual);
 		p->qual = t.qual;
+		p->u.obj.align = p->type->align;
 		if (tok.kind == TSEMICOLON)
 			break;
 		expect(TCOMMA, "or ';' after parameter declarator");
@@ -1001,7 +1002,7 @@ decl(struct scope *s, struct func *f)
 	enum funcspec fs;
 	struct init *init;
 	bool hasinit;
-	struct param *p;
+	struct decl *p;
 	char *name, *asmname;
 	int allowfunc = !f;
 	struct decl *d, *prior;

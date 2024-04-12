@@ -181,14 +181,6 @@ enum typeprop {
 	PROPFLOAT   = 1<<5
 };
 
-struct param {
-	char *name;
-	struct type *type;
-	enum typequal qual;
-	struct value *value;
-	struct param *next;
-};
-
 struct bitfield {
 	short before;  /* number of bits in the storage unit before the bit-field */
 	short after;   /* number of bits in the storage unit after the bit-field */
@@ -224,7 +216,7 @@ struct type {
 		} array;
 		struct {
 			bool isprototype, isvararg, isnoreturn, paraminfo;
-			struct param *params;
+			struct decl *params;
 			size_t nparam;
 		} func;
 		struct {
@@ -442,8 +434,6 @@ struct type *typeadjust(struct type *, enum typequal *);
 enum typeprop typeprop(struct type *);
 struct member *typemember(struct type *, const char *, unsigned long long *);
 bool typehasint(struct type *, unsigned long long, bool);
-
-struct param *mkparam(char *, struct type *, enum typequal);
 
 extern struct type typevoid;
 extern struct type typebool;

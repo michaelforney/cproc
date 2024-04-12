@@ -902,7 +902,7 @@ postfixexpr(struct scope *s, struct expr *r)
 {
 	struct expr *e, *arr, *idx, *tmp, **end;
 	struct type *t;
-	struct param *p;
+	struct decl *p;
 	struct member *m;
 	unsigned long long offset;
 	enum typequal tq;
