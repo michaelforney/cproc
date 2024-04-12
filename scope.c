@@ -9,32 +9,29 @@ struct scope filescope;
 void
 scopeinit(void)
 {
-	static struct builtin {
-		char *name;
-		struct decl decl;
-	} builtins[] = {
-		{"__builtin_alloca",     {.kind = DECLBUILTIN, .u.builtin = BUILTINALLOCA}},
-		{"__builtin_constant_p", {.kind = DECLBUILTIN, .u.builtin = BUILTINCONSTANTP}},
-		{"__builtin_expect",     {.kind = DECLBUILTIN, .u.builtin = BUILTINEXPECT}},
-		{"__builtin_inff",       {.kind = DECLBUILTIN, .u.builtin = BUILTININFF}},
-		{"__builtin_nanf",       {.kind = DECLBUILTIN, .u.builtin = BUILTINNANF}},
-		{"__builtin_offsetof",   {.kind = DECLBUILTIN, .u.builtin = BUILTINOFFSETOF}},
-		{"__builtin_types_compatible_p",
-			{.kind = DECLBUILTIN, .u.builtin = BUILTINTYPESCOMPATIBLEP}},
-		{"__builtin_unreachable", {.kind = DECLBUILTIN, .u.builtin = BUILTINUNREACHABLE}},
-		{"__builtin_va_arg",     {.kind = DECLBUILTIN, .u.builtin = BUILTINVAARG}},
-		{"__builtin_va_copy",    {.kind = DECLBUILTIN, .u.builtin = BUILTINVACOPY}},
-		{"__builtin_va_end",     {.kind = DECLBUILTIN, .u.builtin = BUILTINVAEND}},
-		{"__builtin_va_start",   {.kind = DECLBUILTIN, .u.builtin = BUILTINVASTART}},
+	static struct decl builtins[] = {
+		{.name = "__builtin_alloca",      .kind = DECLBUILTIN, .u.builtin = BUILTINALLOCA},
+		{.name = "__builtin_constant_p",  .kind = DECLBUILTIN, .u.builtin = BUILTINCONSTANTP},
+		{.name = "__builtin_expect",      .kind = DECLBUILTIN, .u.builtin = BUILTINEXPECT},
+		{.name = "__builtin_inff",        .kind = DECLBUILTIN, .u.builtin = BUILTININFF},
+		{.name = "__builtin_nanf",        .kind = DECLBUILTIN, .u.builtin = BUILTINNANF},
+		{.name = "__builtin_offsetof",    .kind = DECLBUILTIN, .u.builtin = BUILTINOFFSETOF},
+		{.name = "__builtin_types_compatible_p", .kind = DECLBUILTIN, .u.builtin = BUILTINTYPESCOMPATIBLEP},
+		{.name = "__builtin_unreachable", .kind = DECLBUILTIN, .u.builtin = BUILTINUNREACHABLE},
+		{.name = "__builtin_va_arg",      .kind = DECLBUILTIN, .u.builtin = BUILTINVAARG},
+		{.name = "__builtin_va_copy",     .kind = DECLBUILTIN, .u.builtin = BUILTINVACOPY},
+		{.name = "__builtin_va_end",      .kind = DECLBUILTIN, .u.builtin = BUILTINVAEND},
+		{.name = "__builtin_va_start",    .kind = DECLBUILTIN, .u.builtin = BUILTINVASTART},
 	};
 	static struct decl valist;
-	struct builtin *b;
+	struct decl *d;
 
-	for (b = builtins; b < builtins + LEN(builtins); ++b)
-		scopeputdecl(&filescope, b->name, &b->decl);
+	for (d = builtins; d < builtins + LEN(builtins); ++d)
+		scopeputdecl(&filescope, d);
+	valist.name = "__builtin_va_list";
 	valist.kind = DECLTYPE;
 	valist.type = targ->typevalist;
-	scopeputdecl(&filescope, "__builtin_va_list", &valist);
+	scopeputdecl(&filescope, &valist);
 }
 
 struct scope *
@@ -98,13 +95,13 @@ scopegettag(struct scope *s, const char *name, bool recurse)
 }
 
 void
-scopeputdecl(struct scope *s, const char *name, struct decl *d)
+scopeputdecl(struct scope *s, struct decl *d)
 {
 	struct mapkey k;
 
 	if (!s->decls.len)
 		mapinit(&s->decls, 32);
-	mapkey(&k, name, strlen(name));
+	mapkey(&k, d->name, strlen(d->name));
 	*mapput(&s->decls, &k) = d;
 }
 

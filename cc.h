@@ -182,14 +182,6 @@ enum typeprop {
 	PROPVM      = 1<<6  /* variably-modified type */
 };
 
-struct param {
-	char *name;
-	struct type *type;
-	enum typequal qual;
-	struct value *value;
-	struct param *next;
-};
-
 struct bitfield {
 	short before;  /* number of bits in the storage unit before the bit-field */
 	short after;   /* number of bits in the storage unit after the bit-field */
@@ -226,7 +218,7 @@ struct type {
 		} array;
 		struct {
 			bool isprototype, isvararg, isnoreturn, paraminfo;
-			struct param *params;
+			struct decl *params;
 			size_t nparam;
 		} func;
 		struct {
@@ -273,6 +265,7 @@ enum builtinkind {
 };
 
 struct decl {
+	char *name;
 	enum declkind kind;
 	enum linkage linkage;
 	struct type *type;
@@ -281,11 +274,11 @@ struct decl {
 	struct expr *expr;
 	char *asmname;
 	bool defined;
+	bool tentative;
+	struct decl *next;
 
 	union {
 		struct {
-			/* link in list of tentative object definitions */
-			struct list tentative;
 			/* alignment of object storage (may be stricter than type requires) */
 			int align;
 		} obj;
@@ -293,9 +286,6 @@ struct decl {
 			/* the function might have an "inline definition" (C11 6.7.4p7) */
 			bool inlinedefn;
 		} func;
-		struct {
-			struct decl *next;
-		} enumconst;
 		enum builtinkind builtin;
 	} u;
 };
@@ -452,8 +442,6 @@ enum typeprop typeprop(struct type *);
 struct member *typemember(struct type *, const char *, unsigned long long *);
 bool typehasint(struct type *, unsigned long long, bool);
 
-struct param *mkparam(char *, struct type *, enum typequal);
-
 extern struct type typevoid;
 extern struct type typebool;
 extern struct type typechar, typeschar, typeuchar;
@@ -497,7 +485,7 @@ bool gnuattr(struct attr *, enum attrkind);
 
 /* decl */
 
-struct decl *mkdecl(enum declkind, struct type *, enum typequal, enum linkage);
+struct decl *mkdecl(char *name, enum declkind, struct type *, enum typequal, enum linkage);
 bool decl(struct scope *, struct func *);
 struct type *typename(struct scope *, enum typequal *);
 
@@ -511,7 +499,7 @@ void scopeinit(void);
 struct scope *mkscope(struct scope *);
 struct scope *delscope(struct scope *);
 
-void scopeputdecl(struct scope *, const char *, struct decl *);
+void scopeputdecl(struct scope *, struct decl *);
 struct decl *scopegetdecl(struct scope *, const char *, bool);
 
 void scopeputtag(struct scope *, const char *, struct type *);

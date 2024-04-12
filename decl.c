@@ -8,7 +8,7 @@
 #include "util.h"
 #include "cc.h"
 
-static struct list tentativedefns = {&tentativedefns, &tentativedefns};
+static struct decl *tentativedefns, **tentativedefnsend = &tentativedefns;
 
 struct qualtype {
 	struct type *type;
@@ -61,17 +61,18 @@ struct structbuilder {
 };
 
 struct decl *
-mkdecl(enum declkind k, struct type *t, enum typequal tq, enum linkage linkage)
+mkdecl(char *name, enum declkind k, struct type *t, enum typequal tq, enum linkage linkage)
 {
 	struct decl *d;
 
 	d = xmalloc(sizeof(*d));
 	memset(d, 0, sizeof(*d));
+	d->name = name;
 	d->kind = k;
 	d->linkage = linkage;
 	d->type = t;
 	d->qual = tq;
-	if (k == DECLOBJECT)
+	if (k == DECLOBJECT && t)
 		d->u.obj.align = t->align;
 
 	return d;
@@ -272,9 +273,9 @@ tagspec(struct scope *s)
 				}
 				assert(i < LEN(inttypes));
 			}
-			d = mkdecl(DECLCONST, et, QUALNONE, LINKNONE);
+			d = mkdecl(name, DECLCONST, et, QUALNONE, LINKNONE);
 			d->value = mkintconst(value);
-			d->u.enumconst.next = enumconsts;
+			d->next = enumconsts;
 			enumconsts = d;
 			if (et->u.basic.issigned && value >= 1ull << 63) {
 				if (-value > min)
@@ -282,7 +283,7 @@ tagspec(struct scope *s)
 			} else if (value > max) {
 				max = value;
 			}
-			scopeputdecl(s, name, d);
+			scopeputdecl(s, d);
 			if (!consume(TCOMMA))
 				break;
 		}
@@ -300,7 +301,7 @@ tagspec(struct scope *s)
 				if (i == LEN(inttypes))
 					error(&tok.loc, "no integer type can represent all enumerator values");
 				t->base = et;
-				for (d = enumconsts; d; d = d->u.enumconst.next)
+				for (d = enumconsts; d; d = d->next)
 					d->type = t;
 			}
 			t->size = t->base->size;
@@ -522,7 +523,7 @@ done:
 }
 
 /* 6.7.6 Declarators */
-static struct param *parameter(struct scope *);
+static struct decl *parameter(struct scope *);
 
 static bool
 istypename(struct scope *s, const char *name)
@@ -544,7 +545,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 {
 	struct list *ptr;
 	struct type *t;
-	struct param **p;
+	struct decl **p;
 	struct expr *e;
 	enum typequal tq;
 	bool allowattr;
@@ -611,8 +612,9 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 				if (!istypename(s, tok.lit)) {
 					/* identifier-list (K&R declaration) */
 					do {
-						*p = mkparam(tok.lit, NULL, QUALNONE);
+						*p = mkdecl(tok.lit, DECLOBJECT, NULL, QUALNONE, LINKNONE);
 						p = &(*p)->next;
+						++t->u.func.nparam;
 						next();
 					} while (consume(TCOMMA) && tok.kind == TIDENT);
 					break;
@@ -728,7 +730,7 @@ declarator(struct scope *s, struct qualtype base, char **name, bool allowabstrac
 	return base;
 }
 
-static struct param *
+static struct decl *
 parameter(struct scope *s)
 {
 	char *name;
@@ -743,14 +745,13 @@ parameter(struct scope *s)
 		error(&tok.loc, "parameter declaration has invalid storage-class specifier");
 	t = declarator(s, t, &name, true);
 	t.type = typeadjust(t.type, &t.qual);
-
-	return mkparam(name, t.type, t.qual);
+	return mkdecl(name, DECLOBJECT, t.type, t.qual, LINKNONE);
 }
 
 static bool
-paramdecl(struct scope *s, struct param *params)
+paramdecl(struct scope *s, struct decl *params)
 {
-	struct param *p;
+	struct decl *p;
 	struct qualtype t, base;
 	enum storageclass sc;
 	char *name;
@@ -768,6 +769,7 @@ paramdecl(struct scope *s, struct param *params)
 			error(&tok.loc, "old-style function declarator has no parameter named '%s'", name);
 		p->type = typeadjust(t.type, &t.qual);
 		p->qual = t.qual;
+		p->u.obj.align = p->type->align;
 		if (tok.kind == TSEMICOLON)
 			break;
 		expect(TCOMMA, "or ';' after parameter declarator");
@@ -988,8 +990,8 @@ declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struc
 			t = typecomposite(t, prior->type);
 		}
 	}
-	d = mkdecl(kind, t, tq, linkage);
-	scopeputdecl(s, name, d);
+	d = mkdecl(name, kind, t, tq, linkage);
+	scopeputdecl(s, d);
 	if (kind == DECLFUNC || linkage != LINKNONE || sc & SCSTATIC) {
 		if (asmname)
 			name = asmname;
@@ -1009,7 +1011,7 @@ decl(struct scope *s, struct func *f)
 	enum funcspec fs;
 	struct init *init;
 	bool hasinit;
-	struct param *p;
+	struct decl *p;
 	char *name, *asmname;
 	int allowfunc = !f;
 	struct decl *d, *prior;
@@ -1062,7 +1064,7 @@ decl(struct scope *s, struct func *f)
 			if (asmname)
 				error(&tok.loc, "typedef '%s' declared with assembler label", name);
 			if (!prior)
-				scopeputdecl(s, name, mkdecl(DECLTYPE, t, tq, LINKNONE));
+				scopeputdecl(s, mkdecl(name, DECLTYPE, t, tq, LINKNONE));
 			else if (!typesame(prior->type, t) || prior->qual != tq)
 				error(&tok.loc, "typedef '%s' redefined with different type", name);
 			break;
@@ -1083,8 +1085,11 @@ decl(struct scope *s, struct func *f)
 				init = parseinit(s, d->type);
 				hasinit = true;
 			} else if (d->linkage != LINKNONE) {
-				if (!(sc & SCEXTERN) && !d->defined && !d->u.obj.tentative.next)
-					listinsert(tentativedefns.prev, &d->u.obj.tentative);
+				if (!(sc & SCEXTERN) && !d->defined && !d->tentative) {
+					d->tentative = true;
+					*tentativedefnsend = d;
+					tentativedefnsend = &d->next;
+				}
 				break;
 			}
 			if (d->linkage != LINKNONE || sc & SCSTATIC)
@@ -1092,8 +1097,6 @@ decl(struct scope *s, struct func *f)
 			else
 				funcinit(f, d, init, hasinit);
 			d->defined = true;
-			if (d->u.obj.tentative.next)
-				listremove(&d->u.obj.tentative);
 			break;
 		case DECLFUNC:
 			if (align)
@@ -1156,7 +1159,7 @@ stringdecl(struct expr *expr)
 	entry = mapput(&strings, &key);
 	d = *entry;
 	if (!d) {
-		d = mkdecl(DECLOBJECT, expr->type, QUALNONE, LINKNONE);
+		d = mkdecl(NULL, DECLOBJECT, expr->type, QUALNONE, LINKNONE);
 		d->value = mkglobal("string", true);
 		emitdata(d, mkinit(0, expr->type->size, (struct bitfield){0}, expr));
 		*entry = d;
@@ -1167,8 +1170,10 @@ stringdecl(struct expr *expr)
 void
 emittentativedefns(void)
 {
-	struct list *l;
+	struct decl *d;
 
-	for (l = tentativedefns.next; l != &tentativedefns; l = l->next)
-		emitdata(listelement(l, struct decl, u.obj.tentative), NULL);
+	for (d = tentativedefns; d; d = d->next) {
+		if (!d->defined)
+			emitdata(d, NULL);
+	}
 }
