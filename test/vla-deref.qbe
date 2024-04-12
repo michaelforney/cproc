@@ -1,0 +1,12 @@
+export
+function w $main() {
+@start.1
+	%.1 =l alloc4 4
+@body.2
+	storew 3, %.1
+	%.2 =w loadw %.1
+	%.3 =l extsw %.2
+	%.4 =l mul %.3, 1
+	%.5 =l alloc4 %.4
+	ret 0
+}

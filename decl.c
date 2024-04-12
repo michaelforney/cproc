@@ -651,7 +651,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 			t = mkarraytype(NULL, QUALNONE, 0);
 			while (consume(TSTATIC) || typequal(&t->u.array.ptrqual))
 				;
-			if (tok.kind == TMUL)
+			if (tok.kind == TMUL && peek(TRBRACK))
 				error(&tok.loc, "VLAs are not yet supported");
 			if (tok.kind != TRBRACK) {
 				e = assignexpr(s);
