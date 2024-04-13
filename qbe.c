@@ -280,7 +280,6 @@ funcalloc(struct func *f, struct decl *d)
 	int align;
 
 	assert(!d->type->incomplete);
-
 	calcvla(f, d->type);
 	size = d->type->size;
 	align = d->u.obj.align;
@@ -293,10 +292,7 @@ funcalloc(struct func *f, struct decl *d)
 	case 16: op = IALLOC16; break;
 	}
 	inst = mkinst(f, op, ptrclass, size ? mkintconst(size) : d->type->u.array.size, NULL);
-	if (size)
-		arrayaddptr(&f->start->insts, inst);
-	else
-		arrayaddptr(&f->end->insts, inst);
+	arrayaddptr(size ? &f->start->insts : &f->end->insts, inst);
 
 	if (align > 16) {
 		/* TODO: implement alloc32 in QBE and use that instead */

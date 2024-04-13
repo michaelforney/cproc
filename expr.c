@@ -1069,12 +1069,12 @@ unaryexpr(struct scope *s)
 		next();
 		if (consume(TLPAREN)) {
 			t = typename(s, NULL);
-			e = NULL;
 			if (t) {
 				expect(TRPAREN, "after type name");
 				/* might be part of a compound literal */
 				if (op == TSIZEOF && tok.kind == TLBRACE)
 					parseinit(s, t);
+				e = NULL;
 			} else {
 				e = expr(s);
 				expect(TRPAREN, "after expression");
