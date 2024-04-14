@@ -602,6 +602,8 @@ generic(struct scope *s)
 				error(&tok.loc, "generic association must have object type");
 			if (t->incomplete)
 				error(&tok.loc, "generic association must have complete type");
+			if (t->prop & PROPVM)
+				error(&tok.loc, "generic association has variably modified type");
 			expect(TCOLON, "after type name");
 			e = assignexpr(s);
 			if (typecompatible(t, want) && qual == QUALNONE) {
