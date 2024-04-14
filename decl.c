@@ -794,6 +794,8 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 	}
 	if (mt.type->kind == TYPEFUNC)
 		error(&tok.loc, "struct member '%s' has function type", name);
+	if (mt.type->prop & PROPVM)
+		error(&tok.loc, "struct member '%s' has variably modified type", name);
 	if (mt.type->flexible)
 		error(&tok.loc, "struct member '%s' contains flexible array member", name);
 	assert(mt.type->align > 0);
