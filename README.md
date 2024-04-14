@@ -1,6 +1,6 @@
 (mirrored on [GitHub][GitHub mirror])
 
-[![builds.sr.ht status](https://builds.sr.ht/~mcf/cproc.svg)](https://builds.sr.ht/~mcf/cproc)
+[![builds.sr.ht status](https://builds.sr.ht/~mcf/cproc/commits/master.svg)](https://builds.sr.ht/~mcf/cproc/commits/master)
 
 `cproc` is a [C11] compiler using [QBE] as a backend. It is released
 under the [ISC] license.

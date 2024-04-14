@@ -786,16 +786,16 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 	size_t end;
 
 	if (t->flexible)
-		error(&tok.loc, "struct has member after flexible array member");
+		error(&tok.loc, "struct has member '%s' after flexible array member", name);
 	if (mt.type->incomplete) {
 		if (mt.type->kind != TYPEARRAY)
-			error(&tok.loc, "struct member has incomplete type");
+			error(&tok.loc, "struct member '%s' has incomplete type", name);
 		t->flexible = true;
 	}
 	if (mt.type->kind == TYPEFUNC)
-		error(&tok.loc, "struct member has function type");
+		error(&tok.loc, "struct member '%s' has function type", name);
 	if (mt.type->flexible)
-		error(&tok.loc, "struct member contains flexible array member");
+		error(&tok.loc, "struct member '%s' contains flexible array member", name);
 	assert(mt.type->align > 0);
 	if (name || width == -1) {
 		m = xmalloc(sizeof(*m));
@@ -813,7 +813,7 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 		m->bits.after = 0;
 		if (align < mt.type->align) {
 			if (align)
-				error(&tok.loc, "specified alignment of struct member is less strict than is required by type");
+				error(&tok.loc, "specified alignment of struct member '%s' is less strict than is required by type", name);
 			align = b->pack ? 1 : mt.type->align;
 		}
 		if (t->kind == TYPESTRUCT) {
@@ -827,15 +827,15 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 		b->bits = 0;
 	} else {  /* bit-field */
 		if (!(mt.type->prop & PROPINT))
-			error(&tok.loc, "bit-field has invalid type");
+			error(&tok.loc, "bit-field '%s' has invalid type", name);
 		if (align)
-			error(&tok.loc, "alignment specified for bit-field");
+			error(&tok.loc, "alignment specified for bit-field '%s'", name);
 		if (b->pack)
-			error(&tok.loc, "bit-field in packed struct is not supported");
+			error(&tok.loc, "bit-field '%s' in packed struct is not supported", name);
 		if (!width && name)
-			error(&tok.loc, "bit-field with zero width must not have declarator");
+			error(&tok.loc, "bit-field '%s' with zero width must not have declarator", name);
 		if (width > mt.type->size * 8)
-			error(&tok.loc, "bit-field exceeds width of underlying type");
+			error(&tok.loc, "bit-field '%s' exceeds width of underlying type", name);
 		align = mt.type->align;
 		if (t->kind == TYPESTRUCT) {
 			/* calculate end of the storage-unit for this bit-field */
