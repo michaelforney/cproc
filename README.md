@@ -77,8 +77,7 @@ specified in `config.h`.
 
 ## What's missing
 
-- Digraph and trigraph sequences ([6.4.6p3] and [5.2.1.1], will not
-  be implemented).
+- Digraph sequences ([6.4.6p3], will not be implemented).
 - Variable-length arrays ([#1]).
 - `volatile`-qualified types ([#7]).
 - `_Thread_local` storage-class specifier ([#5]).
