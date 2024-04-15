@@ -473,7 +473,6 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 {
 	struct func *f;
 	struct decl *d;
-	struct type *pt;
 	struct value *v, *pv;
 
 	f = xmalloc(sizeof(*f));
@@ -488,15 +487,14 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 	/* allocate space for parameters */
 	f->paramtemps = xreallocarray(NULL, t->u.func.nparam, sizeof *f->paramtemps);
 	for (d = t->u.func.params, pv = f->paramtemps; d; d = d->next, ++pv) {
-		pt = t->u.func.isprototype ? d->type : typepromote(d->type, -1);
-		emittype(pt);
+		emittype(d->type);
 		functemp(f, pv);
 		if(!d->name)
 			continue;
 		if (d->type->value) {
 			d->value = pv;
 		} else {
-			v = typecompatible(d->type, pt) ? pv : convert(f, pt, d->type, pv);
+			v = pv;
 			funcalloc(f, d);
 			funcstore(f, d->type, QUALNONE, (struct lvalue){d->value}, v);
 		}

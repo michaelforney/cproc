@@ -949,10 +949,10 @@ postfixexpr(struct scope *s, struct expr *r)
 			while (tok.kind != TRPAREN) {
 				if (e->u.call.args)
 					expect(TCOMMA, "or ')' after function call argument");
-				if (!p && !t->u.func.isvararg && t->u.func.paraminfo)
+				if (!p && !t->u.func.isvararg)
 					error(&tok.loc, "too many arguments for function call");
 				*end = assignexpr(s);
-				if (!t->u.func.isprototype || (t->u.func.isvararg && !p))
+				if (t->u.func.isvararg && !p)
 					*end = exprpromote(*end);
 				else
 					*end = exprassign(*end, p->type);
@@ -961,7 +961,7 @@ postfixexpr(struct scope *s, struct expr *r)
 				if (p)
 					p = p->next;
 			}
-			if (p && !t->u.func.isvararg && t->u.func.paraminfo)
+			if (p && !t->u.func.isvararg)
 				error(&tok.loc, "not enough arguments for function call");
 			e = decay(e);
 			next();

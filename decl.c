@@ -597,48 +597,27 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 		func:
 			t = mktype(TYPEFUNC, 0);
 			t->qual = QUALNONE;
-			t->u.func.isprototype = false;
 			t->u.func.isvararg = false;
 			t->u.func.isnoreturn = false;
 			t->u.func.params = NULL;
 			t->u.func.nparam = 0;
 			p = &t->u.func.params;
-			switch (tok.kind) {
-			case TIDENT:
-				if (!istypename(s, tok.lit)) {
-					/* identifier-list (K&R declaration) */
-					do {
-						*p = mkdecl(tok.lit, DECLOBJECT, NULL, QUALNONE, LINKNONE);
-						p = &(*p)->next;
-						++t->u.func.nparam;
-						next();
-					} while (consume(TCOMMA) && tok.kind == TIDENT);
+			while (tok.kind != TRPAREN) {
+				*p = parameter(s);
+				p = &(*p)->next;
+				++t->u.func.nparam;
+				if (!consume(TCOMMA))
+					break;
+				if (consume(TELLIPSIS)) {
+					t->u.func.isvararg = true;
 					break;
 				}
-				/* fallthrough */
-			default:
-				t->u.func.isprototype = true;
-				for (;;) {
-					*p = parameter(s);
-					p = &(*p)->next;
-					++t->u.func.nparam;
-					if (!consume(TCOMMA))
-						break;
-					if (consume(TELLIPSIS)) {
-						t->u.func.isvararg = true;
-						break;
-					}
-				}
-				if (t->u.func.nparam == 1 && !t->u.func.isvararg && t->u.func.params->type->kind == TYPEVOID && !t->u.func.params->name) {
-					t->u.func.params = NULL;
-					t->u.func.nparam = 0;
-				}
-				break;
-			case TRPAREN:
-				break;
+			}
+			if (t->u.func.nparam == 1 && !t->u.func.isvararg && t->u.func.params->type->kind == TYPEVOID && !t->u.func.params->name) {
+				t->u.func.params = NULL;
+				t->u.func.nparam = 0;
 			}
 			expect(TRPAREN, "to close function declarator");
-			t->u.func.paraminfo = t->u.func.isprototype || t->u.func.params || tok.kind == TLBRACE;
 			listinsert(ptr->prev, &t->link);
 			allowattr = true;
 			break;
@@ -739,36 +718,6 @@ parameter(struct scope *s)
 	t = declarator(s, t, &name, true);
 	t.type = typeadjust(t.type, &t.qual);
 	return mkdecl(name, DECLOBJECT, t.type, t.qual, LINKNONE);
-}
-
-static bool
-paramdecl(struct scope *s, struct decl *params)
-{
-	struct decl *p;
-	struct qualtype t, base;
-	enum storageclass sc;
-	char *name;
-
-	base = declspecs(s, &sc, NULL, NULL);
-	if (!base.type)
-		return false;
-	if (sc && sc != SCREGISTER)
-		error(&tok.loc, "parameter declaration has invalid storage-class specifier");
-	for (;;) {
-		t = declarator(s, base, &name, false);
-		for (p = params; p && strcmp(name, p->name) != 0; p = p->next)
-			;
-		if (!p)
-			error(&tok.loc, "old-style function declarator has no parameter named '%s'", name);
-		p->type = typeadjust(t.type, &t.qual);
-		p->qual = t.qual;
-		p->u.obj.align = p->type->align;
-		if (tok.kind == TSEMICOLON)
-			break;
-		expect(TCOMMA, "or ';' after parameter declarator");
-	}
-	next();
-	return true;
 }
 
 static void
@@ -1004,7 +953,6 @@ decl(struct scope *s, struct func *f)
 	enum funcspec fs;
 	struct init *init;
 	bool hasinit;
-	struct decl *p;
 	char *name, *asmname;
 	int allowfunc = !f;
 	struct decl *d, *prior;
@@ -1096,19 +1044,6 @@ decl(struct scope *s, struct func *f)
 			t->u.func.isnoreturn |= fs & FUNCNORETURN;
 			if (f && sc && sc != SCEXTERN)  /* 6.7.1p7 */
 				error(&tok.loc, "function '%s' with block scope may only have storage class 'extern'", name);
-			if (!t->u.func.isprototype && t->u.func.params) {
-				if (!allowfunc)
-					error(&tok.loc, "function definition not allowed");
-				/* collect type information for parameters before we check compatibility */
-				while (paramdecl(s, t->u.func.params))
-					;
-				if (tok.kind != TLBRACE)
-					error(&tok.loc, "function declaration with identifier list is not part of definition");
-				for (p = t->u.func.params; p; p = p->next) {
-					if (!p->type)
-						error(&tok.loc, "old-style function definition does not declare '%s'", p->name);
-				}
-			}
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			d->u.func.inlinedefn = d->linkage == LINKEXTERN && fs & FUNCINLINE && !(sc & SCEXTERN) && (!prior || prior->u.func.inlinedefn);
 			if (tok.kind == TLBRACE) {

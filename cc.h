@@ -215,7 +215,7 @@ struct type {
 			enum typequal ptrqual;
 		} array;
 		struct {
-			bool isprototype, isvararg, isnoreturn, paraminfo;
+			bool isvararg, isnoreturn;
 			struct decl *params;
 			size_t nparam;
 		} func;
