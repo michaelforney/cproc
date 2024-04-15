@@ -113,7 +113,6 @@ typerank(struct type *t)
 bool
 typecompatible(struct type *t1, struct type *t2)
 {
-	struct type *tmp;
 	struct decl *p1, *p2;
 	struct expr *e1, *e2;
 
@@ -140,23 +139,10 @@ typecompatible(struct type *t1, struct type *t2)
 			return false;
 		goto derived;
 	case TYPEFUNC:
-		if (!t1->u.func.isprototype) {
-			if (!t2->u.func.isprototype)
-				return true;
-			tmp = t1, t1 = t2, t2 = tmp;
-		}
 		if (t1->u.func.isvararg != t2->u.func.isvararg)
 			return false;
-		if (!t2->u.func.paraminfo) {
-			for (p1 = t1->u.func.params; p1; p1 = p1->next) {
-				if (!typecompatible(p1->type, typepromote(p1->type, -1)))
-					return false;
-			}
-			return true;
-		}
 		for (p1 = t1->u.func.params, p2 = t2->u.func.params; p1 && p2; p1 = p1->next, p2 = p2->next) {
-			tmp = t2->u.func.isprototype ? p2->type : typepromote(p2->type, -1);
-			if (!typecompatible(p1->type, tmp))
+			if (!typecompatible(p1->type, p2->type))
 				return false;
 		}
 		if (p1 || p2)

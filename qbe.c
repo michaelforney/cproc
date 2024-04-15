@@ -494,8 +494,7 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 {
 	struct func *f;
 	struct decl *d;
-	struct type *pt;
-	struct value *v, *pv;
+	struct value *v;
 
 	f = xmalloc(sizeof(*f));
 	f->decl = decl;
@@ -508,20 +507,17 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 
 	/* allocate space for parameters */
 	f->paramtemps = xreallocarray(NULL, t->u.func.nparam, sizeof *f->paramtemps);
-	for (d = t->u.func.params, pv = f->paramtemps; d; d = d->next, ++pv) {
-		pt = t->u.func.isprototype ? d->type : typepromote(d->type, -1);
-		emittype(pt);
-		functemp(f, pv);
+	for (d = t->u.func.params, v = f->paramtemps; d; d = d->next, ++v) {
+		emittype(d->type);
+		functemp(f, v);
 		if(!d->name)
 			continue;
 		if (d->type->value) {
-			d->value = pv;
+			d->value = v;
 		} else {
-			v = typecompatible(d->type, pt) ? pv : convert(f, pt, d->type, pv);
 			funcalloc(f, d);
 			funcstore(f, d->type, QUALNONE, (struct lvalue){d->value}, v);
 		}
-		scopeputdecl(s, d);
 	}
 
 	t = mkarraytype(&typechar, QUALCONST, strlen(name) + 1);
@@ -1255,8 +1251,11 @@ emitfunc(struct func *f, bool global)
 		putchar(' ');
 		emitvalue(v);
 	}
-	if (f->type->u.func.isvararg)
-		fputs(", ...", stdout);
+	if (f->type->u.func.isvararg) {
+		if (f->type->u.func.params)
+			fputs(", ", stdout);
+		fputs("...", stdout);
+	}
 	puts(") {");
 	for (b = f->start; b; b = b->next) {
 		emitvalue(&b->label);
