@@ -1219,8 +1219,11 @@ emitfunc(struct func *f, bool global)
 		putchar(' ');
 		emitvalue(v);
 	}
-	if (f->type->u.func.isvararg)
-		fputs(", ...", stdout);
+	if (f->type->u.func.isvararg) {
+		if (f->type->u.func.params)
+			fputs(", ", stdout);
+		fputs("...", stdout);
+	}
 	puts(") {");
 	for (b = f->start; b; b = b->next) {
 		emitvalue(&b->label);

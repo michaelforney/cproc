@@ -49,3 +49,14 @@ function $f3(w %.1, ...) {
 	%.10 =l loadl %.3
 	ret
 }
+export
+function $f4(...) {
+@start.10
+	%.1 =l alloc8 8
+@body.11
+	vastart %.1
+	%.2 =d vaarg %.1
+	%.3 =w vaarg %.1
+	%.4 =l loadl %.1
+	ret
+}

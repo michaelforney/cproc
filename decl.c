@@ -604,20 +604,21 @@ declaratortypes(struct scope *s, struct list *result, char **name, struct scope 
 			t->u.func.nparam = 0;
 			paramend = &t->u.func.params;
 			s = mkscope(s);
-			while (tok.kind != TRPAREN) {
+			do {
+				if (consume(TELLIPSIS)) {
+					t->u.func.isvararg = true;
+					break;
+				}
+				if (tok.kind == TRPAREN)
+					break;
 				d = parameter(s);
 				if (d->name)
 					scopeputdecl(s, d);
 				*paramend = d;
 				paramend = &d->next;
 				++t->u.func.nparam;
-				if (!consume(TCOMMA))
-					break;
-				if (consume(TELLIPSIS)) {
-					t->u.func.isvararg = true;
-					break;
-				}
-			}
+			} while (consume(TCOMMA));
+			expect(TRPAREN, "to close function declarator");
 			if (funcscope && ptr->prev == prev) {
 				/* we may need to re-open the scope later if this is a function definition */
 				*funcscope = s;
@@ -629,7 +630,6 @@ declaratortypes(struct scope *s, struct list *result, char **name, struct scope 
 				t->u.func.params = NULL;
 				t->u.func.nparam = 0;
 			}
-			expect(TRPAREN, "to close function declarator");
 			listinsert(ptr->prev, &t->link);
 			allowattr = true;
 			break;

@@ -773,7 +773,7 @@ designator(struct scope *s, struct type *t, unsigned long long *offset)
 static struct expr *
 builtinfunc(struct scope *s, enum builtinkind kind)
 {
-	struct expr *e, *param;
+	struct expr *e;
 	struct type *t;
 	struct member *m;
 	char *name;
@@ -868,12 +868,8 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 			error(&tok.loc, "va_start argument must have type va_list");
 		if (typeadjvalist == targ->typevalist)
 			e->base = mkunaryexpr(TBAND, e->base);
-		expect(TCOMMA, "after va_list");
-		param = assignexpr(s);
-		if (param->kind != EXPRIDENT)
-			error(&tok.loc, "expected parameter identifier");
-		delexpr(param);
-		/* XXX: check that this was actually a parameter name? */
+		if (consume(TCOMMA))
+			delexpr(assignexpr(s));
 		break;
 	default:
 		fatal("internal error; unknown builtin");

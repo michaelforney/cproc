@@ -24,3 +24,11 @@ void f3(int n, ...) {
 	}
 	__builtin_va_end(ap);
 }
+
+void f4(...) {
+	__builtin_va_list ap;
+	__builtin_va_start(ap);
+	__builtin_va_arg(ap, double);
+	__builtin_va_arg(ap, int);
+	__builtin_va_end(ap);
+}
