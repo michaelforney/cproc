@@ -629,8 +629,10 @@ declaratortypes(struct scope *s, struct list *result, char **name, bool allowabs
 						break;
 					}
 				}
-				if (t->u.func.params->type->kind == TYPEVOID && !t->u.func.params->next)
+				if (t->u.func.nparam == 1 && !t->u.func.isvararg && t->u.func.params->type->kind == TYPEVOID && !t->u.func.params->name) {
 					t->u.func.params = NULL;
+					t->u.func.nparam = 0;
+				}
 				break;
 			case TRPAREN:
 				break;
