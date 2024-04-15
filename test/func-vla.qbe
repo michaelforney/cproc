@@ -1,0 +1,24 @@
+export
+function w $f(w %.1, l %.3) {
+@start.1
+	%.2 =l alloc4 4
+	%.7 =l alloc8 8
+@body.2
+	storew %.1, %.2
+	%.4 =w loadw %.2
+	%.5 =l extsw %.4
+	%.6 =l mul %.5, 8
+	storel %.3, %.7
+	%.8 =l loadl %.7
+	ret %.6
+}
+export
+function w $main() {
+@start.3
+	%.1 =l alloc8 40
+@body.4
+	%.2 =w call $f(w 5, l %.1)
+	%.3 =l extsw %.2
+	%.4 =w cnel %.3, 40
+	ret %.4
+}
