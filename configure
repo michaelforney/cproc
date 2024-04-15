@@ -148,7 +148,6 @@ static const char *const preprocesscmd[] = {
 	/* we don't yet support these optional features */
 	"-D", "__STDC_NO_ATOMICS__",
 	"-D", "__STDC_NO_COMPLEX__",
-	"-D", "__STDC_NO_VLA__",
 	"-U", "__SIZEOF_INT128__",
 
 	/* we don't generate position-independent code */
