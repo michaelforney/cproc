@@ -340,6 +340,7 @@ calcvla(struct func *f, struct type *t)
 	assert(t->kind == TYPEARRAY);
 	if (!t->u.array.size) {
 		assert(t->base->size || t->base->kind == TYPEARRAY);
+		assert(t->u.array.length);
 		length = convert(f, &typeulong, t->u.array.length->type, funcexpr(f, t->u.array.length));
 		basesize = t->base->size ? mkintconst(t->base->size) : t->base->u.array.size;
 		t->u.array.size = funcinst(f, IMUL, 'l', length, basesize);

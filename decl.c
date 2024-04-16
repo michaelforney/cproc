@@ -633,16 +633,17 @@ declaratortypes(struct scope *s, struct list *result, char **name, struct scope 
 			t = mkarraytype(NULL, QUALNONE, 0);
 			while (consume(TSTATIC) || typequal(&t->u.array.ptrqual))
 				;
-			if (tok.kind == TMUL && peek(TRBRACK))
-				error(&tok.loc, "VLAs are not yet supported");
-			if (tok.kind != TRBRACK) {
+			if (tok.kind == TMUL && peek(TRBRACK)) {
+				t->prop |= PROPVM;
+				t->incomplete = false;
+			} else if (!consume(TRBRACK)) {
 				e = assignexpr(s);
 				if (!(e->type->prop & PROPINT))
 					error(&tok.loc, "array length expression must have integer type");
 				t->u.array.length = e;
 				t->incomplete = false;
+				expect(TRBRACK, "after array length");
 			}
-			expect(TRBRACK, "after array length");
 			listinsert(ptr->prev, &t->link);
 			allowattr = true;
 			break;

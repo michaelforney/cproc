@@ -135,7 +135,7 @@ typecompatible(struct type *t1, struct type *t2)
 			goto derived;
 		e1 = t1->u.array.length;
 		e2 = t2->u.array.length;
-		if (e1->kind == EXPRCONST && e2->kind == EXPRCONST && e1->u.constant.u != e2->u.constant.u)
+		if (e1 && e2 && e1->kind == EXPRCONST && e2->kind == EXPRCONST && e1->u.constant.u != e2->u.constant.u)
 			return false;
 		goto derived;
 	case TYPEFUNC:
