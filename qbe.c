@@ -1355,7 +1355,7 @@ emitdata(struct decl *d, struct init *init)
 		if (offset < start)
 			printf("z %llu, ", start - offset);
 		if (cur->bits.before || cur->bits.after) {
-			/* XXX: little-endian specific */
+			/* little-endian target specific */
 			assert(cur->expr->type->prop & PROPINT);
 			assert(cur->expr->kind == EXPRCONST);
 			bits |= cur->expr->u.constant.u << cur->bits.before % 8;
