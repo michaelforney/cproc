@@ -963,8 +963,6 @@ funcinit(struct func *func, struct decl *d, struct init *init, bool hasinit)
 	unsigned long long offset = 0, max = 0;
 	size_t i, w;
 
-	if (d->expr)
-		funcexpr(func, d->expr);
 	funcalloc(func, d);
 	if (!hasinit)
 		return;

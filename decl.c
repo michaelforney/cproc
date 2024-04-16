@@ -1041,7 +1041,8 @@ decl(struct scope *s, struct func *f)
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			if (d->u.obj.align < align)
 				d->u.obj.align = align;
-			d->expr = base.expr;
+			if (base.expr)
+				funcexpr(f, base.expr);
 			init = NULL;
 			hasinit = false;
 			if (consume(TASSIGN)) {
