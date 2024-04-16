@@ -322,6 +322,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 	struct expr *e;
 	enum typespec ts = SPECNONE;
 	enum typequal tq = QUALNONE;
+	enum tokenkind op;
 	int ntypes = 0;
 	unsigned long long i;
 
@@ -335,7 +336,8 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 	for (;;) {
 		if (typequal(&tq) || storageclass(sc) || funcspec(fs))
 			continue;
-		switch (tok.kind) {
+		op = tok.kind;
+		switch (op) {
 		/* 6.7.2 Type specifiers */
 		case TVOID:
 			t = &typevoid;
@@ -417,6 +419,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			next();
 			break;
 		case TTYPEOF:
+		case TTYPEOF_UNQUAL:
 			next();
 			expect(TLPAREN, "after 'typeof'");
 			t = typename(s, &tq);
@@ -425,25 +428,12 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 				if (e->decayed)
 					e = e->base;
 				t = e->type;
-				tq |= e->qual;
+				if (op == TTYPEOF)
+					tq |= e->qual;
 				delexpr(e);
 			}
 			++ntypes;
 			expect(TRPAREN, "to close 'typeof'");
-			break;
-		case TTYPEOF_UNQUAL:
-			next();
-			expect(TLPAREN, "after 'typeof_unqual'");
-			t = typename(s, NULL);
-			if (!t) {
-				e = expr(s);
-				if (e->decayed)
-					e = e->base;
-				t = e->type;
-				delexpr(e);
-			}
-			++ntypes;
-			expect(TRPAREN, "to close 'typeof_unqual'");
 			break;
 
 		/* 6.7.5 Alignment specifier */
