@@ -1277,8 +1277,8 @@ dataitem(struct expr *expr, unsigned long long size)
 		if (expr->kind != EXPRIDENT)
 			error(&tok.loc, "initializer is not a constant expression");
 		decl = expr->u.ident.decl;
-		if (decl->value->kind != VALUE_GLOBAL)
-			fatal("not a global");
+		if (decl->kind == DECLOBJECT && decl->u.obj.storage != SDSTATIC)
+			error(&tok.loc, "initializer is not a constant expression");
 		emitvalue(decl->value);
 		break;
 	case EXPRBINARY:
