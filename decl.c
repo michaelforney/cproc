@@ -941,13 +941,8 @@ declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struc
 		}
 	}
 	d = mkdecl(name, kind, t, tq, linkage);
+	d->asmname = asmname;
 	scopeputdecl(s, d);
-	if (kind == DECLFUNC || linkage != LINKNONE || sc & SCSTATIC) {
-		if (asmname)
-			name = asmname;
-		d->value = mkglobal(name, linkage == LINKNONE && !asmname, sc & SCTHREADLOCAL);
-		d->asmname = asmname;
-	}
 	return d;
 }
 
@@ -1022,10 +1017,12 @@ decl(struct scope *s, struct func *f)
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			if (d->u.obj.align < align)
 				d->u.obj.align = align;
-			if (d->linkage == LINKNONE && !(sc & SCSTATIC))
+			if (d->linkage == LINKNONE && !(sc & SCSTATIC)) {
 				d->u.obj.storage = SDAUTO;
-			else
+			} else {
 				d->u.obj.storage = sc & SCTHREADLOCAL ? SDTHREAD : SDSTATIC;
+				d->value = mkglobal(d);
+			}
 			init = NULL;
 			hasinit = false;
 			if (consume(TASSIGN)) {
@@ -1056,6 +1053,7 @@ decl(struct scope *s, struct func *f)
 			if (f && sc && sc != SCEXTERN)  /* 6.7.1p7 */
 				error(&tok.loc, "function '%s' with block scope may only have storage class 'extern'", name);
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
+			d->value = mkglobal(d);
 			d->u.func.inlinedefn = d->linkage == LINKEXTERN && fs & FUNCINLINE && !(sc & SCEXTERN) && (!prior || prior->u.func.inlinedefn);
 			if (tok.kind == TLBRACE) {
 				if (!allowfunc)
@@ -1101,8 +1099,8 @@ stringdecl(struct expr *expr)
 	entry = mapput(&strings, &key);
 	d = *entry;
 	if (!d) {
-		d = mkdecl(NULL, DECLOBJECT, expr->type, QUALNONE, LINKNONE);
-		d->value = mkglobal("string", true, false);
+		d = mkdecl("string", DECLOBJECT, expr->type, QUALNONE, LINKNONE);
+		d->value = mkglobal(d);
 		emitdata(d, mkinit(0, expr->type->size, (struct bitfield){0}, expr));
 		*entry = d;
 	}

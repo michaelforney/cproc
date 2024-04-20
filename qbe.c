@@ -129,16 +129,21 @@ mkblock(char *name)
 }
 
 struct value *
-mkglobal(char *name, bool private, bool threadlocal)
+mkglobal(struct decl *d)
 {
 	static unsigned id;
 	struct value *v;
 
 	v = xmalloc(sizeof(*v));
 	v->kind = VALUE_GLOBAL;
-	v->u.name = name;
-	v->id = private ? ++id : 0;
-	v->threadlocal = threadlocal;
+	if (d->asmname) {
+		v->u.name = d->asmname;
+		v->id = 0;
+	} else {
+		v->u.name = d->name;
+		v->id = d->linkage == LINKNONE ? ++id : 0;
+	}
+	v->threadlocal = d->kind == DECLOBJECT && d->u.obj.storage == SDTHREAD;
 
 	return v;
 }
@@ -504,7 +509,7 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 	t = mkarraytype(&typechar, QUALCONST, strlen(name) + 1);
 	d = mkdecl("__func__", DECLOBJECT, t, QUALNONE, LINKNONE);
 	d->u.obj.storage = SDSTATIC;
-	d->value = mkglobal(d->name, true, false);
+	d->value = mkglobal(d);
 	scopeputdecl(s, d);
 	f->namedecl = d;
 
