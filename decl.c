@@ -1032,8 +1032,11 @@ decl(struct scope *s, struct func *f)
 				d->u.obj.storage = SDAUTO;
 			} else {
 				d->u.obj.storage = sc & SCTHREADLOCAL ? SDTHREAD : SDSTATIC;
+				if (t->prop & PROPVM)
+					error(&tok.loc, "object '%s' with %s storage duration cannot have variably modified type", name, d->u.obj.storage == SDSTATIC ? "static" : "thread");
 				d->value = mkglobal(d);
 			}
+
 			if (base.expr)
 				funcexpr(f, base.expr);
 			init = NULL;
