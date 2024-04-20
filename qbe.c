@@ -18,6 +18,8 @@ struct value {
 		VALUE_TEMP,
 		VALUE_TYPE,
 		VALUE_LABEL,
+
+		VALUE_THREAD = 1<<4,
 	} kind;
 	unsigned id;
 	union {
@@ -128,15 +130,22 @@ mkblock(char *name)
 }
 
 struct value *
-mkglobal(char *name, bool private)
+mkglobal(struct decl *d)
 {
 	static unsigned id;
 	struct value *v;
 
 	v = xmalloc(sizeof(*v));
 	v->kind = VALUE_GLOBAL;
-	v->u.name = name;
-	v->id = private ? ++id : 0;
+	if (d->kind == DECLOBJECT && d->u.obj.storage == SDTHREAD)
+		v->kind |= VALUE_THREAD;
+	if (d->asmname) {
+		v->u.name = d->asmname;
+		v->id = 0;
+	} else {
+		v->u.name = d->name;
+		v->id = d->linkage == LINKNONE ? ++id : 0;
+	}
 
 	return v;
 }
@@ -203,6 +212,7 @@ qbetype(struct type *t)
 /* functions */
 
 static void emittype(struct type *);
+static void emitname(struct value *);
 static void emitvalue(struct value *);
 
 static void
@@ -523,7 +533,8 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 
 	t = mkarraytype(&typechar, QUALCONST, strlen(name) + 1);
 	d = mkdecl("__func__", DECLOBJECT, t, QUALNONE, LINKNONE);
-	d->value = mkglobal(d->name, true);
+	d->u.obj.storage = SDSTATIC;
+	d->value = mkglobal(d);
 	scopeputdecl(s, d);
 	f->namedecl = d;
 
@@ -645,7 +656,7 @@ funclval(struct func *f, struct expr *e)
 			error(&tok.loc, "identifier is not an object or function");  /* XXX: fix location, var name */
 		if (d == f->namedecl) {
 			fputs("data ", stdout);
-			emitvalue(d->value);
+			emitname(d->value);
 			printf(" = { b \"%s\", b 0 }\n", f->name);
 			f->namedecl = NULL;
 		}
@@ -657,6 +668,7 @@ funclval(struct func *f, struct expr *e)
 		break;
 	case EXPRCOMPOUND:
 		d = mkdecl(NULL, DECLOBJECT, e->type, e->qual, LINKNONE);
+		d->u.obj.storage = SDAUTO;
 		funcinit(f, d, e->u.compound.init, true);
 		lval.addr = d->value;
 		break;
@@ -1039,7 +1051,7 @@ funcswitch(struct func *f, struct value *v, struct switchcases *c, struct block 
 /* emit */
 
 static void
-emitvalue(struct value *v)
+emitname(struct value *v)
 {
 	static const char sigil[] = {
 		[VALUE_TEMP] = '%',
@@ -1047,8 +1059,24 @@ emitvalue(struct value *v)
 		[VALUE_TYPE] = ':',
 		[VALUE_LABEL] = '@',
 	};
+	int kind;
 
-	switch (v->kind) {
+	kind = v->kind & 0xf;
+	if (kind >= LEN(sigil) || !sigil[kind])
+		fatal("invalid value");
+	putchar(sigil[kind]);
+	if (kind == VALUE_GLOBAL && v->id)
+		fputs(".L", stdout);
+	if (v->u.name)
+		fputs(v->u.name, stdout);
+	if (v->id)
+		printf(".%u", v->id);
+}
+
+static void
+emitvalue(struct value *v)
+{
+	switch (v->kind & 0xf) {
 	case VALUE_INTCONST:
 		printf("%llu", v->u.i);
 		break;
@@ -1058,16 +1086,13 @@ emitvalue(struct value *v)
 	case VALUE_DBLCONST:
 		printf("d_%.17g", v->u.f);
 		break;
+	case VALUE_GLOBAL:
+		if (v->kind & VALUE_THREAD)
+			fputs("thread ", stdout);
+		/* fallthrough */
 	default:
-		if (v->kind >= LEN(sigil) || !sigil[v->kind])
-			fatal("invalid value");
-		putchar(sigil[v->kind]);
-		if (v->kind == VALUE_GLOBAL && v->id)
-			fputs(".L", stdout);
-		if (v->u.name)
-			fputs(v->u.name, stdout);
-		if (v->id)
-			printf(".%u", v->id);
+		emitname(v);
+		break;
 	}
 }
 
@@ -1075,7 +1100,7 @@ static void
 emitclass(int class, struct value *v)
 {
 	if (v && v->kind == VALUE_TYPE)
-		emitvalue(v);
+		emitname(v);
 	else if (class)
 		putchar(class);
 	else
@@ -1103,7 +1128,7 @@ emittype(struct type *t)
 		emittype(sub);
 	}
 	fputs("type ", stdout);
-	emitvalue(t->value);
+	emitname(t->value);
 	if (t == targ->typevalist) {
 		printf(" = align %d { %llu }\n", t->align, t->size);
 		return;
@@ -1204,16 +1229,16 @@ emitjump(struct jump *j)
 		break;
 	case JUMP_JMP:
 		fputs("\tjmp ", stdout);
-		emitvalue(&j->blk[0]->label);
+		emitname(&j->blk[0]->label);
 		putchar('\n');
 		break;
 	case JUMP_JNZ:
 		fputs("\tjnz ", stdout);
 		emitvalue(j->arg);
 		fputs(", ", stdout);
-		emitvalue(&j->blk[0]->label);
+		emitname(&j->blk[0]->label);
 		fputs(", ", stdout);
-		emitvalue(&j->blk[1]->label);
+		emitname(&j->blk[1]->label);
 		putchar('\n');
 		break;
 	}
@@ -1241,14 +1266,14 @@ emitfunc(struct func *f, bool global)
 		emitclass(qbetype(f->type->base).base, f->type->base->value);
 		putchar(' ');
 	}
-	emitvalue(f->decl->value);
+	emitname(f->decl->value);
 	putchar('(');
 	for (p = f->type->u.func.params, v = f->paramtemps; p; p = p->next, ++v) {
 		if (p != f->type->u.func.params)
 			fputs(", ", stdout);
 		emitclass(qbetype(p->type).base, p->type->value);
 		putchar(' ');
-		emitvalue(v);
+		emitname(v);
 	}
 	if (f->type->u.func.isvararg) {
 		if (f->type->u.func.params)
@@ -1257,17 +1282,17 @@ emitfunc(struct func *f, bool global)
 	}
 	puts(") {");
 	for (b = f->start; b; b = b->next) {
-		emitvalue(&b->label);
+		emitname(&b->label);
 		putchar('\n');
 		if (b->phi.res.kind) {
 			putchar('\t');
 			emitvalue(&b->phi.res);
 			printf(" =%c phi ", b->phi.class);
-			emitvalue(&b->phi.blk[0]->label);
+			emitname(&b->phi.blk[0]->label);
 			putchar(' ');
 			emitvalue(b->phi.val[0]);
 			fputs(", ", stdout);
-			emitvalue(&b->phi.blk[1]->label);
+			emitname(&b->phi.blk[1]->label);
 			putchar(' ');
 			emitvalue(b->phi.val[1]);
 			putchar('\n');
@@ -1295,9 +1320,9 @@ dataitem(struct expr *expr, unsigned long long size)
 		if (expr->kind != EXPRIDENT)
 			error(&tok.loc, "initializer is not a constant expression");
 		decl = expr->u.ident.decl;
-		if (decl->value->kind != VALUE_GLOBAL)
-			fatal("not a global");
-		emitvalue(decl->value);
+		if (decl->kind == DECLOBJECT && decl->u.obj.storage != SDSTATIC)
+			error(&tok.loc, "initializer is not a constant expression");
+		emitname(decl->value);
 		break;
 	case EXPRBINARY:
 		if (expr->op != TADD || expr->u.binary.l->kind != EXPRUNARY || expr->u.binary.r->kind != EXPRCONST)
@@ -1353,10 +1378,12 @@ emitdata(struct decl *d, struct init *init)
 	align = d->u.obj.align;
 	for (cur = init; cur; cur = cur->next)
 		cur->expr = eval(cur->expr);
+	if (d->u.obj.storage == SDTHREAD)
+		fputs("thread ", stdout);
 	if (d->linkage == LINKEXTERN)
 		fputs("export ", stdout);
 	fputs("data ", stdout);
-	emitvalue(d->value);
+	emitname(d->value);
 	printf(" = align %d { ", align);
 
 	while (init) {

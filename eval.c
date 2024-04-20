@@ -119,7 +119,7 @@ eval(struct expr *expr)
 		if (expr->u.compound.storage != SDSTATIC)
 			break;
 		d = mkdecl(NULL, DECLOBJECT, t, expr->qual, LINKNONE);
-		d->value = mkglobal(NULL, true);
+		d->value = mkglobal(d);
 		emitdata(d, expr->u.compound.init);
 		expr->kind = EXPRIDENT;
 		expr->u.ident.decl = d;

@@ -280,6 +280,7 @@ struct decl {
 		struct {
 			/* alignment of object storage (may be stricter than type requires) */
 			int align;
+			enum storageduration storage;
 		} obj;
 		struct {
 			/* the function might have an "inline definition" (C11 6.7.4p7) */
@@ -547,7 +548,7 @@ void switchcase(struct switchcases *, unsigned long long, struct block *);
 
 struct block *mkblock(char *);
 
-struct value *mkglobal(char *, bool);
+struct value *mkglobal(struct decl *);
 
 struct value *mkintconst(unsigned long long);
 unsigned long long intconstvalue(struct value *);
