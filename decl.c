@@ -710,6 +710,7 @@ declarator(struct scope *s, struct qualtype base, char **name, struct scope **fu
 static struct decl *
 parameter(struct scope *s)
 {
+	struct decl *d;
 	char *name;
 	struct qualtype t;
 	enum storageclass sc;
@@ -722,7 +723,9 @@ parameter(struct scope *s)
 		error(&tok.loc, "parameter declaration has invalid storage-class specifier");
 	t = declarator(s, t, &name, NULL, true);
 	t.type = typeadjust(t.type, &t.qual);
-	return mkdecl(name, DECLOBJECT, t.type, t.qual, LINKNONE);
+	d = mkdecl(name, DECLOBJECT, t.type, t.qual, LINKNONE);
+	d->u.obj.storage = SDAUTO;
+	return d;
 }
 
 static void
@@ -1019,6 +1022,10 @@ decl(struct scope *s, struct func *f)
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			if (d->u.obj.align < align)
 				d->u.obj.align = align;
+			if (d->linkage == LINKNONE && !(sc & SCSTATIC))
+				d->u.obj.storage = SDAUTO;
+			else
+				d->u.obj.storage = sc & SCTHREADLOCAL ? SDTHREAD : SDSTATIC;
 			init = NULL;
 			hasinit = false;
 			if (consume(TASSIGN)) {
@@ -1036,10 +1043,10 @@ decl(struct scope *s, struct func *f)
 				}
 				break;
 			}
-			if (d->linkage != LINKNONE || sc & SCSTATIC)
-				emitdata(d, init);
-			else
+			if (d->u.obj.storage == SDAUTO)
 				funcinit(f, d, init, hasinit);
+			else
+				emitdata(d, init);
 			d->defined = true;
 			break;
 		case DECLFUNC:

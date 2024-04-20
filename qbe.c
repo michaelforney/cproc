@@ -503,6 +503,7 @@ mkfunc(struct decl *decl, char *name, struct type *t, struct scope *s)
 
 	t = mkarraytype(&typechar, QUALCONST, strlen(name) + 1);
 	d = mkdecl("__func__", DECLOBJECT, t, QUALNONE, LINKNONE);
+	d->u.obj.storage = SDSTATIC;
 	d->value = mkglobal(d->name, true, false);
 	scopeputdecl(s, d);
 	f->namedecl = d;
@@ -637,6 +638,7 @@ funclval(struct func *f, struct expr *e)
 		break;
 	case EXPRCOMPOUND:
 		d = mkdecl(NULL, DECLOBJECT, e->type, e->qual, LINKNONE);
+		d->u.obj.storage = SDAUTO;
 		funcinit(f, d, e->u.compound.init, true);
 		lval.addr = d->value;
 		break;
@@ -1328,7 +1330,7 @@ emitdata(struct decl *d, struct init *init)
 	align = d->u.obj.align;
 	for (cur = init; cur; cur = cur->next)
 		cur->expr = eval(cur->expr);
-	if (d->value->threadlocal)
+	if (d->u.obj.storage == SDTHREAD)
 		fputs("thread ", stdout);
 	if (d->linkage == LINKEXTERN)
 		fputs("export ", stdout);

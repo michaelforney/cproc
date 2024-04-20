@@ -278,6 +278,7 @@ struct decl {
 		struct {
 			/* alignment of object storage (may be stricter than type requires) */
 			int align;
+			enum storageduration storage;
 		} obj;
 		struct {
 			/* the function might have an "inline definition" (C11 6.7.4p7) */
