@@ -594,6 +594,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, struct scope 
 			t->u.func.nparam = 0;
 			paramend = &t->u.func.params;
 			s = mkscope(s);
+			d = NULL;
 			do {
 				if (consume(TELLIPSIS)) {
 					t->u.func.isvararg = true;
