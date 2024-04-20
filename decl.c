@@ -1032,8 +1032,10 @@ decl(struct scope *s, struct func *f)
 					error(&tok.loc, "object '%s' redefined", name);
 				init = parseinit(s, d->type);
 				hasinit = true;
-			} else if (d->linkage != LINKNONE && (!(sc & SCTHREADLOCAL) || sc & SCEXTERN)) {
-				if (!(sc & SCEXTERN) && !d->defined && !d->tentative) {
+			} else if (sc & SCEXTERN) {
+				break;
+			} else if (d->linkage != LINKNONE && d->u.obj.storage == SDSTATIC) {
+				if (!d->defined && !d->tentative) {
 					d->tentative = true;
 					*tentativedefnsend = d;
 					tentativedefnsend = &d->next;
