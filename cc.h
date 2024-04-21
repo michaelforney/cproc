@@ -358,7 +358,7 @@ struct expr {
 			struct bitfield bits;
 		} bitfield;
 		struct {
-			enum storageduration storage;
+			struct decl *decl;
 			struct init *init;
 		} compound;
 		struct {

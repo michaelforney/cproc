@@ -645,8 +645,7 @@ funclval(struct func *f, struct expr *e)
 		lval.addr = d->value;
 		break;
 	case EXPRCOMPOUND:
-		d = mkdecl(NULL, DECLOBJECT, e->type, e->qual, LINKNONE);
-		d->u.obj.storage = SDAUTO;
+		d = e->u.compound.decl;
 		funcinit(f, d, e->u.compound.init, true);
 		lval.addr = d->value;
 		break;
