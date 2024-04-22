@@ -1,0 +1,16 @@
+--- bits/signal.h.orig
++++ bits/signal.h
+@@ -19,7 +19,12 @@
+ };
+ 
+ struct __riscv_mc_q_ext_state {
+-	unsigned long long __f[64] __attribute__((aligned(16)));
++#if __STDC_VERSION__ >= 201112L
++	_Alignas(16)
++#else
++	__attribute__((__aligned__(16)))
++#endif
++	unsigned long long __f[64];
+ 	unsigned int __fcsr;
+ 	unsigned int __reserved[3];
+ };

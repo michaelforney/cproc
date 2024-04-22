@@ -1115,6 +1115,7 @@ static struct expr *
 castexpr(struct scope *s)
 {
 	struct type *t, *ct;
+	struct decl *d;
 	enum typequal tq;
 	struct expr *r, *e, **end;
 
@@ -1134,8 +1135,10 @@ castexpr(struct scope *s)
 			e = mkexpr(EXPRCOMPOUND, t, NULL);
 			e->qual = tq;
 			e->lvalue = true;
+			d = mkdecl(NULL, DECLOBJECT, t, tq, LINKNONE);
+			d->u.obj.storage = s == &filescope ? SDSTATIC : SDAUTO;
+			e->u.compound.decl = d;
 			e->u.compound.init = parseinit(s, t);
-			e->u.compound.storage = s == &filescope ? SDSTATIC : SDAUTO;
 			e = postfixexpr(s, decay(e));
 			goto done;
 		}

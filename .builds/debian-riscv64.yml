@@ -1,7 +1,7 @@
 image: debian/stable
 packages:
-- gcc-aarch64-linux-gnu
-- libc-dev-arm64-cross
+- gcc-riscv64-linux-gnu
+- libc-dev-riscv64-cross
 - qemu-user
 - qemu-user-binfmt
 sources:
@@ -12,14 +12,14 @@ tasks:
     PATH=$HOME/qbe:$PATH
     make -C qbe
     cd cproc
-    crtbegin=$(aarch64-linux-gnu-gcc -print-file-name=crtbegin.o)
+    crtbegin=$(riscv64-linux-gnu-gcc -print-file-name=crtbegin.o)
     ./configure \
-      --target=aarch64-linux-gnu \
-      --with-ldso=/usr/aarch64-linux-gnu/lib/ld-linux-aarch64.so.1 \
+      --target=riscv64-linux-gnu \
+      --with-ldso=/usr/riscv64-linux-gnu/lib/ld-linux-riscv64-lp64d.so.1 \
       --with-gcc-libdir="${crtbegin%/*}"
     make all check
-    make bootstrap LDFLAGS='-Wl,-rpath,/usr/aarch64-linux-gnu/lib'
-    aarch64-linux-gnu-readelf -h stage2/cproc stage2/cproc-qbe
+    make bootstrap LDFLAGS='-Wl,-rpath,/usr/riscv64-linux-gnu/lib'
+    riscv64-linux-gnu-readelf -h stage2/cproc stage2/cproc-qbe
 triggers:
 - action: email
   condition: failure

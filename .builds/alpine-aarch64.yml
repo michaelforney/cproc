@@ -7,20 +7,13 @@ sources:
 - git://c9x.me/qbe.git
 tasks:
 - setup: |
-    # work around bugs in qemu-binfmt
-    sudo sed -i -e '/qemu_suffix:=/d' -e 's/printf/env &/' /etc/init.d/qemu-binfmt
     sudo /etc/init.d/qemu-binfmt start
     curl -O http://musl.cc/aarch64-linux-musl-cross.tgz
     tar --warning=no-unknown-keyword -xzf aarch64-linux-musl-cross.tgz
 - build: |
     PATH=$HOME/qbe:$HOME/aarch64-linux-musl-cross/bin:$PATH
-    cd qbe
-    cat >config.h <<EOF
-    #define Defasm Gaself
-    #define Deftgt T_arm64
-    EOF
-    make
-    cd ../cproc
+    make -C qbe
+    cd cproc
     ./configure \
       --target=aarch64-linux-musl \
       --with-ldso="$HOME/aarch64-linux-musl-cross/aarch64-linux-musl/lib/libc.so"

@@ -116,7 +116,7 @@ eval(struct expr *expr)
 		expr->u.constant.u = intconstvalue(expr->u.ident.decl->value);
 		break;
 	case EXPRCOMPOUND:
-		if (expr->u.compound.storage != SDSTATIC)
+		if (expr->u.compound.decl->u.obj.storage != SDSTATIC)
 			break;
 		d = mkdecl(NULL, DECLOBJECT, t, expr->qual, LINKNONE);
 		d->value = mkglobal(d);
