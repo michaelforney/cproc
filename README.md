@@ -28,8 +28,8 @@ external one is currently required as well.
 
 ## Supported targets
 
-All architectures supported by QBE should work (currently x86\_64 and
-aarch64).
+All architectures supported by QBE should work (currently x86\_64,
+aarch64, and riscv64).
 
 The following targets are tested by the continuous build and known to
 bootstrap and pass all tests:
@@ -39,6 +39,7 @@ bootstrap and pass all tests:
 - `x86_64-freebsd`
 - `aarch64-linux-musl`
 - `aarch64-linux-gnu`
+- `riscv64-linux-gnu`
 
 ## Building
 
