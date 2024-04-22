@@ -7,8 +7,6 @@ sources:
 - git://c9x.me/qbe.git
 tasks:
 - setup: |
-    # work around bugs in qemu-binfmt
-    sudo sed -i -e '/qemu_suffix:=/d' -e 's/printf/env &/' /etc/init.d/qemu-binfmt
     sudo /etc/init.d/qemu-binfmt start
     curl -O http://musl.cc/aarch64-linux-musl-cross.tgz
     tar --warning=no-unknown-keyword -xzf aarch64-linux-musl-cross.tgz
