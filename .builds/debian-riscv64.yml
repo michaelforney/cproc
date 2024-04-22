@@ -1,0 +1,26 @@
+image: debian/stable
+packages:
+- gcc-riscv64-linux-gnu
+- libc-dev-riscv64-cross
+- qemu-user
+- qemu-user-binfmt
+sources:
+- https://git.sr.ht/~mcf/cproc
+- git://c9x.me/qbe.git
+tasks:
+- build: |
+    PATH=$HOME/qbe:$PATH
+    make -C qbe
+    cd cproc
+    crtbegin=$(riscv64-linux-gnu-gcc -print-file-name=crtbegin.o)
+    ./configure \
+      --target=riscv64-linux-gnu \
+      --with-ldso=/usr/riscv64-linux-gnu/lib/ld-linux-riscv64-lp64d.so.1 \
+      --with-gcc-libdir="${crtbegin%/*}"
+    make all check
+    make bootstrap LDFLAGS='-Wl,-rpath,/usr/riscv64-linux-gnu/lib'
+    riscv64-linux-gnu-readelf -h stage2/cproc stage2/cproc-qbe
+triggers:
+- action: email
+  condition: failure
+  to: "<~mcf/cproc-builds@lists.sr.ht>"
