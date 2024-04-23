@@ -65,6 +65,7 @@ case "$target" in
 	test "${DEFAULT_DYNAMIC_LINKER+set}" || case "$target" in
 	x86_64*)  DEFAULT_DYNAMIC_LINKER=/lib64/ld-linux-x86-64.so.2 ;;
 	aarch64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-linux-aarch64.so.1  ;;
+	riscv64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-linux-riscv64-lp64d.so.1 ;;
 	*) fail "unsuported target '$target'"
 	esac
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o", "-l", ":crtbegin.o"'
