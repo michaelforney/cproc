@@ -424,7 +424,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 		case TTYPEOF_UNQUAL:
 			next();
 			expect(TLPAREN, "after 'typeof'");
-			t = typename(s, &tq);
+			t = typename(s, &tq, &typeofexpr);
 			if (!t) {
 				e = expr(s);
 				if (e->decayed)
@@ -445,7 +445,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 				error(&tok.loc, "alignment specifier not allowed in this declaration");
 			next();
 			expect(TLPAREN, "after 'alignas'");
-			other = typename(s, NULL);
+			other = typename(s, NULL, NULL);
 			i = other ? other->align : intconstexpr(s, false);
 			if (i & i - 1 || i > INT_MAX)
 				error(&tok.loc, "invalid alignment: %llu", i);
@@ -887,7 +887,7 @@ structdecl(struct scope *s, struct structbuilder *b)
 
 /* 6.7.7 Type names */
 struct type *
-typename(struct scope *s, enum typequal *tq)
+typename(struct scope *s, enum typequal *tq, struct expr **toeval)
 {
 	struct qualtype t;
 
@@ -896,6 +896,8 @@ typename(struct scope *s, enum typequal *tq)
 		t = declarator(s, t, NULL, NULL, true);
 		if (tq)
 			*tq |= t.qual;
+		if (toeval)
+			*toeval = t.expr;
 	}
 	return t.type;
 }

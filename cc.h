@@ -343,6 +343,7 @@ struct expr {
 	enum tokenkind op;
 	struct expr *base;
 	struct expr *next;
+	struct expr *toeval;
 	union {
 		struct {
 			struct decl *decl;
@@ -487,7 +488,7 @@ bool gnuattr(struct attr *, enum attrkind);
 
 struct decl *mkdecl(char *name, enum declkind, struct type *, enum typequal, enum linkage);
 bool decl(struct scope *, struct func *);
-struct type *typename(struct scope *, enum typequal *);
+struct type *typename(struct scope *, enum typequal *, struct expr **);
 
 struct decl *stringdecl(struct expr *);
 

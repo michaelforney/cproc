@@ -667,6 +667,8 @@ funclval(struct func *f, struct expr *e)
 		lval.addr = d->value;
 		break;
 	case EXPRCOMPOUND:
+		if (e->toeval)
+			funcexpr(f, e->toeval);
 		d = e->u.compound.decl;
 		funcinit(f, d, e->u.compound.init, true);
 		lval.addr = d->value;
@@ -770,6 +772,8 @@ funcexpr(struct func *f, struct expr *e)
 		fatal("internal error; unknown unary expression");
 		break;
 	case EXPRCAST:
+		if (e->toeval)
+			funcexpr(f, e->toeval);
 		l = funcexpr(f, e->base);
 		return convert(f, e->type, e->base->type, l);
 	case EXPRBINARY:
@@ -913,6 +917,8 @@ funcexpr(struct func *f, struct expr *e)
 			funcinst(f, IVASTART, 0, l, NULL);
 			break;
 		case BUILTINVAARG:
+			if (e->toeval)
+				funcexpr(f, e->toeval);
 			/* https://todo.sr.ht/~mcf/cproc/52 */
 			if (!(e->type->prop & PROPSCALAR))
 				error(&tok.loc, "va_arg with non-scalar type is not yet supported");

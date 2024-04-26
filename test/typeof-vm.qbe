@@ -11,15 +11,41 @@ function w $f() {
 	ret 3
 }
 export
-function w $main() {
+function w $g(w %.1, ...) {
 @start.3
+	%.2 =l alloc4 4
+	storew %.1, %.2
+	%.3 =l alloc8 24
+	%.7 =l alloc8 8
+	%.9 =l alloc4 4
+@body.4
+	%.4 =w loadw %.2
+	%.5 =l extsw %.4
+	%.6 =l mul %.5, 1
+	%.8 =l extsw 0
+	storel %.8, %.7
+	storew 1, %.9
+	vastart %.3
+	%.10 =w loadw %.9
+	%.11 =w sub %.10, 1
+	storew %.11, %.9
+	%.12 =l loadl %.7
+	%.13 =l vaarg %.3
+	%.14 =w loadw %.9
+	ret %.14
+}
+export
+function w $main() {
+@start.5
 	%.1 =l alloc4 4
 	%.5 =l alloc8 8
 	%.14 =l alloc8 8
 	%.19 =l alloc4 4
 	%.24 =l alloc4 4
 	%.45 =l alloc8 8
-@body.4
+	%.65 =l alloc8 8
+	%.79 =l alloc8 8
+@body.6
 	storew 0, %.1
 	%.2 =w call $f()
 	%.3 =l extsw %.2
@@ -81,6 +107,42 @@ function w $main() {
 	%.52 =w cnel %.51, $a
 	%.53 =w add %.50, %.52
 	storew %.53, %.1
-	%.54 =w loadw %.1
-	ret %.54
+	%.54 =w loadw $c
+	%.55 =w add %.54, 1
+	storew %.55, $c
+	%.56 =l loadl %.5
+	%.57 =l extsw 0
+	%.58 =w loadw %.1
+	%.59 =w loadw $c
+	%.60 =w cnew %.59, 4
+	%.61 =w add %.58, %.60
+	storew %.61, %.1
+	%.62 =w loadw $c
+	%.63 =w add %.62, 1
+	storew %.63, $c
+	%.64 =l loadl %.5
+	%.66 =l extsw 0
+	storel %.66, %.65
+	%.67 =l loadl %.65
+	%.68 =w loadw %.1
+	%.69 =w loadw $c
+	%.70 =w cnew %.69, 5
+	%.71 =w add %.68, %.70
+	storew %.71, %.1
+	%.72 =w loadw %.1
+	%.73 =l loadl %.5
+	%.74 =w call $g(w 3, ..., l %.73)
+	%.75 =w add %.72, %.74
+	storew %.75, %.1
+	%.76 =w loadw $c
+	%.77 =w add %.76, 1
+	storew %.77, $c
+	%.78 =l loadl %.5
+	%.80 =w loadw %.1
+	%.81 =w loadw $c
+	%.82 =w cnew %.81, 6
+	%.83 =w add %.80, %.82
+	storew %.83, %.1
+	%.84 =w loadw %.1
+	ret %.84
 }

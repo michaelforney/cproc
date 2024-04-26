@@ -22,6 +22,7 @@ mkexpr(enum exprkind k, struct type *t, struct expr *b)
 	e->kind = k;
 	e->base = b;
 	e->next = NULL;
+	e->toeval = NULL;
 
 	return e;
 }
@@ -595,7 +596,7 @@ generic(struct scope *s)
 			def = assignexpr(s);
 		} else {
 			qual = QUALNONE;
-			t = typename(s, &qual);
+			t = typename(s, &qual, NULL);
 			if (!t)
 				error(&tok.loc, "expected typename for generic association");
 			if (t->kind == TYPEFUNC)
@@ -775,7 +776,7 @@ designator(struct scope *s, struct type *t, unsigned long long *offset)
 static struct expr *
 builtinfunc(struct scope *s, enum builtinkind kind)
 {
-	struct expr *e;
+	struct expr *e, *toeval;
 	struct type *t;
 	struct member *m;
 	char *name;
@@ -811,7 +812,7 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		e->u.constant.f = strtod("nan", NULL);
 		break;
 	case BUILTINOFFSETOF:
-		t = typename(s, NULL);
+		t = typename(s, NULL, NULL);
 		expect(TCOMMA, "after type name");
 		name = expect(TIDENT, "after ','");
 		if (t->kind != TYPESTRUCT && t->kind != TYPEUNION)
@@ -825,9 +826,9 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		free(name);
 		break;
 	case BUILTINTYPESCOMPATIBLEP:
-		t = typename(s, NULL);
+		t = typename(s, NULL, NULL);
 		expect(TCOMMA, "after type name");
-		e = mkconstexpr(&typeint, typecompatible(t, typename(s, NULL)));
+		e = mkconstexpr(&typeint, typecompatible(t, typename(s, NULL, NULL)));
 		break;
 	case BUILTINUNREACHABLE:
 		e = mkexpr(EXPRBUILTIN, &typevoid, NULL);
@@ -841,7 +842,8 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		if (typeadjvalist == targ->typevalist)
 			e->base = mkunaryexpr(TBAND, e->base);
 		expect(TCOMMA, "after va_list");
-		e->type = typename(s, &e->qual);
+		e->type = typename(s, &e->qual, &toeval);
+		e->toeval = toeval;
 		break;
 	case BUILTINVACOPY:
 		e = mkexpr(EXPRASSIGN, &typevoid, NULL);
@@ -1066,7 +1068,7 @@ unaryexpr(struct scope *s)
 	case TALIGNOF:
 		next();
 		if (consume(TLPAREN)) {
-			t = typename(s, NULL);
+			t = typename(s, NULL, NULL);
 			if (t) {
 				expect(TRPAREN, "after type name");
 				/* might be part of a compound literal */
@@ -1117,13 +1119,13 @@ castexpr(struct scope *s)
 	struct type *t, *ct;
 	struct decl *d;
 	enum typequal tq;
-	struct expr *r, *e, **end;
+	struct expr *r, *e, **end, *toeval;
 
 	ct = NULL;
 	end = &r;
 	while (consume(TLPAREN)) {
 		tq = QUALNONE;
-		t = typename(s, &tq);
+		t = typename(s, &tq, &toeval);
 		if (!t) {
 			e = expr(s);
 			expect(TRPAREN, "after expression to match '('");
@@ -1133,6 +1135,7 @@ castexpr(struct scope *s)
 		expect(TRPAREN, "after type name");
 		if (tok.kind == TLBRACE) {
 			e = mkexpr(EXPRCOMPOUND, t, NULL);
+			e->toeval = toeval;
 			e->qual = tq;
 			e->lvalue = true;
 			d = mkdecl(NULL, DECLOBJECT, t, tq, LINKNONE);
@@ -1145,6 +1148,7 @@ castexpr(struct scope *s)
 		if (t != &typevoid && !(t->prop & PROPSCALAR))
 			error(&tok.loc, "cast type must be scalar");
 		e = mkexpr(EXPRCAST, t, NULL);
+		e->toeval = toeval;
 		*end = e;
 		end = &e->base;
 		ct = t;
