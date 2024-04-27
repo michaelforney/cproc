@@ -589,7 +589,6 @@ declaratortypes(struct scope *s, struct list *result, char **name, struct scope 
 			t = mktype(TYPEFUNC, 0);
 			t->qual = QUALNONE;
 			t->u.func.isvararg = false;
-			t->u.func.isnoreturn = false;
 			t->u.func.params = NULL;
 			t->u.func.nparam = 0;
 			paramend = &t->u.func.params;
@@ -1051,12 +1050,12 @@ decl(struct scope *s, struct func *f)
 		case DECLFUNC:
 			if (align)
 				error(&tok.loc, "function '%s' declared with alignment specifier", name);
-			t->u.func.isnoreturn |= fs & FUNCNORETURN;
 			if (f && sc && sc != SCEXTERN)  /* 6.7.1p7 */
 				error(&tok.loc, "function '%s' with block scope may only have storage class 'extern'", name);
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			d->value = mkglobal(d);
 			d->u.func.inlinedefn = d->linkage == LINKEXTERN && fs & FUNCINLINE && !(sc & SCEXTERN) && (!prior || prior->u.func.inlinedefn);
+			d->u.func.isnoreturn = fs & FUNCNORETURN;
 			if (tok.kind == TLBRACE) {
 				if (!allowfunc)
 					error(&tok.loc, "function definition not allowed");

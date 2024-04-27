@@ -215,7 +215,7 @@ struct type {
 			enum typequal ptrqual;
 		} array;
 		struct {
-			bool isvararg, isnoreturn;
+			bool isvararg;
 			struct decl *params;
 			size_t nparam;
 		} func;
@@ -283,6 +283,7 @@ struct decl {
 		struct {
 			/* the function might have an "inline definition" (C11 6.7.4p7) */
 			bool inlinedefn;
+			bool isnoreturn;
 		} func;
 		enum builtinkind builtin;
 	} u;
