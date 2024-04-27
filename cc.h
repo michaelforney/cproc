@@ -287,6 +287,7 @@ struct decl {
 			bool inlinedefn;
 			bool isnoreturn;
 		} func;
+		unsigned long long enumconst;
 		enum builtinkind builtin;
 	} u;
 };
@@ -553,7 +554,6 @@ struct block *mkblock(char *);
 struct value *mkglobal(struct decl *);
 
 struct value *mkintconst(unsigned long long);
-unsigned long long intconstvalue(struct value *);
 
 struct func *mkfunc(struct decl *, char *, struct type *, struct scope *);
 void delfunc(struct func *);

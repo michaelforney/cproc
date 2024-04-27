@@ -110,10 +110,11 @@ eval(struct expr *expr)
 	t = expr->type;
 	switch (expr->kind) {
 	case EXPRIDENT:
-		if (expr->u.ident.decl->kind != DECLCONST)
+		d = expr->u.ident.decl;
+		if (d->kind != DECLCONST)
 			break;
 		expr->kind = EXPRCONST;
-		expr->u.constant.u = intconstvalue(expr->u.ident.decl->value);
+		expr->u.constant.u = d->u.enumconst;
 		break;
 	case EXPRCOMPOUND:
 		if (expr->u.compound.decl->u.obj.storage != SDSTATIC)

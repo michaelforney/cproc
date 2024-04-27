@@ -163,13 +163,6 @@ mkintconst(unsigned long long n)
 	return v;
 }
 
-unsigned long long
-intconstvalue(struct value *v)
-{
-	assert(v->kind == VALUE_INTCONST);
-	return v->u.i;
-}
-
 static struct value *
 mkfltconst(int kind, double n)
 {

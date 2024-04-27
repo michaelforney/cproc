@@ -274,6 +274,7 @@ tagspec(struct scope *s)
 				assert(i < LEN(inttypes));
 			}
 			d = mkdecl(name, DECLCONST, et, QUALNONE, LINKNONE);
+			d->u.enumconst = value;
 			d->value = mkintconst(value);
 			d->next = enumconsts;
 			enumconsts = d;
