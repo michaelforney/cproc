@@ -13,6 +13,7 @@ static struct decl *tentativedefns, **tentativedefnsend = &tentativedefns;
 struct qualtype {
 	struct type *type;
 	enum typequal qual;
+	struct expr *expr;
 };
 
 enum storageclass {
@@ -325,6 +326,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 	enum tokenkind op;
 	int ntypes = 0;
 	unsigned long long i;
+	struct expr *typeofexpr = NULL;
 
 	t = NULL;
 	if (sc)
@@ -422,7 +424,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 		case TTYPEOF_UNQUAL:
 			next();
 			expect(TLPAREN, "after 'typeof'");
-			t = typename(s, &tq);
+			t = typename(s, &tq, &typeofexpr);
 			if (!t) {
 				e = expr(s);
 				if (e->decayed)
@@ -430,7 +432,8 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 				t = e->type;
 				if (op == TTYPEOF)
 					tq |= e->qual;
-				delexpr(e);
+				if (t->prop & PROPVM)
+					typeofexpr = e;
 			}
 			++ntypes;
 			expect(TRPAREN, "to close 'typeof'");
@@ -442,7 +445,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 				error(&tok.loc, "alignment specifier not allowed in this declaration");
 			next();
 			expect(TLPAREN, "after 'alignas'");
-			other = typename(s, NULL);
+			other = typename(s, NULL, NULL);
 			i = other ? other->align : intconstexpr(s, false);
 			if (i & i - 1 || i > INT_MAX)
 				error(&tok.loc, "invalid alignment: %llu", i);
@@ -505,7 +508,7 @@ done:
 	*/
 	attr(NULL, 0);
 
-	return (struct qualtype){t, tq};
+	return (struct qualtype){t, tq, typeofexpr};
 }
 
 /* 6.7.6 Declarators */
@@ -630,16 +633,17 @@ declaratortypes(struct scope *s, struct list *result, char **name, struct scope 
 			t = mkarraytype(NULL, QUALNONE, 0);
 			while (consume(TSTATIC) || typequal(&t->u.array.ptrqual))
 				;
-			if (tok.kind == TMUL)
-				error(&tok.loc, "VLAs are not yet supported");
-			if (tok.kind != TRBRACK) {
+			if (tok.kind == TMUL && peek(TRBRACK)) {
+				t->prop |= PROPVM;
+				t->incomplete = false;
+			} else if (!consume(TRBRACK)) {
 				e = assignexpr(s);
 				if (!(e->type->prop & PROPINT))
 					error(&tok.loc, "array length expression must have integer type");
 				t->u.array.length = e;
 				t->incomplete = false;
+				expect(TRBRACK, "after array length");
 			}
-			expect(TRBRACK, "after array length");
 			listinsert(ptr->prev, &t->link);
 			allowattr = true;
 			break;
@@ -673,6 +677,7 @@ declarator(struct scope *s, struct qualtype base, char **name, struct scope **fu
 		tq = t->qual;
 		t->base = base.type;
 		t->qual = base.qual;
+		t->prop |= base.type->prop & PROPVM;
 		switch (t->kind) {
 		case TYPEFUNC:
 			if (base.type->kind == TYPEFUNC)
@@ -689,13 +694,17 @@ declarator(struct scope *s, struct qualtype base, char **name, struct scope **fu
 			t->size = 0;
 			if (t->u.array.length) {
 				e = eval(t->u.array.length);
-				if (e->kind != EXPRCONST)
-					error(&tok.loc, "VLAs are not yet supported");
-				if (e->type->u.basic.issigned && e->u.constant.u >> 63)
-					error(&tok.loc, "array length must be non-negative");
-				if (e->u.constant.u > ULLONG_MAX / base.type->size)
-					error(&tok.loc, "array length is too large");
-				t->size = base.type->size * e->u.constant.u;
+				if (e->kind == EXPRCONST) {
+					if (e->type->u.basic.issigned && e->u.constant.u >> 63)
+						error(&tok.loc, "array length must be non-negative");
+					if (e->u.constant.u > ULLONG_MAX / base.type->size)
+						error(&tok.loc, "array length is too large");
+					t->size = base.type->size * e->u.constant.u;
+				} else {
+					t->prop |= PROPVM;
+					t->u.array.length = e;
+					t->u.array.size = NULL;
+				}
 			}
 			break;
 		}
@@ -743,6 +752,8 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 	}
 	if (mt.type->kind == TYPEFUNC)
 		error(&tok.loc, "struct member '%s' has function type", name);
+	if (mt.type->prop & PROPVM)
+		error(&tok.loc, "struct member '%s' has variably modified type", name);
 	if (mt.type->flexible)
 		error(&tok.loc, "struct member '%s' contains flexible array member", name);
 	assert(mt.type->align > 0);
@@ -875,7 +886,7 @@ structdecl(struct scope *s, struct structbuilder *b)
 
 /* 6.7.7 Type names */
 struct type *
-typename(struct scope *s, enum typequal *tq)
+typename(struct scope *s, enum typequal *tq, struct expr **toeval)
 {
 	struct qualtype t;
 
@@ -884,6 +895,8 @@ typename(struct scope *s, enum typequal *tq)
 		t = declarator(s, t, NULL, NULL, true);
 		if (tq)
 			*tq |= t.qual;
+		if (toeval)
+			*toeval = t.expr;
 	}
 	return t.type;
 }
@@ -1020,8 +1033,13 @@ decl(struct scope *s, struct func *f)
 				d->u.obj.storage = SDAUTO;
 			} else {
 				d->u.obj.storage = sc & SCTHREADLOCAL ? SDTHREAD : SDSTATIC;
+				if (t->prop & PROPVM)
+					error(&tok.loc, "object '%s' with %s storage duration cannot have variably modified type", name, d->u.obj.storage == SDSTATIC ? "static" : "thread");
 				d->value = mkglobal(d);
 			}
+
+			if (base.expr)
+				funcexpr(f, base.expr);
 			init = NULL;
 			hasinit = false;
 			if (consume(TASSIGN)) {

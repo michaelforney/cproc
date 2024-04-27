@@ -1,0 +1,97 @@
+export data $c = align 4 { w 0, }
+export
+function w $main() {
+@start.1
+	%.1 =l alloc4 4
+	%.2 =l alloc4 4
+	%.6 =l alloc8 8
+@body.2
+	storew 0, %.1
+	storew 2, %.2
+	%.3 =w loadw %.2
+	%.4 =l extsw %.3
+	%.5 =l mul %.4, 4
+	%.7 =l extsw 0
+	storel %.7, %.6
+	%.8 =w loadw %.1
+	%.9 =w cnel 8, 8
+	%.10 =w add %.8, %.9
+	storew %.10, %.1
+	%.11 =w loadw %.1
+	%.12 =w loadw $c
+	%.13 =w cnew %.12, 0
+	%.14 =w add %.11, %.13
+	storew %.14, %.1
+	%.15 =w loadw %.1
+	%.16 =w loadw $c
+	%.17 =w add %.16, 1
+	storew %.17, $c
+	%.18 =l loadl %.6
+	%.19 =l extsw 2
+	%.20 =l mul %.19, 4
+	%.21 =w cnel %.5, %.20
+	%.22 =w add %.15, %.21
+	storew %.22, %.1
+	%.23 =w loadw %.1
+	%.24 =w loadw $c
+	%.25 =w cnew %.24, 1
+	%.26 =w add %.23, %.25
+	storew %.26, %.1
+	%.27 =w loadw %.1
+	%.28 =w cnel 8, 8
+	%.29 =w add %.27, %.28
+	storew %.29, %.1
+	%.30 =w loadw %.1
+	%.31 =w loadw $c
+	%.32 =w cnew %.31, 1
+	%.33 =w add %.30, %.32
+	storew %.33, %.1
+	%.34 =w loadw %.1
+	%.35 =w loadw %.2
+	%.36 =w add %.35, 1
+	storew %.36, %.2
+	%.37 =l extsw %.36
+	%.38 =l mul %.37, 4
+	%.39 =l extsw 3
+	%.40 =l mul %.39, 4
+	%.41 =w cnel %.38, %.40
+	%.42 =w add %.34, %.41
+	storew %.42, %.1
+	%.43 =w loadw %.1
+	%.44 =w loadw %.2
+	%.45 =w cnew %.44, 3
+	%.46 =w add %.43, %.45
+	storew %.46, %.1
+	%.47 =w loadw %.1
+	%.48 =w loadw %.2
+	%.49 =w add %.48, 1
+	storew %.49, %.2
+	%.50 =l extsw %.49
+	%.51 =l mul %.50, 4
+	%.52 =w cnel %.51, 16
+	%.53 =w add %.47, %.52
+	storew %.53, %.1
+	%.54 =w loadw %.1
+	%.55 =w loadw %.2
+	%.56 =w cnew %.55, 4
+	%.57 =w add %.54, %.56
+	storew %.57, %.1
+	%.58 =w loadw %.1
+	%.59 =w loadw $c
+	%.60 =w add %.59, 1
+	storew %.60, $c
+	%.61 =l extsw 5
+	%.62 =l mul %.61, 4
+	%.63 =l extsw 5
+	%.64 =l mul %.63, 4
+	%.65 =w cnel %.62, %.64
+	%.66 =w add %.58, %.65
+	storew %.66, %.1
+	%.67 =w loadw %.1
+	%.68 =w loadw $c
+	%.69 =w cnew %.68, 2
+	%.70 =w add %.67, %.69
+	storew %.70, %.1
+	%.71 =w loadw %.1
+	ret %.71
+}

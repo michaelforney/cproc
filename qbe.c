@@ -262,6 +262,102 @@ funcinst(struct func *f, int op, int class, struct value *arg0, struct value *ar
 	return &inst->res;
 }
 
+static struct value *
+convert(struct func *f, struct type *dst, struct type *src, struct value *l)
+{
+	enum instkind op;
+	struct value *r = NULL;
+	int class;
+
+	if (src->kind == TYPEPOINTER)
+		src = &typeulong;
+	if (dst->kind == TYPEPOINTER)
+		dst = &typeulong;
+	if (dst->kind == TYPEVOID)
+		return NULL;
+	if (!(src->prop & PROPREAL) || !(dst->prop & PROPREAL))
+		fatal("internal error; unsupported conversion");
+	if (dst->kind == TYPEBOOL) {
+		class = 'w';
+		if (src->prop & PROPINT) {
+			r = mkintconst(0);
+			switch (src->size) {
+			case 1: op = ICNEW, l = funcinst(f, IEXTUB, 'w', l, NULL); break;
+			case 2: op = ICNEW, l = funcinst(f, IEXTUH, 'w', l, NULL); break;
+			case 4: op = ICNEW; break;
+			case 8: op = ICNEL; break;
+			default:
+				fatal("internal error; unknown integer conversion");
+				return NULL;  /* unreachable */
+			}
+		} else {
+			assert(src->prop & PROPFLOAT);
+			switch (src->size) {
+			case 4: op = ICNES, r = mkfltconst(VALUE_FLTCONST, 0); break;
+			case 8: op = ICNED, r = mkfltconst(VALUE_DBLCONST, 0); break;
+			default:
+				fatal("internal error; unknown floating point conversion");
+				return NULL;  /* unreachable */
+			}
+		}
+	} else if (dst->prop & PROPINT) {
+		class = dst->size == 8 ? 'l' : 'w';
+		if (src->prop & PROPINT) {
+			if (dst->size <= src->size)
+				return l;
+			switch (src->size) {
+			case 4: op = src->u.basic.issigned ? IEXTSW : IEXTUW; break;
+			case 2: op = src->u.basic.issigned ? IEXTSH : IEXTUH; break;
+			case 1: op = src->u.basic.issigned ? IEXTSB : IEXTUB; break;
+			default:
+				fatal("internal error; unknown integer conversion");
+				return NULL;  /* unreachable */
+			}
+		} else {
+			if (dst->u.basic.issigned)
+				op = src->size == 8 ? IDTOSI : ISTOSI;
+			else
+				op = src->size == 8 ? IDTOUI : ISTOUI;
+		}
+	} else {
+		class = dst->size == 8 ? 'd' : 's';
+		if (src->prop & PROPINT) {
+			if (src->u.basic.issigned)
+				op = src->size == 8 ? ISLTOF : ISWTOF;
+			else
+				op = src->size == 8 ? IULTOF : IUWTOF;
+		} else {
+			assert(src->prop & PROPFLOAT);
+			if (src->size == dst->size)
+				return l;
+			op = src->size < dst->size ? IEXTS : ITRUNCD;
+		}
+	}
+
+	return funcinst(f, op, class, l, r);
+}
+
+static void
+calcvla(struct func *f, struct type *t)
+{
+	struct value *length, *basesize;
+
+	if (!(t->prop & PROPVM))
+		return;
+	if (t->base)
+		calcvla(f, t->base);
+	if (t->kind == TYPEFUNC || t->size)
+		return;
+	assert(t->kind == TYPEARRAY);
+	if (!t->u.array.size) {
+		assert(t->base->size || t->base->kind == TYPEARRAY);
+		assert(t->u.array.length);
+		length = convert(f, &typeulong, t->u.array.length->type, funcexpr(f, t->u.array.length));
+		basesize = t->base->size ? mkintconst(t->base->size) : t->base->u.array.size;
+		t->u.array.size = funcinst(f, IMUL, 'l', length, basesize);
+	}
+}
+
 static void
 funcalloc(struct func *f, struct decl *d)
 {
@@ -271,10 +367,16 @@ funcalloc(struct func *f, struct decl *d)
 	int align;
 
 	assert(!d->type->incomplete);
-	assert(d->type->size > 0);
+	calcvla(f, d->type);
 	end = f->end;
-	f->end = f->start;
-	v = mkintconst(d->type->size);
+	if (d->type->size) {
+		f->end = f->start;
+		v = mkintconst(d->type->size);
+	} else {
+		assert(d->type->kind == TYPEARRAY);
+		assert(d->type->u.array.size);
+		v = d->type->u.array.size;
+	}
 	align = d->u.obj.align;
 	switch (align) {
 	case 1:
@@ -402,81 +504,6 @@ funcload(struct func *f, struct type *t, struct lvalue lval)
 	qt = qbetype(t);
 	v = funcinst(f, qt.load, qt.base, lval.addr, NULL);
 	return funcbits(f, t, v, lval.bits);
-}
-
-static struct value *
-convert(struct func *f, struct type *dst, struct type *src, struct value *l)
-{
-	enum instkind op;
-	struct value *r = NULL;
-	int class;
-
-	if (src->kind == TYPEPOINTER)
-		src = &typeulong;
-	if (dst->kind == TYPEPOINTER)
-		dst = &typeulong;
-	if (dst->kind == TYPEVOID)
-		return NULL;
-	if (!(src->prop & PROPREAL) || !(dst->prop & PROPREAL))
-		fatal("internal error; unsupported conversion");
-	if (dst->kind == TYPEBOOL) {
-		class = 'w';
-		if (src->prop & PROPINT) {
-			r = mkintconst(0);
-			switch (src->size) {
-			case 1: op = ICNEW, l = funcinst(f, IEXTUB, 'w', l, NULL); break;
-			case 2: op = ICNEW, l = funcinst(f, IEXTUH, 'w', l, NULL); break;
-			case 4: op = ICNEW; break;
-			case 8: op = ICNEL; break;
-			default:
-				fatal("internal error; unknown integer conversion");
-				return NULL;  /* unreachable */
-			}
-		} else {
-			assert(src->prop & PROPFLOAT);
-			switch (src->size) {
-			case 4: op = ICNES, r = mkfltconst(VALUE_FLTCONST, 0); break;
-			case 8: op = ICNED, r = mkfltconst(VALUE_DBLCONST, 0); break;
-			default:
-				fatal("internal error; unknown floating point conversion");
-				return NULL;  /* unreachable */
-			}
-		}
-	} else if (dst->prop & PROPINT) {
-		class = dst->size == 8 ? 'l' : 'w';
-		if (src->prop & PROPINT) {
-			if (dst->size <= src->size)
-				return l;
-			switch (src->size) {
-			case 4: op = src->u.basic.issigned ? IEXTSW : IEXTUW; break;
-			case 2: op = src->u.basic.issigned ? IEXTSH : IEXTUH; break;
-			case 1: op = src->u.basic.issigned ? IEXTSB : IEXTUB; break;
-			default:
-				fatal("internal error; unknown integer conversion");
-				return NULL;  /* unreachable */
-			}
-		} else {
-			if (dst->u.basic.issigned)
-				op = src->size == 8 ? IDTOSI : ISTOSI;
-			else
-				op = src->size == 8 ? IDTOUI : ISTOUI;
-		}
-	} else {
-		class = dst->size == 8 ? 'd' : 's';
-		if (src->prop & PROPINT) {
-			if (src->u.basic.issigned)
-				op = src->size == 8 ? ISLTOF : ISWTOF;
-			else
-				op = src->size == 8 ? IULTOF : IUWTOF;
-		} else {
-			assert(src->prop & PROPFLOAT);
-			if (src->size == dst->size)
-				return l;
-			op = src->size < dst->size ? IEXTS : ITRUNCD;
-		}
-	}
-
-	return funcinst(f, op, class, l, r);
 }
 
 struct func *
@@ -655,6 +682,8 @@ funclval(struct func *f, struct expr *e)
 		lval.addr = d->value;
 		break;
 	case EXPRCOMPOUND:
+		if (e->toeval)
+			funcexpr(f, e->toeval);
 		d = e->u.compound.decl;
 		funcinit(f, d, e->u.compound.init, true);
 		lval.addr = d->value;
@@ -684,6 +713,7 @@ funcexpr(struct func *f, struct expr *e)
 	struct type *t, *functype;
 	size_t i;
 
+	calcvla(f, e->type);
 	switch (e->kind) {
 	case EXPRIDENT:
 		d = e->u.ident.decl;
@@ -759,6 +789,8 @@ funcexpr(struct func *f, struct expr *e)
 		fatal("internal error; unknown unary expression");
 		break;
 	case EXPRCAST:
+		if (e->toeval)
+			funcexpr(f, e->toeval);
 		l = funcexpr(f, e->base);
 		return convert(f, e->type, e->base->type, l);
 	case EXPRBINARY:
@@ -902,6 +934,8 @@ funcexpr(struct func *f, struct expr *e)
 			funcinst(f, IVASTART, 0, l, NULL);
 			break;
 		case BUILTINVAARG:
+			if (e->toeval)
+				funcexpr(f, e->toeval);
 			/* https://todo.sr.ht/~mcf/cproc/52 */
 			if (!(e->type->prop & PROPSCALAR))
 				error(&tok.loc, "va_arg with non-scalar type is not yet supported");
@@ -919,6 +953,14 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRTEMP:
 		assert(e->u.temp);
 		return e->u.temp;
+	case EXPRSIZEOF:
+		t = e->u.szof.type;
+		assert(t->kind == TYPEARRAY);
+		calcvla(f, t);
+		/* if the sizeof operand has VLA type, we must evaluate it */
+		if (e->base)
+			funcexpr(f, e->base);
+		return t->u.array.size;
 	}
 	fatal("unimplemented expression %d", e->kind);
 	return NULL;

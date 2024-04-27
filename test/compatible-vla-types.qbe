@@ -1,0 +1,11 @@
+export
+function $f2() {
+@start.1
+	%.1 =l alloc4 4
+	%.2 =l alloc4 4
+@body.2
+	storew 12, %.1
+	%.3 =w mul 6, 2
+	storew %.3, %.2
+	ret
+}

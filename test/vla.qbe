@@ -1,0 +1,18 @@
+export
+function w $g() {
+@start.1
+@body.2
+	ret 1
+}
+export
+function l $f() {
+@start.3
+@body.4
+	%.1 =w call $g()
+	%.2 =w extsh %.1
+	%.3 =w add 10, %.2
+	%.4 =l extsw %.3
+	%.5 =l mul %.4, 8
+	%.6 =l alloc8 %.5
+	ret %.5
+}

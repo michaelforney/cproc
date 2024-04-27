@@ -178,7 +178,8 @@ enum typeprop {
 	PROPREAL    = 1<<2,
 	PROPARITH   = 1<<3,
 	PROPSCALAR  = 1<<4,
-	PROPFLOAT   = 1<<5
+	PROPFLOAT   = 1<<5,
+	PROPVM      = 1<<6  /* variably-modified type */
 };
 
 struct bitfield {
@@ -213,6 +214,7 @@ struct type {
 		struct {
 			struct expr *length;
 			enum typequal ptrqual;
+			struct value *size;
 		} array;
 		struct {
 			bool isvararg;
@@ -321,6 +323,7 @@ enum exprkind {
 
 	EXPRBUILTIN,
 	EXPRTEMP,
+	EXPRSIZEOF,
 };
 
 struct stringlit {
@@ -341,6 +344,7 @@ struct expr {
 	enum tokenkind op;
 	struct expr *base;
 	struct expr *next;
+	struct expr *toeval;
 	union {
 		struct {
 			struct decl *decl;
@@ -377,6 +381,9 @@ struct expr {
 		struct {
 			enum builtinkind kind;
 		} builtin;
+		struct {
+			struct type *type;
+		} szof;
 		struct value *temp;
 	} u;
 };
@@ -482,7 +489,7 @@ bool gnuattr(struct attr *, enum attrkind);
 
 struct decl *mkdecl(char *name, enum declkind, struct type *, enum typequal, enum linkage);
 bool decl(struct scope *, struct func *);
-struct type *typename(struct scope *, enum typequal *);
+struct type *typename(struct scope *, enum typequal *, struct expr **);
 
 struct decl *stringdecl(struct expr *);
 
