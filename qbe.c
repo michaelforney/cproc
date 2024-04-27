@@ -678,7 +678,7 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRIDENT:
 		d = e->u.ident.decl;
 		switch (d->kind) {
-		case DECLOBJECT: return funcload(f, d->type, (struct lvalue){d->value});
+		case DECLOBJECT: return funcload(f, e->type, (struct lvalue){d->value});
 		case DECLCONST:  return d->value;
 		default:
 			fatal("unimplemented declaration kind %d", d->kind);
