@@ -1066,6 +1066,8 @@ decl(struct scope *s, struct func *f)
 				s = funcscope;
 				f = mkfunc(d, name, t, s);
 				stmt(f, s);
+				if (d->u.func.isnoreturn)
+					funchlt(f);
 				/* XXX: need to keep track of function in case a later declaration specifies extern */
 				if (!d->u.func.inlinedefn)
 					emitfunc(f, d->linkage == LINKEXTERN);
