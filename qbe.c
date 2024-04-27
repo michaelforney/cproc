@@ -362,12 +362,16 @@ static void
 funcalloc(struct func *f, struct decl *d)
 {
 	enum instkind op;
-	struct inst *inst;
+	struct block *end;
+	struct value *v;
 	unsigned long long size;
 	int align;
 
 	assert(!d->type->incomplete);
 	calcvla(f, d->type);
+	end = f->end;
+	if (d->type->size)
+		f->end = f->start;
 	size = d->type->size;
 	align = d->u.obj.align;
 	switch (align) {
@@ -378,17 +382,14 @@ funcalloc(struct func *f, struct decl *d)
 	default: size += align - 16; /* fallthrough */
 	case 16: op = IALLOC16; break;
 	}
-	inst = mkinst(f, op, ptrclass, size ? mkintconst(size) : d->type->u.array.size, NULL);
-	arrayaddptr(size ? &f->start->insts : &f->end->insts, inst);
-
+	v = funcinst(f, op, ptrclass, size ? mkintconst(size) : d->type->u.array.size, NULL);
 	if (align > 16) {
 		/* TODO: implement alloc32 in QBE and use that instead */
-		inst = mkinst(f, IADD, ptrclass, &inst->res, mkintconst(align - 16));
-		arrayaddptr(&f->start->insts, inst);
-		inst = mkinst(f, IAND, ptrclass, &inst->res, mkintconst(-align));
-		arrayaddptr(&f->start->insts, inst);
+		v = funcinst(f, IADD, ptrclass, v, mkintconst(align - 16));
+		v = funcinst(f, IAND, ptrclass, v, mkintconst(-align));
 	}
-	d->value = &inst->res;
+	d->value = v;
+	f->end = end;
 }
 
 static struct value *
