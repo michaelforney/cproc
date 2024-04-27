@@ -268,24 +268,23 @@ funcalloc(struct func *f, struct decl *d)
 	enum instkind op;
 	struct block *end;
 	struct value *v;
-	unsigned long long size;
 	int align;
 
 	assert(!d->type->incomplete);
 	assert(d->type->size > 0);
 	end = f->end;
 	f->end = f->start;
-	size = d->type->size;
+	v = mkintconst(d->type->size);
 	align = d->u.obj.align;
 	switch (align) {
 	case 1:
 	case 2:
 	case 4:  op = IALLOC4; break;
 	case 8:  op = IALLOC8; break;
-	default: size += align - 16; /* fallthrough */
+	default: v = funcinst(f, IADD, ptrclass, v, mkintconst(align - 16));  /* fallthrough */
 	case 16: op = IALLOC16; break;
 	}
-	v = funcinst(f, op, ptrclass, mkintconst(size), NULL);
+	v = funcinst(f, op, ptrclass, v, NULL);
 	if (align > 16) {
 		/* TODO: implement alloc32 in QBE and use that instead */
 		v = funcinst(f, IADD, ptrclass, v, mkintconst(align - 16));
