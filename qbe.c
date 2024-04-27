@@ -62,6 +62,7 @@ struct jump {
 		JUMP_JMP,
 		JUMP_JNZ,
 		JUMP_RET,
+		JUMP_HLT,
 	} kind;
 	struct value *arg;
 	struct block *blk[2];
@@ -620,6 +621,15 @@ funcret(struct func *f, struct value *v)
 	}
 }
 
+void
+funchlt(struct func *f)
+{
+	struct block *b = f->end;
+
+	if (!b->jump.kind)
+		b->jump.kind = JUMP_HLT;
+}
+
 struct gotolabel *
 funcgoto(struct func *f, char *name)
 {
@@ -653,7 +663,7 @@ funclval(struct func *f, struct expr *e)
 	case EXPRIDENT:
 		d = e->u.ident.decl;
 		if (d->kind != DECLOBJECT && d->kind != DECLFUNC)
-			error(&tok.loc, "identifier is not an object or function");  /* XXX: fix location, var name */
+			error(&tok.loc, "identifier '%s' is not an object or function", d->name);
 		if (d == f->namedecl) {
 			fputs("data ", stdout);
 			emitname(d->value);
@@ -703,7 +713,7 @@ funcexpr(struct func *f, struct expr *e)
 	case EXPRIDENT:
 		d = e->u.ident.decl;
 		switch (d->kind) {
-		case DECLOBJECT: return funcload(f, d->type, (struct lvalue){d->value});
+		case DECLOBJECT: return funcload(f, e->type, (struct lvalue){d->value});
 		case DECLCONST:  return d->value;
 		default:
 			fatal("unimplemented declaration kind %d", d->kind);
@@ -752,10 +762,12 @@ funcexpr(struct func *f, struct expr *e)
 			t = arg->type;
 			funcinst(f, IARG, qbetype(t).base, argvals[i], t->value);
 		}
-		/*
-		if (functype->func.isnoreturn)
-			funcret(f, NULL);
-		*/
+		e = e->base;
+		if (e->kind == EXPRUNARY && e->op == TBAND) {
+			e = e->base;
+			if (e->kind == EXPRIDENT && e->u.ident.decl->u.func.isnoreturn)
+				funchlt(f);
+		}
 		return v;
 	case EXPRUNARY:
 		switch (e->op) {
@@ -1224,6 +1236,8 @@ static void
 emitjump(struct jump *j)
 {
 	switch (j->kind) {
+	case JUMP_NONE:
+		break;
 	case JUMP_RET:
 		fputs("\tret", stdout);
 		if (j->arg) {
@@ -1246,6 +1260,11 @@ emitjump(struct jump *j)
 		emitname(&j->blk[1]->label);
 		putchar('\n');
 		break;
+	case JUMP_HLT:
+		fputs("\thlt\n", stdout);
+		break;
+	default:
+		assert(0);
 	}
 }
 

@@ -217,7 +217,7 @@ struct type {
 			struct value *size;
 		} array;
 		struct {
-			bool isvararg, isnoreturn;
+			bool isvararg;
 			struct decl *params;
 			size_t nparam;
 		} func;
@@ -285,6 +285,7 @@ struct decl {
 		struct {
 			/* the function might have an "inline definition" (C11 6.7.4p7) */
 			bool inlinedefn;
+			bool isnoreturn;
 		} func;
 		enum builtinkind builtin;
 	} u;
@@ -562,6 +563,7 @@ struct value *funcexpr(struct func *, struct expr *);
 void funcjmp(struct func *, struct block *);
 void funcjnz(struct func *, struct value *, struct type *, struct block *, struct block *);
 void funcret(struct func *, struct value *);
+void funchlt(struct func *);
 struct gotolabel *funcgoto(struct func *, char *);
 void funcswitch(struct func *, struct value *, struct switchcases *, struct block *);
 void funcinit(struct func *, struct decl *, struct init *, bool);

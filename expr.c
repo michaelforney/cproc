@@ -122,6 +122,7 @@ static struct expr *
 mkunaryexpr(enum tokenkind op, struct expr *base)
 {
 	struct expr *expr;
+	struct type *type;
 
 	switch (op) {
 	case TBAND:
@@ -144,10 +145,16 @@ mkunaryexpr(enum tokenkind op, struct expr *base)
 	case TMUL:
 		if (base->type->kind != TYPEPOINTER)
 			error(&tok.loc, "cannot dereference non-pointer");
-		expr = mkexpr(EXPRUNARY, base->type->base, base);
-		expr->qual = base->type->qual;
-		expr->lvalue = true;
-		expr->op = op;
+		if (base->kind == EXPRUNARY && base->op == TBAND) {
+			type = base->type->base;
+			expr = base->base;
+			expr->type = type;
+		} else {
+			expr = mkexpr(EXPRUNARY, base->type->base, base);
+			expr->qual = base->type->qual;
+			expr->lvalue = true;
+			expr->op = op;
+		}
 		return decay(expr);
 	}
 	/* other unary operators get compiled as equivalent binary ones */
