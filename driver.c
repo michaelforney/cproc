@@ -66,6 +66,7 @@ static struct stageinfo stages[] = {
 static const char *const ignoreflags[] = {
 	"fno-builtin",
 	"pedantic",
+	"pedantic-errors",
 	"pipe"
 };
 
