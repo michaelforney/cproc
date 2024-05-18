@@ -745,7 +745,11 @@ funcexpr(struct func *f, struct expr *e)
 		l = funcload(f, e->base->type, lval);
 		t = e->type;
 		if (t->kind == TYPEPOINTER) {
-			r = mkintconst(t->base->size);
+			if (t->base->kind == TYPEARRAY && t->base->size == 0) {
+				r = t->base->u.array.size;
+			} else {
+				r = mkintconst(t->base->size);
+			}
 		} else if (t->prop & PROPINT) {
 			r = mkintconst(1);
 		} else if (t->prop & PROPFLOAT) {

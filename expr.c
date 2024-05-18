@@ -252,6 +252,20 @@ commonreal(struct expr **e1, struct expr **e2)
 }
 
 static struct expr *
+mksizeofexpr(struct type *t) {
+	struct expr *e;
+
+	if (t->kind == TYPEARRAY && t->size == 0) {
+		e = mkexpr(EXPRSIZEOF, &typeulong, NULL);
+		e->u.szof.type = t;
+	} else {
+		e = mkconstexpr(&typeulong, t->size);
+	}
+
+	return e;
+}
+
+static struct expr *
 mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct expr *r)
 {
 	struct expr *e;
@@ -328,7 +342,7 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 		t = l->type;
 		if (t->base->incomplete || t->base->kind == TYPEFUNC)
 			error(loc, "pointer operand to '+' must be to complete object type");
-		r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
+		r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mksizeofexpr(t->base));
 		break;
 	case TSUB:
 		if (lp & PROPARITH && rp & PROPARITH) {
@@ -341,14 +355,14 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 			error(loc, "pointer operand to '-' must be to complete object type");
 		if (rp & PROPINT) {
 			t = l->type;
-			r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mkconstexpr(&typeulong, t->base->size));
+			r = mkbinaryexpr(loc, TMUL, exprconvert(r, &typeulong), mksizeofexpr(t->base));
 		} else {
 			if (!typecompatible(l->type->base, r->type->base))
 				error(&tok.loc, "pointer operands to '-' are to incompatible types");
 			op = TDIV;
 			t = &typelong;
 			e = mkbinaryexpr(loc, TSUB, exprconvert(l, &typelong), exprconvert(r, &typelong));
-			r = mkconstexpr(&typelong, l->type->base->size);
+			r = mksizeofexpr(l->type->base);
 			l = e;
 		}
 		break;
