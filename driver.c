@@ -446,7 +446,8 @@ ignore:
 		} else if (strcmp(arg, "-static") == 0) {
 			arrayaddptr(&stages[LINK].cmd, arg);
 		} else if (strcmp(arg, "-emit-qbe") == 0) {
-			last = COMPILE;
+			if (last > COMPILE)
+				last = COMPILE;
 		} else if (strcmp(arg, "-include") == 0 || strcmp(arg, "-idirafter") == 0 || strcmp(arg, "-isystem") == 0 || strcmp(arg, "-iquote") == 0) {
 			if (!--argc)
 				usage(NULL);
@@ -468,14 +469,16 @@ ignore:
 				usage(NULL);
 			switch (arg[1]) {
 			case 'c':
-				last = ASSEMBLE;
+				if (last > ASSEMBLE)
+					last = ASSEMBLE;
 				break;
 			case 'D':
 				arrayaddptr(&stages[PREPROCESS].cmd, "-D");
 				arrayaddptr(&stages[PREPROCESS].cmd, nextarg(&argv));
 				break;
 			case 'E':
-				last = PREPROCESS;
+				if (last > PREPROCESS)
+					last = PREPROCESS;
 				break;
 			case 'g':
 				/* ignore */
@@ -498,7 +501,8 @@ ignore:
 			case 'M':
 				if (strcmp(arg, "-M") == 0 || strcmp(arg, "-MM") == 0) {
 					arrayaddptr(&stages[PREPROCESS].cmd, arg);
-					last = PREPROCESS;
+					if (last > PREPROCESS)
+						last = PREPROCESS;
 				} else if (strcmp(arg, "-MD") == 0 || strcmp(arg, "-MMD") == 0) {
 					arrayaddptr(&stages[PREPROCESS].cmd, arg);
 				} else if (strcmp(arg, "-MT") == 0 || strcmp(arg, "-MF") == 0) {
@@ -520,7 +524,8 @@ ignore:
 				arrayaddptr(&stages[PREPROCESS].cmd, "-P");
 				break;
 			case 'S':
-				last = CODEGEN;
+				if (last > CODEGEN)
+					last = CODEGEN;
 				break;
 			case 's':
 				arrayaddptr(&stages[LINK].cmd, "-s");
