@@ -645,7 +645,7 @@ next(void)
 }
 
 bool
-peek(int kind)
+peek(enum tokenkind kind)
 {
 	static struct token pending;
 	struct token old;
@@ -674,7 +674,7 @@ expect(enum tokenkind kind, const char *msg)
 }
 
 bool
-consume(int kind)
+consume(enum tokenkind kind)
 {
 	if (tok.kind != kind)
 		return false;

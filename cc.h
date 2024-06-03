@@ -311,9 +311,9 @@ extern enum ppflags ppflags;
 void ppinit(void);
 
 void next(void);
-bool peek(int);
+bool peek(enum tokenkind);
 char *expect(enum tokenkind, const char *);
-bool consume(int);
+bool consume(enum tokenkind);
 
 /* type */
 
