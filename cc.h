@@ -568,6 +568,7 @@ struct func *mkfunc(struct decl *, char *, struct type *, struct scope *);
 void delfunc(struct func *);
 struct type *functype(struct func *);
 void funclabel(struct func *, struct block *);
+void funcbranch(struct func *, struct expr *, struct block *, struct block *);
 struct value *funcexpr(struct func *, struct expr *);
 void funcjmp(struct func *, struct block *);
 void funcjnz(struct func *, struct value *, struct type *, struct block *, struct block *);

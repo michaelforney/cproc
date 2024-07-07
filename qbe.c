@@ -707,6 +707,38 @@ funclval(struct func *f, struct expr *e)
 	return lval;
 }
 
+void
+funcbranch(struct func *f, struct expr *e, struct block *bt, struct block *bf)
+{
+	struct value *v;
+	struct block *b;
+
+	/* Maybe we we could do something for EXPRCOND as well. */
+	switch (e->kind) {
+	case EXPRBINARY:
+		if (e->op == TLOR || e->op == TLAND) {
+			if (e->op == TLOR) {
+				b = mkblock("logic_or");
+				funcbranch(f, e->u.binary.l, bt, b);
+			} else {
+				b = mkblock("logic_and");
+				funcbranch(f, e->u.binary.l, b, bf);
+			}
+			funclabel(f, b);
+			funcbranch(f, e->u.binary.r, bt, bf);
+			return;
+		}
+		break;
+	case EXPRCOMMA:
+		for (e = e->base; e->next; e = e->next)
+			funcexpr(f, e);
+		funcbranch(f, e, bt, bf);
+		return;
+	}
+	v = funcexpr(f, e);
+	funcjnz(f, v, e->type, bt, bf);
+}
+
 struct value *
 funcexpr(struct func *f, struct expr *e)
 {
@@ -804,28 +836,27 @@ funcexpr(struct func *f, struct expr *e)
 		l = funcexpr(f, e->base);
 		return convert(f, e->type, e->base->type, l);
 	case EXPRBINARY:
-		l = funcexpr(f, e->u.binary.l);
 		if (e->op == TLOR || e->op == TLAND) {
-			b[0] = mkblock("logic_right");
-			b[1] = mkblock("logic_join");
-			t = e->u.binary.l->type;
-			if (e->op == TLOR) {
-				funcjnz(f, l, t, b[1], b[0]);
-				b[1]->phi.val[0] = mkintconst(1);
-			} else {
-				funcjnz(f, l, t, b[0], b[1]);
-				b[1]->phi.val[0] = mkintconst(0);
-			}
-			b[1]->phi.blk[0] = f->end;
+			b[0] = mkblock("logic_true");
+			b[1] = mkblock("logic_false");
+			b[2] = mkblock("logic_join");
+
+			funcbranch(f, e, b[0], b[1]);
 			funclabel(f, b[0]);
-			r = funcexpr(f, e->u.binary.r);
-			b[1]->phi.val[1] = convert(f, &typebool, e->u.binary.r->type, r);
-			b[1]->phi.blk[1] = f->end;
+			funcjmp(f, b[2]);
 			funclabel(f, b[1]);
-			functemp(f, &b[1]->phi.res);
-			b[1]->phi.class = 'w';
-			return &b[1]->phi.res;
+
+			b[2]->phi.class = 'w';
+			b[2]->phi.blk[0] = b[0];
+			b[2]->phi.val[0] = mkintconst(1);
+			b[2]->phi.blk[1] = b[1];
+			b[2]->phi.val[1] = mkintconst(0);
+			functemp(f, &b[2]->phi.res);
+			funclabel(f, b[2]);
+
+			return &b[2]->phi.res;
 		}
+		l = funcexpr(f, e->u.binary.l);
 		r = funcexpr(f, e->u.binary.r);
 		t = e->u.binary.l->type;
 		if (t->kind == TYPEPOINTER)

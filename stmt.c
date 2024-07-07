@@ -104,13 +104,11 @@ stmt(struct func *f, struct scope *s)
 		t = e->type;
 		if (!(t->prop & PROPSCALAR))
 			error(&tok.loc, "controlling expression of if statement must have scalar type");
-		v = funcexpr(f, e);
-		delexpr(e);
-		expect(TRPAREN, "after expression");
-
 		b[0] = mkblock("if_true");
 		b[1] = mkblock("if_false");
-		funcjnz(f, v, t, b[0], b[1]);
+		funcbranch(f, e, b[0], b[1]);
+		delexpr(e);
+		expect(TRPAREN, "after expression");
 
 		funclabel(f, b[0]);
 		s = mkscope(s);
@@ -181,8 +179,7 @@ stmt(struct func *f, struct scope *s)
 		b[2] = mkblock("while_join");
 
 		funclabel(f, b[0]);
-		v = funcexpr(f, e);
-		funcjnz(f, v, t, b[1], b[2]);
+		funcbranch(f, e, b[1], b[2]);
 		funclabel(f, b[1]);
 		s = mkscope(s);
 		s->continuelabel = b[0];
@@ -217,8 +214,7 @@ stmt(struct func *f, struct scope *s)
 			error(&tok.loc, "controlling expression of loop must have scalar type");
 		expect(TRPAREN, "after expression");
 
-		v = funcexpr(f, e);
-		funcjnz(f, v, t, b[0], b[2]);
+		funcbranch(f, e, b[0], b[2]);
 		funclabel(f, b[2]);
 		s = delscope(s);
 		expect(TSEMICOLON, "after 'do' statement");
@@ -247,8 +243,7 @@ stmt(struct func *f, struct scope *s)
 			t = e->type;
 			if (!(t->prop & PROPSCALAR))
 				error(&tok.loc, "controlling expression of loop must have scalar type");
-			v = funcexpr(f, e);
-			funcjnz(f, v, t, b[1], b[3]);
+			funcbranch(f, e, b[1], b[3]);
 			delexpr(e);
 		}
 		expect(TSEMICOLON, NULL);

@@ -3,37 +3,28 @@ function w $main() {
 @start.1
 @body.2
 	%.1 =w loadw $i
-	jnz %.1, @logic_join.4, @logic_right.3
-@logic_right.3
-	%.2 =w cnew 0, 0
-@logic_join.4
-	%.3 =w phi @body.2 1, @logic_right.3 %.2
-	jnz %.3, @if_true.5, @if_false.6
-@if_true.5
+	jnz %.1, @if_true.3, @logic_or.5
+@logic_or.5
+	jnz 0, @if_true.3, @if_false.4
+@if_true.3
 	ret 1
-@if_false.6
-	%.4 =s loads $f
-	%.5 =w cnes %.4, s_0
-	jnz %.5, @logic_join.8, @logic_right.7
-@logic_right.7
-	%.6 =w cnew 0, 0
-@logic_join.8
-	%.7 =w phi @if_false.6 1, @logic_right.7 %.6
-	jnz %.7, @if_true.9, @if_false.10
+@if_false.4
+	%.2 =s loads $f
+	%.3 =w cnes %.2, s_0
+	jnz %.3, @if_true.6, @logic_or.8
+@logic_or.8
+	jnz 0, @if_true.6, @if_false.7
+@if_true.6
+	ret 1
+@if_false.7
+	%.4 =l loadl $p
+	%.5 =w cnel %.4, 0
+	jnz %.5, @if_true.9, @logic_or.11
+@logic_or.11
+	jnz 0, @if_true.9, @if_false.10
 @if_true.9
 	ret 1
 @if_false.10
-	%.8 =l loadl $p
-	%.9 =w cnel %.8, 0
-	jnz %.9, @logic_join.12, @logic_right.11
-@logic_right.11
-	%.10 =w cnew 0, 0
-@logic_join.12
-	%.11 =w phi @if_false.10 1, @logic_right.11 %.10
-	jnz %.11, @if_true.13, @if_false.14
-@if_true.13
-	ret 1
-@if_false.14
 	ret 0
 }
 export data $i = align 4 { z 4 }
