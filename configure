@@ -1,174 +1,245 @@
 #!/bin/sh
 
-fail() {
-	echo "$0: $*" >&2
+# configure - Create config.h and config.mk
+
+log() {
+	printf " \033[32m*\033[0m %s\n" "$1" >&2
+}
+
+err() {
+	printf " \033[31m*\033[0m %s: %s\n" "$0" "$*" >&2
 	exit 1
 }
 
-prefix=/usr/local
-bindir='$(PREFIX)/bin'
-host=
-target=
-gcclibdir=
+usage() {
+	printf "Usage:\n \
+%s [OPTIONS]\n\n\
+Valid options:\n \
+	--ignore-unkown-opts   Ignore unknown options [Default: Yes]\n \
+	--skip-checks          Don't check dependencies [Default: No]\n \
+	--help                 Show this help message
+	--prefix               Directory containing BINDIR [Default: /usr]\n \
+	--bindir               Where to install binaries [Default: PREFIX/bin]\n \
+	--host                 Host system type [Default: Autodetect]\n \
+	--target               Target system type [Default: Host]\n \
+	--with-cpp             Default preprocessor [Default: cpp]\n \
+	--with-qbe             Default QBE [Default: qbe]\n \
+	--with-as              Default assembler [Default: as]\n \
+	--with-ld              Default linker [Default: ld]\n \
+	--with-ldso            Default dynamic linker [Default: Unset]
+	--with-gcclibdir       Directory containing GCC libraries [Default: Unset]
+	CC                     C Compiler [Default: cc]
+	CFLAGS                 Compilation Flags [Default: --std=c99 -Wall -Wpedantic -Wno-parentheses -Wno-switch -g -pipe]
+	LDFLAGS                Link Flags [Default: Unset]\n" "$0"
+	exit 0
+}
 
-for arg ; do
-	case "$arg" in
-	--prefix=*) prefix=${arg#*=} ;;
-	--bindir=*) bindir=${arg#*=} ;;
-	--host=*) host=${arg#*=} ;;
-	--target=*) target=${arg#*=} ;;
-	--with-cpp=*) DEFAULT_PREPROCESSOR=${arg#*=} ;;
-	--with-qbe=*) DEFAULT_QBE=${arg#*=} ;;
-	--with-as=*) DEFAULT_ASSEMBLER=${arg#*=} ;;
-	--with-ld=*) DEFAULT_LINKER=${arg#*=} ;;
-	--with-ldso=*) DEFAULT_DYNAMIC_LINKER=${arg#*=} ;;
-	--with-gcc-libdir=*) gcclibdir=${arg#*=} ;;
-	CC=*) CC=${arg#*=} ;;
-	CFLAGS=*) CFLAGS=${arg#*=} ;;
-	LDFLAGS=*) LDFLAGS=${arg#*=} ;;
-	*) fail "unknown option '$arg'"
+PREFIX='/usr'
+BINDIR="${PREFIX}/bin"
+HOST=''
+TARGET=''
+GCCLIBDIR=''
+IGNORE_UNKNOWN_OPTS='0'
+SKIP_CHECKS='0'
+TOOLPREFIX=''
+STARTFILES='0'
+ENDFILES='0'
+DEFINES=''
+LINKFLAGS=''
+CRTBEGIN=''
+
+for ARG in "$@"; do
+	case "${ARG}" in
+	--ignore-unknown-opts) IGNORE_UNKNOWN_OPTS='1' ;;
+	--skip-checks) SKIP_CHECKS='1' ;;
+	--help) usage ;;
+	--prefix=*) PREFIX=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        --bindir=*) BINDIR=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        --host=*) HOST=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        --target=*) TARGET=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        --with-cpp=*) DEFAULT_PREPROCESSOR=$(printf -- "%s" "${ARG}"| cut -d'=' -f2) ;;
+        --with-qbe=*) DEFAULT_QBE=$(printf -- "%s" "${ARG}"| cut -d'=' -f2) ;;
+        --with-as=*) DEFAULT_ASSEMBLER=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        --with-ld=*) DEFAULT_LINKER=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        --with-ldso=*) DEFAULT_DYNAMIC_LINKER=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        --with-gcclibdir=*) GCCLIBDIR=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        CC=*) CC=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        CFLAGS=*) CFLAGS=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        LDFLAGS=*) PREFIX=$(printf -- "%s" "${ARG}" | cut -d'=' -f2) ;;
+        *) [ "${IGNORE_UNKNOWN_OPTS}" = '0' ] && err "Unknown option '${ARG}'. Use '$0 --help' to get a list of valid options."
+	   log "Ignoring option '${ARG}'..." ;;
 	esac
 done
 
-: ${CC:=cc}
+[ -z "${CC}" ] && CC='cc'
 
-printf 'checking host system type... '
-test -n "$host" || host=$($CC -dumpmachine 2>/dev/null) || fail "could not determine host"
-printf '%s\n' "$host"
+printf " \033[32m*\033[0m Checking host system type... "
+# shellcheck disable=SC2015
+[ -z "${HOST}" ] && HOST=$(${CC} -dumpmachine 2>/dev/null 2>&1) || err "Could not determine host!"
+printf "%s\n" "${HOST}"
 
-printf 'checking target system type... '
-test -n "$target" || target=$host
-printf '%s\n' "$target"
+printf " \033[32m*\033[0m Checking target system type... "
+[ -z "${TARGET}" ] && TARGET="${HOST}"
+printf "%s\n" "${TARGET}"
 
-toolprefix=
-if [ "$host" != "$target" ] ; then
-	toolprefix=$target-
-fi
+[ "${HOST}" = "${TARGET}" ] || \
+	TOOLPREFIX="${TARGET}-"
 
-startfiles=0
-endfiles=0
-defines=
-linkflags=
-
-case "$target" in
+case "${TARGET}" in
 *-linux-*musl*)
-	test "${DEFAULT_DYNAMIC_LINKER+set}" || case "$target" in
-	x86_64*)  DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-x86_64.so.1  ;;
-	aarch64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-aarch64.so.1 ;;
-	riscv64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-riscv64.so.1 ;;
-	*) fail "unsuported target '$target'"
-	esac
-	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
-	endfiles='"-l", "c", "-l", ":crtn.o"'
-	;;
-*-linux-*gnu*)
-	test "${DEFAULT_DYNAMIC_LINKER+set}" || case "$target" in
-	x86_64*)  DEFAULT_DYNAMIC_LINKER=/lib64/ld-linux-x86-64.so.2 ;;
-	aarch64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-linux-aarch64.so.1  ;;
-	riscv64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-linux-riscv64-lp64d.so.1 ;;
-	*) fail "unsuported target '$target'"
-	esac
-	startfiles='"-l", ":crt1.o", "-l", ":crti.o", "-l", ":crtbegin.o"'
-	endfiles='"-l", "c", "-l", ":crtend.o", "-l", ":crtn.o"'
-	if [ -z "$gcclibdir" ] ; then
-		test "$host" = "$target" || fail "gcc libdir must be specified when building a cross-compiler"
-		crtbegin=$($CC -print-file-name=crtbegin.o 2>/dev/null)
-		gcclibdir=${crtbegin%/*}
-	fi
-	linkflags='"-L", "'$gcclibdir'",'
-	;;
+        [ -n "${DEFAULT_DYNAMIC_LINKER}" ] || case "${TARGET}" in
+        x86_64*)  DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-x86_64.so.1  ;;
+        aarch64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-aarch64.so.1 ;;
+        riscv64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-riscv64.so.1 ;;
+        *) err "Unsupported target '${TARGET}'" ;;
+        esac
+	STARTFILES='"-l", ":crt1.o", "-l", ":crti.o"'
+        ENDFILES='"-l", "c", "-l", ":crtn.o"'
+        ;;
+*-linux-*gnu*|*-redhat-linux)
+	[ -n "${DEFAULT_DYNAMIC_LINKER}" ] || case "${TARGET}" in
+        x86_64*)  DEFAULT_DYNAMIC_LINKER=/lib64/ld-linux-x86-64.so.2 ;;
+        aarch64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-linux-aarch64.so.1  ;;
+        riscv64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-linux-riscv64-lp64d.so.1 ;;
+        *) err "Unsupported target '${TARGET}'" ;;
+        esac
+	STARTFILES='"-l", ":crt1.o", "-l", ":crti.o", "-l", ":crtbegin.o"'
+        ENDFILES='"-l", "c", "-l", ":crtend.o", "-l", ":crtn.o"'
+        if [ -z "${GCCLIBDIR}" ]; then
+                [ "${HOST}" = "${TARGET}" ] || err "GCC libdir must be specified when building a cross-compiler."
+                CRTBEGIN=$(${CC} -print-file-name=crtbegin.o 2>/dev/null)
+                GCCLIBDIR=${CRTBEGIN%/*}
+        fi
+	LINKFLAGS='"-L", "'${GCCLIBDIR}'",'
+        ;;
 *-*freebsd*)
-	: ${DEFAULT_DYNAMIC_LINKER:=/libexec/ld-elf.so.1}
-	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
-	endfiles='"-l", "c", "-l", ":crtn.o"'
-	linkflags='"-L", "/usr/lib",'
-	defines='
-	"-D", "_Pragma(x)=",
-	"-D", "_Nullable=",
-	"-D", "_Nonnull=",
+	[ -z "${DEFAULT_DYNAMIC_LINKER}" ] && \
+		DEFAULT_DYNAMIC_LINKER="/libexec/ld-elf.so.1"
+        STARTFILES='"-l", ":crt1.o", "-l", ":crti.o"'
+        ENDFILES='"-l", "c", "-l", ":crtn.o"'
+        LINKFLAGS='"-L", "/usr/lib",'
+        DEFINES='
+        "-D", "_Pragma(x)=",
+        "-D", "_Nullable=",
+        "-D", "_Nonnull=",
 
-	"-D", "__GNUCLIKE_BUILTIN_STDARG",
-	"-D", "__GNUCLIKE_BUILTIN_VARARGS",
+        "-D", "__GNUCLIKE_BUILTIN_STDARG",
+        "-D", "__GNUCLIKE_BUILTIN_VARARGS",
 
-	/* required to define _RuneLocale, needed by xlocale/_ctype.h */
-	"-D", "_USE_CTYPE_INLINE_",
-	/* workaround for #42 */
-	"-D", "_XLOCALE_INLINE=static inline",
-	/* used like attribute after declarator, so _Alignas will not work here */
-	"-D", "__aligned(x)=",
-	/* TLS is not yet supported (#8) */
-	"-D", "__NO_TLS",
+        /* required to define _RuneLocale, needed by xlocale/_ctype.h */
+        "-D", "_USE_CTYPE_INLINE_",
+        /* workaround for #42 */
+        "-D", "_XLOCALE_INLINE=static inline",
+        /* used like attribute after declarator, so _Alignas will not work here */
+        "-D", "__aligned(x)=",
+        /* TLS is not yet supported (#8) */
+        "-D", "__NO_TLS",
 
-	/* disable warnings for redefining _Pragma */
-	"-Wno-builtin-macro-redefined",
+        /* disable warnings for redefining _Pragma */
+        "-Wno-builtin-macro-redefined",
 '
-	;;
+        ;;
 *-*openbsd*)
-	: ${DEFAULT_DYNAMIC_LINKER:=/usr/libexec/ld.so}
-	test "$host" = "$target" && : ${DEFAULT_PREPROCESSOR:=/usr/libexec/cpp}
-	startfiles='"-l", ":crt0.o", "-l", ":crtbegin.o"'
-	endfiles='"-l", "c", "-l", ":crtend.o"'
-	linkflags='"-L", "/usr/lib", "-nopie",'
-	defines='
-	/* required to prevent libc headers from declaring functions with conflicting linkage */
-	"-D", "_ANSI_LIBRARY",
+	[ -z "${DEFAULT_DYNAMIC_LINKER}" ] && \
+		DEFAULT_DYNAMIC_LINKER="/usr/libexec/ld.so"
+        [ "${HOST}" = "${TARGET}" ] && \
+		[ -z "${DEFAULT_PREPROCESSOR}" ] && \
+		DEFAULT_PREPROCESSOR="/usr/libexec/cpp"
+        STARTFILES='"-l", ":crt0.o", "-l", ":crtbegin.o"'
+        ENDFILES='"-l", "c", "-l", ":crtend.o"'
+        LINKFLAGS='"-L", "/usr/lib", "-nopie",'
+        DEFINES='
+        /* required to prevent libc headers from declaring functions with conflicting linkage */
+        "-D", "_ANSI_LIBRARY",
 
-	/* used like attribute after declarator, so _Alignas will not work here */
-	"-D", "__aligned(x)=",
+        /* used like attribute after declarator, so _Alignas will not work here */
+        "-D", "__aligned(x)=",
 '
-	;;
+        ;;
 *-*netbsd*)
-	: ${DEFAULT_DYNAMIC_LINKER:=/usr/libexec/ld.elf_so}
-	startfiles='"-l", ":crt0.o", "-l", ":crti.o"'
-	endfiles='"-l", "c", "-l", ":crtn.o"'
-	defines='"-D", "__builtin_stdarg_start(ap, last)=__builtin_va_start(ap, last)"'
-	;;
+	[ -z "${DEFAULT_DYNAMIC_LINKER}" ] && \
+		DEFAULT_DYNAMIC_LINKER="/usr/libexec/ld.elf_so"
+        STARTFILES='"-l", ":crt0.o", "-l", ":crti.o"'
+        ENDFILES='"-l", "c", "-l", ":crtn.o"'
+        DEFINES='"-D", "__builtin_stdarg_start(ap, last)=__builtin_va_start(ap, last)"'
+        ;;
 *)
-	fail "unknown target '$target', please create config.h manually"
+  	err "Unknown target '${TARGET}', please create config.h manually."
 esac
 
-: ${DEFAULT_PREPROCESSOR:=${toolprefix}cpp}
-: ${DEFAULT_QBE:=qbe}
-: ${DEFAULT_ASSEMBLER:=${toolprefix}as}
-: ${DEFAULT_LINKER:=${toolprefix}ld}
 
-test "$DEFAULT_DYNAMIC_LINKER" && linkflags=$linkflags' "--dynamic-linker", "'$DEFAULT_DYNAMIC_LINKER'"'
+[ -z "${DEFAULT_PREPROCESSOR}" ] && DEFAULT_PREPROCESSOR="${TOOLPREFIX}cpp"
+[ -z "${DEFAULT_QBE}" ] && DEFAULT_QBE="qbe"
+[ -z "${DEFAULT_ASSEMBLER}" ] && DEFAULT_ASSEMBLER="${TOOLPREFIX}as"
+[ -z "${DEFAULT_LINKER}" ] && DEFAULT_LINKER="${TOOLPREFIX}ld"
 
-printf "creating config.h... "
+[ -n "${DEFAULT_DYNAMIC_LINKER}" ] && \
+	LINKFLAGS=${LINKFLAGS}' "--dynamic-linker", "'${DEFAULT_DYNAMIC_LINKER}'"'
+
+[ "${HOST}" = "${TARGET}" ] && [ "${SKIP_CHECKS}" = '0' ] && \
+	for DEP in ${DEFAULT_PREPROCESSOR} ${DEFAULT_QBE} ${DEFAULT_ASSEMBLER} ${DEFAULT_LINKER} ${CC}; do
+		which "${DEP}" > /dev/null 2>&1 || err "${DEP} was not found in PATH."
+		log "Found '${DEP}' at $(which "${DEP}")..."
+	done
+
+printf " \033[32m*\033[0m Creating config.h... "
 cat >config.h <<EOF
-static const char target[]               = "$target";
-static const char *const startfiles[]    = {$startfiles};
-static const char *const endfiles[]      = {$endfiles};
+static const char target[]               = "${TARGET}";
+static const char *const startfiles[]    = {${STARTFILES}};
+static const char *const endfiles[]	 = {${ENDFILES}};
 static const char *const preprocesscmd[] = {
-	"$DEFAULT_PREPROCESSOR",
+        "${DEFAULT_PREPROCESSOR}",
 
-	/* clear preprocessor GNU C version */
-	"-U", "__GNUC__",
-	"-U", "__GNUC_MINOR__",
+        /* clear preprocessor GNU C version */
+        "-U", "__GNUC__",
+        "-U", "__GNUC_MINOR__",
 
-	/* we don't yet support these optional features */
-	"-D", "__STDC_NO_ATOMICS__",
-	"-D", "__STDC_NO_COMPLEX__",
-	"-U", "__SIZEOF_INT128__",
+        /* we don't yet support these optional features */
+        "-D", "__STDC_NO_ATOMICS__",
+        "-D", "__STDC_NO_COMPLEX__",
+        "-U", "__SIZEOF_INT128__",
 
-	/* we don't generate position-independent code */
-	"-U", "__PIC__",
+        /* we don't generate position-independent code */
+        "-U", "__PIC__",
 
-	/* ignore extension markers */
-	"-D", "__extension__=",
-$defines};
-static const char *const codegencmd[]    = {"$DEFAULT_QBE"};
-static const char *const assemblecmd[]   = {"$DEFAULT_ASSEMBLER"};
-static const char *const linkcmd[]       = {"$DEFAULT_LINKER", $linkflags};
+        /* ignore extension markers */
+        "-D", "__extension__=",
+${DEFINES}};
+static const char *const codegencmd[]    = {"${DEFAULT_QBE}"};
+static const char *const assemblecmd[]   = {"${DEFAULT_ASSEMBLER}"};
+static const char *const linkcmd[]	 = {"${DEFAULT_LINKER}", ${LINKFLAGS}};
 EOF
-echo done
+printf "done.\n"
 
-printf "creating config.mk... "
+[ -z "${CFLAGS}" ] && \
+	CFLAGS="--std=c99 -Wall -Wpedantic -Wno-parentheses -Wno-switch -g -pipe"
+
+printf " \033[32m*\033[0m Creating config.mk... "
 cat >config.mk <<EOF
-PREFIX=$prefix
-BINDIR=$bindir
-CC=${CC:-cc}
-CFLAGS=${CFLAGS:--std=c99 -Wall -Wpedantic -Wno-parentheses -Wno-switch -g -pipe}
-LDFLAGS=$LDFLAGS
+PREFIX=${PREFIX}
+BINDIR=${BINDIR}
+CC=${CC}
+CFLAGS=${CFLAGS}
+LDFLAGS=${LDFLAGS}
 EOF
-echo done
+printf "done.\n"
+
+# shellcheck disable=SC2059
+printf " \
+             =-----------------------=\n \
++------------| Configuration Options |--------------+\n \
+|            =-----------------------=\n \
+| Prefix                    ${PREFIX}\n \
+| Binary Directory          ${BINDIR}\n \
+| C Compiler                ${CC}\n \
+| Compilation Flags         ${CFLAGS}\n \
+| Link Flags                ${LDFLAGS}\n \
+| Target                    ${TARGET}\n \
+| Host                      ${HOST}\n \
+| Default Preprocessor      ${DEFAULT_PREPROCESSOR}\n \
+| Default QBE               ${DEFAULT_QBE}\n \
+| Default Assembler         ${DEFAULT_ASSEMBLER}\n \
+| Default Linker            ${DEFAULT_LINKER}\n \
+| Default Dynamic Linker    ${DEFAULT_DYNAMIC_LINKER}\n \
+| Cross Compiling           $([ "${HOST}" = "${TARGET}" ] && printf "No\n" || printf "Yes\n")\n \
++-----------------------------------------------------+\n"
