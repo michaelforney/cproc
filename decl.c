@@ -959,6 +959,20 @@ declcommon(struct scope *s, enum declkind kind, char *name, char *asmname, struc
 	return d;
 }
 
+static void
+defineobj(struct decl *d, struct init *init, bool hasinit, struct func *f)
+{
+	if (d->type->incomplete)
+		error(&tok.loc, "object '%s' has incomplete type", d->name);
+	if (d->u.obj.align < d->type->align)
+		d->u.obj.align = d->type->align;
+	if (d->u.obj.storage == SDAUTO)
+		funcinit(f, d, init, hasinit);
+	else
+		emitdata(d, init);
+	d->defined = true;
+}
+
 bool
 decl(struct scope *s, struct func *f)
 {
@@ -1060,11 +1074,7 @@ decl(struct scope *s, struct func *f)
 				}
 				break;
 			}
-			if (d->u.obj.storage == SDAUTO)
-				funcinit(f, d, init, hasinit);
-			else
-				emitdata(d, init);
-			d->defined = true;
+			defineobj(d, init, hasinit, f);
 			break;
 		case DECLFUNC:
 			if (align)
@@ -1136,6 +1146,6 @@ emittentativedefns(void)
 
 	for (d = tentativedefns; d; d = d->next) {
 		if (!d->defined)
-			emitdata(d, NULL);
+			defineobj(d, NULL, false, NULL);
 	}
 }
