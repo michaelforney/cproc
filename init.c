@@ -206,12 +206,10 @@ parseinit(struct scope *s, struct type *t)
 	p.sub->iscur = false;
 	p.init = NULL;
 	p.last = &p.init;
-	if (t->incomplete) {
-		if (t->kind != TYPEARRAY)
-			error(&tok.loc, "initializer specified for incomplete type");
-	} else if (t->kind == TYPEARRAY && t->size == 0) {
+	if (t->incomplete && t->kind != TYPEARRAY)
+		error(&tok.loc, "initializer specified for incomplete type");
+	if (t->kind == TYPEARRAY && t->base->size == 0)
 		error(&tok.loc, "initializer specified for variable length array type");
-	}
 	for (;;) {
 		if (p.cur) {
 			if (tok.kind == TLBRACK || tok.kind == TPERIOD)
