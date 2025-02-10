@@ -532,6 +532,8 @@ struct expr *eval(struct expr *);
 struct init *mkinit(unsigned long long, unsigned long long, struct bitfield, struct expr *);
 struct init *parseinit(struct scope *, struct type *);
 
+/* stmt */
+
 void stmt(struct func *, struct scope *);
 
 /* backend */
