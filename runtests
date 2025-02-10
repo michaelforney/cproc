@@ -27,7 +27,7 @@ for test ; do
 		set -- $CCQBE -t $arch -E -o "$got" "$test"
 	else
 		echo "invalid test '$test'" >&2
-		set -- false
+		continue
 	fi
 	numtest=$((numtest + 1))
 	if "$@" && diff -Nu "$want" "$got" ; then
