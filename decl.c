@@ -695,7 +695,7 @@ declarator(struct scope *s, struct qualtype base, char **name, struct scope **fu
 			t->size = 0;
 			if (t->u.array.length) {
 				e = eval(t->u.array.length);
-				if (e->kind == EXPRCONST) {
+				if (e->kind == EXPRCONST && base.type->size) {
 					if (e->type->u.basic.issigned && e->u.constant.u >> 63)
 						error(&tok.loc, "array length must be non-negative");
 					if (e->u.constant.u > ULLONG_MAX / base.type->size)
