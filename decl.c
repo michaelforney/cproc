@@ -744,19 +744,22 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 	struct member *m;
 	size_t end;
 
-	if (t->flexible)
+	if (t->kind == TYPESTRUCT && t->flexible)
 		error(&tok.loc, "struct has member '%s' after flexible array member", name);
 	if (mt.type->incomplete) {
 		if (mt.type->kind != TYPEARRAY)
 			error(&tok.loc, "struct member '%s' has incomplete type", name);
 		t->flexible = true;
 	}
+	if (mt.type->flexible) {
+		if (t->kind == TYPESTRUCT)
+			error(&tok.loc, "struct member '%s' contains flexible array member", name);
+		t->flexible = true;
+	}
 	if (mt.type->kind == TYPEFUNC)
 		error(&tok.loc, "struct member '%s' has function type", name);
 	if (mt.type->prop & PROPVM)
 		error(&tok.loc, "struct member '%s' has variably modified type", name);
-	if (mt.type->flexible)
-		error(&tok.loc, "struct member '%s' contains flexible array member", name);
 	assert(mt.type->align > 0);
 	if (name || width == -1) {
 		m = xmalloc(sizeof(*m));
