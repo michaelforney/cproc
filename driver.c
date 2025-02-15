@@ -448,6 +448,10 @@ main(int argc, char *argv[])
 		} else if (strcmp(arg, "-pthread") == 0) {
 			arrayaddptr(&stages[LINK].cmd, "-l");
 			arrayaddptr(&stages[LINK].cmd, "pthread");
+		} else if (strcmp(arg, "-dumpmachine") == 0) {
+			/* print target and exit */
+			puts(target);
+			return 0;
 		} else {
 			if (arg[2] != '\0' && strchr("cESsv", arg[1]))
 				usage(NULL);
