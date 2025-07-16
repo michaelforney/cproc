@@ -421,7 +421,7 @@ inttype(unsigned long long val, bool decimal, char *end)
 static int
 isodigit(int c)
 {
-	return '0' <= c && c <= '8';
+	return '0' <= c && c <= '7';
 }
 
 static size_t
