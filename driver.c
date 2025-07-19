@@ -63,6 +63,12 @@ static struct stageinfo stages[] = {
 	[LINK]       = {.name = "link"},
 };
 
+static const char *const ignoreflags[] = {
+	"fno-builtin",
+	"pedantic",
+	"pipe"
+};
+
 static void
 usage(const char *fmt, ...)
 {
@@ -402,6 +408,7 @@ main(int argc, char *argv[])
 	arrayaddptr(&stages[CODEGEN].cmd, qbearch);
 
 	for (;;) {
+ignore:
 		++argv, --argc;
 		arg = *argv;
 		if (!arg)
@@ -423,6 +430,13 @@ main(int argc, char *argv[])
 			}
 			continue;
 		}
+
+		/* ignore these parameters */
+		for (i = 0; i < LEN(ignoreflags); ++i) {
+			if (strcmp(arg + 1, ignoreflags[i]) == 0)
+				goto ignore;
+		}
+
 		/* TODO: use a binary search for these long parameters */
 		if (strcmp(arg, "-nostdlib") == 0) {
 			flags.nostdlib = true;
@@ -437,14 +451,10 @@ main(int argc, char *argv[])
 				usage(NULL);
 			arrayaddptr(&stages[PREPROCESS].cmd, arg);
 			arrayaddptr(&stages[PREPROCESS].cmd, *++argv);
-		} else if (strcmp(arg, "-pipe") == 0) {
-			/* ignore */
 		} else if (strncmp(arg, "-std=", 5) == 0) {
 			/* pass through to the preprocessor, it may
 			 * affect its default definitions */
 			arrayaddptr(&stages[PREPROCESS].cmd, arg);
-		} else if (strcmp(arg, "-pedantic") == 0) {
-			/* ignore */
 		} else if (strcmp(arg, "-pthread") == 0) {
 			arrayaddptr(&stages[LINK].cmd, "-l");
 			arrayaddptr(&stages[LINK].cmd, "pthread");
