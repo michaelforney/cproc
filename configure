@@ -142,9 +142,16 @@ static const char *const endfiles[]      = {$endfiles};
 static const char *const preprocesscmd[] = {
 	"$DEFAULT_PREPROCESSOR",
 
-	/* clear preprocessor GNU C version */
+	/* clear preprocessor GNU C & Clang definitions */
 	"-U", "__GNUC__",
 	"-U", "__GNUC_MINOR__",
+	"-U", "__clang__",
+	"-U", "__clang_major__",
+	"-U", "__clang_minor__",
+	"-U", "__llvm__",
+
+	/* cproc detection definition */
+	"-D", "__cproc__",
 
 	/* we don't yet support these optional features */
 	"-D", "__STDC_NO_ATOMICS__",
