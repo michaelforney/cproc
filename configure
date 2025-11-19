@@ -103,6 +103,35 @@ case "$target" in
 	"-Wno-builtin-macro-redefined",
 '
 	;;
+*-*dragonflybsd*)
+	: ${DEFAULT_DYNAMIC_LINKER:=/libexec/ld-elf.so.2}
+	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
+	endfiles='"-l", "c", "-l", ":crtn.o"'
+	linkflags='"-L", "/usr/lib",'
+	defines='
+	"-D", "_Pragma(x)=",
+	"-D", "_Nullable=",
+	"-D", "_Nonnull=",
+
+	"-D", "__GNUCLIKE_BUILTIN_STDARG",
+	"-D", "__GNUCLIKE_BUILTIN_VARARGS",
+
+	/* Workaround for TLS */
+	"-D", "__WANT_NO_INLINED___ERROR",
+	/* Workaround for TLS */
+	"-D", "__RUNETYPE_INTERNAL",
+
+	/* required to define _RuneLocale, needed by xlocale/_ctype.h */
+	"-D", "_USE_CTYPE_INLINE_",
+	/* workaround for #42 */
+	"-D", "_XLOCALE_INLINE=static inline",
+	/* used like attribute after declarator, so _Alignas will not work here */
+	"-D", "__aligned(x)=",
+
+	/* disable warnings for redefining _Pragma */
+	"-Wno-builtin-macro-redefined",
+'
+	;;
 *-*openbsd*)
 	: ${DEFAULT_DYNAMIC_LINKER:=/usr/libexec/ld.so}
 	test "$host" = "$target" && : ${DEFAULT_PREPROCESSOR:=/usr/libexec/cpp}
