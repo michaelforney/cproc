@@ -22,6 +22,7 @@ scopeinit(void)
 		{.name = "__builtin_va_copy",     .kind = DECLBUILTIN, .u.builtin = BUILTINVACOPY},
 		{.name = "__builtin_va_end",      .kind = DECLBUILTIN, .u.builtin = BUILTINVAEND},
 		{.name = "__builtin_va_start",    .kind = DECLBUILTIN, .u.builtin = BUILTINVASTART},
+		{.name = "__builtin_c23_va_start", .kind = DECLBUILTIN, .u.builtin = BUILTINVASTART},
 	};
 	static struct decl valist;
 	struct decl *d;
