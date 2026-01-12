@@ -225,7 +225,7 @@ stmt(struct func *f, struct scope *s)
 		break;
 	case TFOR:
 		next();
-		expect(TLPAREN, "after while");
+		expect(TLPAREN, "after 'for'");
 		s = mkscope(s);
 		if (!decl(s, f)) {
 			if (tok.kind != TSEMICOLON) {
