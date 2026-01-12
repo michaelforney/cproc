@@ -1,16 +1,18 @@
 image: openbsd/latest
+packages:
+- gas
 sources:
 - https://git.sr.ht/~mcf/cproc
 - git://c9x.me/qbe.git
 tasks:
 - setup: |
-    # avoid __asm__ on non __GNUC__ compilers
+    # use __builtin_va_* even on non __GNUC__ compilers
     doas patch -d /usr/include < cproc/.builds/openbsd.diff
 - build: |
     PATH=$HOME/qbe:$PATH
     make -C qbe
     cd cproc
-    ./configure
+    ./configure --with-as=gas
     make all check bootstrap
 triggers:
 - action: email
