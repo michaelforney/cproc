@@ -466,6 +466,9 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			error(&tok.loc, "multiple types in declaration specifiers");
 	}
 done:
+	if ((tq & QUALRESTRICT) && (!t || (t->kind != TYPEPOINTER && t->kind != TYPEARRAY)))
+		error(&tok.loc, "'restrict' is only allowed in pointer and array types");
+
 	switch ((int)ts) {
 	case SPECNONE:                                            break;
 	case SPECCHAR:                          t = &typechar;    break;
