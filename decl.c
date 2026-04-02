@@ -752,8 +752,10 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 		t->prop |= PROPFLEX;
 	}
 	if (mt.type->prop & PROPFLEX) {
-		if (t->kind == TYPESTRUCT)
-			error(&tok.loc, "struct member '%s' contains flexible array member", name);
+		/*
+		ISO C doesn't allow structures with members containing
+		FAMs, but allow it as an extension
+		*/
 		t->prop |= PROPFLEX;
 	}
 	if (mt.type->kind == TYPEFUNC)

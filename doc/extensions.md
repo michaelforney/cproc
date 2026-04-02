@@ -26,6 +26,15 @@ rules. The name may contain characters not allowed in regular identifiers.
 - **`__builtin_va_list`**: Built-in suitable for implementing the `va_list` type.
 - **`__builtin_va_start`**: Built-in suitable for implementing the `va_start` macro.
 
+### Nested and empty structs with flexible array members
+
+ISO C does not allow structures with flexible array members (or
+unions that contain a structure with a FAM) to be contained in a
+structure. Additionally, FAMs are not allowed as the only member
+in a struct, and are not allowed in unions.
+
+GNU C relaxes all these conditions and makes FAMs even more flexible.
+
 ## Missing
 
 ### Statement expressions
