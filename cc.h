@@ -179,7 +179,8 @@ enum typeprop {
 	PROPARITH   = 1<<3,
 	PROPSCALAR  = 1<<4,
 	PROPFLOAT   = 1<<5,
-	PROPVM      = 1<<6  /* variably-modified type */
+	PROPVM      = 1<<6, /* variably-modified type */
+	PROPFLEX    = 1<<7, /* struct with flexible array member */
 };
 
 struct bitfield {
@@ -206,7 +207,7 @@ struct type {
 	struct list link;  /* used only during construction of type */
 	/* qualifiers of the base type */
 	enum typequal qual;
-	bool incomplete, flexible;
+	bool incomplete;
 	union {
 		struct {
 			bool issigned, iscomplex;

@@ -52,7 +52,6 @@ mktype(enum typekind kind, enum typeprop prop)
 	t->prop = prop;
 	t->value = NULL;
 	t->incomplete = false;
-	t->flexible = false;
 
 	return t;
 }
