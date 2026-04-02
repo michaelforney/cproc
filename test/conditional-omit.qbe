@@ -1,0 +1,20 @@
+export
+function w $main() {
+@start.1
+	%.1 =l alloc4 4
+@body.2
+	storew 1, %.1
+	%.2 =w loadw %.1
+	%.3 =w add %.2, 1
+	storew %.3, %.1
+	jnz %.3, @cond_true.3, @cond_false.4
+@cond_true.3
+	%.4 =l extsw %.3
+	jmp @cond_join.5
+@cond_false.4
+@cond_join.5
+	%.5 =l phi @cond_true.3 %.4, @cond_false.4 0
+	%.6 =l extsw 2
+	%.7 =w cnel %.5, %.6
+	ret %.7
+}

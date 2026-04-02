@@ -52,7 +52,8 @@ delexpr(struct expr *e)
 		break;
 	case EXPRCOND:
 		delexpr(e->base);
-		delexpr(e->u.cond.t);
+		if (e->u.cond.t != e->base)
+			delexpr(e->u.cond.t);
 		delexpr(e->u.cond.f);
 		break;
 	/*
@@ -1227,7 +1228,7 @@ condexpr(struct scope *s)
 	e = binaryexpr(s, NULL, 0);
 	if (!consume(TQUESTION))
 		return e;
-	l = expr(s);
+	l = tok.kind == TCOLON ? e : expr(s);
 	expect(TCOLON, "in conditional expression");
 	r = condexpr(s);
 
@@ -1236,7 +1237,7 @@ condexpr(struct scope *s)
 	if (lt == rt) {
 		t = lt;
 	} else if (lt->prop & PROPARITH && rt->prop & PROPARITH) {
-		t = commonreal(&l, &r);
+		t = typecommonreal(lt, bitfieldwidth(l), rt, bitfieldwidth(r));
 	} else if (lt == &typevoid && rt == &typevoid) {
 		t = &typevoid;
 	} else {

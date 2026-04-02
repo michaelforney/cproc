@@ -35,6 +35,16 @@ in a struct, and are not allowed in unions.
 
 GNU C relaxes all these conditions and makes FAMs even more flexible.
 
+### Missing operand in conditional expression
+
+GNU C allows you to omit the second operand in conditional expressions,
+in which case the first operand is used. So `E1 ? : E2` behaves the same
+as `E1 ? E1 : E2`, except that `E1` is evaluated only once.
+
+This extension seems likely to make it into C2y ([N3804]).
+
+[N3804]: https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3804.txt
+
 ## Missing
 
 ### Statement expressions
@@ -47,12 +57,6 @@ the statement expression.
 ### Empty declarations
 
 GNU C allows empty top-level declarations (i.e. `;`).
-
-### Missing operand in conditional expression
-
-GNU C allows you to omit the second operand in conditional expressions,
-in which case the first operand is used. So `E1 ? : E2` behaves the same
-as `E1 ? E1 : E2`, except that `E1` is evaluated only once.
 
 [GNU extensions]: https://gcc.gnu.org/onlinedocs/gcc/C-Extensions.html
 [`__builtin_offsetof`]: https://gcc.gnu.org/onlinedocs/gcc/Offsetof.html

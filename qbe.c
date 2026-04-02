@@ -262,6 +262,8 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 	struct value *r = NULL;
 	int class;
 
+	if (src == dst)
+		return l;
 	if (src->kind == TYPEPOINTER)
 		src = &typeulong;
 	if (dst->kind == TYPEPOINTER)
@@ -893,12 +895,15 @@ funcexpr(struct func *f, struct expr *e)
 		funcjnz(f, v, e->base->type, b[0], b[1]);
 
 		funclabel(f, b[0]);
-		b[2]->phi.val[0] = funcexpr(f, e->u.cond.t);
+		if (e->u.cond.t != e->base)
+			v = funcexpr(f, e->u.cond.t);
+		b[2]->phi.val[0] = convert(f, e->type, e->u.cond.t->type, v);
 		b[2]->phi.blk[0] = f->end;
 		funcjmp(f, b[2]);
 
 		funclabel(f, b[1]);
-		b[2]->phi.val[1] = funcexpr(f, e->u.cond.f);
+		v = funcexpr(f, e->u.cond.f);
+		b[2]->phi.val[1] = convert(f, e->type, e->u.cond.f->type, v);
 		b[2]->phi.blk[1] = f->end;
 
 		funclabel(f, b[2]);
