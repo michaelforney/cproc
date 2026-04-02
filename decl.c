@@ -171,7 +171,7 @@ tagspec(struct scope *s)
 	allowedattr = 0;
 	switch (tok.kind) {
 	case TSTRUCT: kind = TYPESTRUCT, allowedattr |= ATTRPACKED; break;
-	case TUNION:  kind = TYPEUNION; break;
+	case TUNION:  kind = TYPEUNION, allowedattr |= ATTRPACKED; break;
 	case TENUM:   kind = TYPEENUM; break;
 	default: fatal("internal error: unknown tag kind");
 	}
