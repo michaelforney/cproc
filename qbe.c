@@ -317,6 +317,8 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 	} else {
 		class = dst->size == 8 ? 'd' : 's';
 		if (src->prop & PROPINT) {
+			if (src->size < 4)
+				l = convert(f, src->u.basic.issigned ? &typeint : &typeuint, src, l);
 			if (src->u.basic.issigned)
 				op = src->size == 8 ? ISLTOF : ISWTOF;
 			else
