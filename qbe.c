@@ -20,6 +20,7 @@ struct value {
 		VALUE_LABEL,
 
 		VALUE_THREAD = 1<<4,
+		VALUE_QUOTE = 1<<5,
 	} kind;
 	unsigned id;
 	union {
@@ -141,6 +142,7 @@ mkglobal(struct decl *d)
 	if (d->kind == DECLOBJECT && d->u.obj.storage == SDTHREAD)
 		v->kind |= VALUE_THREAD;
 	if (d->asmname) {
+		v->kind |= VALUE_QUOTE;
 		v->u.name = d->asmname;
 		v->id = 0;
 	} else {
@@ -1089,8 +1091,12 @@ emitname(struct value *v)
 	putchar(sigil[kind]);
 	if (kind == VALUE_GLOBAL && v->id)
 		fputs(".L", stdout);
+	if (v->kind & VALUE_QUOTE)
+		putchar('"');
 	if (v->u.name)
 		fputs(v->u.name, stdout);
+	if (v->kind & VALUE_QUOTE)
+		putchar('"');
 	if (v->id)
 		printf(".%u", v->id);
 }

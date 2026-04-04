@@ -1039,8 +1039,12 @@ decl(struct scope *s, struct func *f)
 		t = qt.type;
 		tq = qt.qual;
 		if (consume(T__ASM__)) {
+			struct stringlit lit;
+
 			expect(TLPAREN, "after __asm__");
-			asmname = expect(TSTRINGLIT, "for assembler name");
+			tokencheck(&tok, TSTRINGLIT, "after __asm__");
+			stringconcat(&lit, true);
+			asmname = lit.data;
 			expect(TRPAREN, "after assembler name");
 			allowfunc = 0;
 		} else {
