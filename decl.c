@@ -701,6 +701,14 @@ declarator(struct scope *s, struct qualtype base, char **name, struct scope **fu
 				error(&tok.loc, "array element has incomplete type");
 			if (base.type->kind == TYPEFUNC)
 				error(&tok.loc, "array element has function type");
+			if (t->u.array.ptrqual) {
+				/* TODO: check if we are in a function prototype
+				if (?)
+					error(&tok.loc, "array type has qualifiers outside of a function prototype");
+				*/
+				if (prev != &result)
+					error(&tok.loc, "nested array type has qualifiers");
+			}
 			t->align = base.type->align;
 			t->size = 0;
 			if (t->u.array.length) {
