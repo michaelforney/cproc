@@ -65,6 +65,9 @@ initadd(struct initparser *p, struct init *new)
 static void
 subobj(struct initparser *p, struct type *t, unsigned long long off)
 {
+	/* the subobject could be incomplete if it's a flexible array member */
+	if (t->incomplete)
+		error(&tok.loc, "initializer specified for incomplete type");
 	off += p->sub->offset;
 	if (++p->sub == p->obj + LEN(p->obj))
 		fatal("internal error: too many designators");
