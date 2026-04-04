@@ -466,9 +466,6 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 			error(&tok.loc, "multiple types in declaration specifiers");
 	}
 done:
-	if ((tq & QUALRESTRICT) && (!t || (t->kind != TYPEPOINTER && t->kind != TYPEARRAY)))
-		error(&tok.loc, "'restrict' is only allowed in pointer and array types");
-
 	switch ((int)ts) {
 	case SPECNONE:                                            break;
 	case SPECCHAR:                          t = &typechar;    break;
@@ -502,6 +499,16 @@ done:
 	case SPECLONG|SPECDOUBLE:               t = &typeldouble; break;
 	default:
 		error(&tok.loc, "invalid combination of type specifiers");
+	}
+	if (tq & QUALRESTRICT) {
+		/* C23 6.7.4.1p2 */
+		other = t;
+		while (other->kind == TYPEARRAY)
+			other = other->base;
+		if (!other || other->kind != TYPEPOINTER)
+			error(&tok.loc, "'restrict' applied to non-pointer type");
+		if (other->base->kind == TYPEFUNC)
+			error(&tok.loc, "'restrict' applied to function pointer");
 	}
 	if (!t && (tq || sc && *sc || fs && *fs))
 		error(&tok.loc, "declaration has no type specifier");
