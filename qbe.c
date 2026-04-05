@@ -1096,7 +1096,7 @@ emitname(struct value *v)
 	int kind;
 
 	kind = v->kind & 0xf;
-	if (kind >= LEN(sigil) || !sigil[kind])
+	if (kind >= countof(sigil) || !sigil[kind])
 		fatal("invalid value");
 	putchar(sigil[kind]);
 	if (kind == VALUE_GLOBAL && v->id)
@@ -1210,7 +1210,7 @@ emitinst(struct inst **instp, struct inst **instend)
 	struct inst *inst = *instp;
 
 	putchar('\t');
-	assert(inst->kind < LEN(instname));
+	assert(inst->kind < countof(instname));
 	if (inst->res.kind) {
 		emitvalue(&inst->res);
 		fputs(" =", stdout);

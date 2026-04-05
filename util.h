@@ -16,7 +16,9 @@ struct treenode {
 
 extern char *argv0;
 
-#define LEN(a) (sizeof(a) / sizeof((a)[0]))
+#ifndef countof
+#define countof(a) (sizeof(a) / sizeof((a)[0]))
+#endif
 #define ALIGNDOWN(x, n) ((x) & -(n))
 #define ALIGNUP(x, n) ALIGNDOWN((x) + (n) - 1, n)
 

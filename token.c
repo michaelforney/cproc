@@ -163,7 +163,7 @@ tokendesc(char *buf, size_t len, enum tokenkind kind, const char *lit)
 	case TOTHER:     class = NULL;                        break;
 	default:
 		class = NULL;
-		lit = kind < LEN(tokstr) ? tokstr[kind] : NULL;
+		lit = kind < countof(tokstr) ? tokstr[kind] : NULL;
 	}
 	if (class && lit)
 		snprintf(buf, len, quote ? "%s '%s'" : "%s %s", class, lit);

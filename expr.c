@@ -401,16 +401,16 @@ inttype(unsigned long long val, bool decimal, char *end)
 
 	for (i = 0; end[i]; ++i)
 		end[i] = tolower(end[i]);
-	for (i = 0; i < LEN(limits); ++i) {
+	for (i = 0; i < countof(limits); ++i) {
 		if (strcmp(end, limits[i].end1) == 0)
 			break;
 		if (limits[i].end2 && strcmp(end, limits[i].end2) == 0)
 			break;
 	}
-	if (i == LEN(limits))
+	if (i == countof(limits))
 		error(&tok.loc, "invalid integer constant suffix '%s'", end);
 	step = i % 2 || decimal ? 2 : 1;
-	for (; i < LEN(limits); i += step) {
+	for (; i < countof(limits); i += step) {
 		t = limits[i].type;
 		if (typehasint(t, val, false))
 			return t;

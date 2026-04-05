@@ -271,7 +271,7 @@ buildobj(struct input *input, char *output)
 		pid = wait(&status);
 		if (pid < 0)
 			fatal("waitpid:");
-		for (i = 0; i < LEN(stages); ++i) {
+		for (i = 0; i < countof(stages); ++i) {
 			if (pid == stages[i].pid) {
 				--npids;
 				stages[i].pid = 0;
@@ -279,12 +279,12 @@ buildobj(struct input *input, char *output)
 				break;
 			}
 		}
-		if (i == LEN(stages))
+		if (i == countof(stages))
 			continue;  /* unknown process */
 		if (!succeeded(phase, pid, status)) {
 kill:
 			if (success && npids > 0) {
-				for (i = 0; i < LEN(stages); ++i) {
+				for (i = 0; i < countof(stages); ++i) {
 					if (stages[i].pid)
 						kill(stages[i].pid, SIGTERM);
 				}
@@ -432,7 +432,7 @@ ignore:
 		}
 
 		/* ignore these parameters */
-		for (i = 0; i < LEN(ignoreflags); ++i) {
+		for (i = 0; i < countof(ignoreflags); ++i) {
 			if (strcmp(arg + 1, ignoreflags[i]) == 0)
 				goto ignore;
 		}
@@ -574,7 +574,7 @@ ignore:
 		}
 	}
 
-	for (i = 0; i < LEN(stages); ++i)
+	for (i = 0; i < countof(stages); ++i)
 		stages[i].cmdbase = stages[i].cmd.len;
 	if (inputs.len == 0)
 		usage(NULL);

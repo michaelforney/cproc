@@ -267,12 +267,12 @@ tagspec(struct scope *s)
 					error(&tok.loc, "enumerator '%s' value cannot be represented in underlying type", name);
 				}
 				sign = et->u.arith.issigned;
-				for (i = 0; i < LEN(inttypes); ++i) {
+				for (i = 0; i < countof(inttypes); ++i) {
 					et = inttypes[i][sign];
 					if (typehasint(et, value, sign))
 						break;
 				}
-				assert(i < LEN(inttypes));
+				assert(i < countof(inttypes));
 			}
 			d = mkdecl(name, DECLCONST, et, QUALNONE, LINKNONE);
 			d->u.enumconst = value;
@@ -295,12 +295,12 @@ tagspec(struct scope *s)
 				t->base = min ? &typeint : &typeuint;
 			} else {
 				sign = min > 0;
-				for (i = 0; i < LEN(inttypes); ++i) {
+				for (i = 0; i < countof(inttypes); ++i) {
 					et = inttypes[i][sign];
 					if (typehasint(et, max, false) && typehasint(et, -min, true))
 						break;
 				}
-				if (i == LEN(inttypes))
+				if (i == countof(inttypes))
 					error(&tok.loc, "no integer type can represent all enumerator values");
 				t->base = et;
 				for (d = enumconsts; d; d = d->next)

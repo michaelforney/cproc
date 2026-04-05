@@ -69,7 +69,7 @@ subobj(struct initparser *p, struct type *t, unsigned long long off)
 	if (t->incomplete)
 		error(&tok.loc, "initializer specified for incomplete type");
 	off += p->sub->offset;
-	if (++p->sub == p->obj + LEN(p->obj))
+	if (++p->sub == p->obj + countof(p->obj))
 		fatal("internal error: too many designators");
 	p->sub->type = t;
 	p->sub->offset = off;

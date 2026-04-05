@@ -607,7 +607,7 @@ keyword(struct token *tok)
 		{"volatile",       TVOLATILE},
 		{"while",          TWHILE},
 	};
-	size_t low = 0, high = LEN(keywords), mid;
+	size_t low = 0, high = countof(keywords), mid;
 	int cmp;
 
 	while (low < high) {

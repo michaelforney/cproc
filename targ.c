@@ -49,7 +49,7 @@ targinit(const char *name)
 		/* TODO: provide a way to set this default */
 		targ = &alltargs[0];
 	}
-	for (i = 0; i < LEN(alltargs) && !targ; ++i) {
+	for (i = 0; i < countof(alltargs) && !targ; ++i) {
 		if (strcmp(alltargs[i].name, name) == 0)
 			targ = &alltargs[i];
 	}
