@@ -258,6 +258,25 @@ funcinst(struct func *f, int op, int class, struct value *arg0, struct value *ar
 }
 
 static struct value *
+funcbits(struct func *f, struct type *t, struct value *v, struct bitfield b)
+{
+	int class, bits;
+
+	class = t->size <= 4 ? 'w' : 'l';
+	bits = b.after;
+	if (!bits && t->kind == TYPEBITINT)
+		bits = t->size * 8 - t->u.arith.width;
+	if (bits) {
+		bits += (t->size + 3 & -4) - t->size << 3;
+		v = funcinst(f, ISHL, class, v, mkintconst(bits));
+	}
+	bits += b.before;
+	if (bits)
+		v = funcinst(f, t->u.arith.issigned ? ISAR : ISHR, class, v, mkintconst(bits));
+	return v;
+}
+
+static struct value *
 convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 {
 	enum instkind op;
@@ -279,8 +298,8 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 		if (src->prop & PROPINT) {
 			r = mkintconst(0);
 			switch (src->size) {
-			case 1: op = ICNEW, l = funcinst(f, IEXTUB, 'w', l, NULL); break;
-			case 2: op = ICNEW, l = funcinst(f, IEXTUH, 'w', l, NULL); break;
+			case 1: op = ICNEW; if (src->kind != TYPEBITINT) l = funcinst(f, IEXTUB, 'w', l, NULL); break;
+			case 2: op = ICNEW; if (src->kind != TYPEBITINT) l = funcinst(f, IEXTUH, 'w', l, NULL); break;
 			case 4: op = ICNEW; break;
 			case 8: op = ICNEL; break;
 			default:
@@ -300,7 +319,12 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 	} else if (dst->prop & PROPINT) {
 		class = dst->size == 8 ? 'l' : 'w';
 		if (src->prop & PROPINT) {
-			if (dst->size <= src->size)
+			if (dst->u.arith.width <= src->u.arith.width) {
+				if (dst->kind == TYPEBITINT)
+					return funcbits(f, dst, l, (struct bitfield){0});
+				return l;
+			}
+			if (src->kind == TYPEBITINT && (src->size == 8 || dst->size == 4))
 				return l;
 			switch (src->size) {
 			case 4: op = src->u.arith.issigned ? IEXTSW : IEXTUW; break;
@@ -393,23 +417,6 @@ funcalloc(struct func *f, struct decl *d)
 	}
 	d->value = v;
 	f->end = end;
-}
-
-static struct value *
-funcbits(struct func *f, struct type *t, struct value *v, struct bitfield b)
-{
-	int class, bits;
-
-	class = t->size <= 4 ? 'w' : 'l';
-	bits = b.after;
-	if (bits) {
-		bits += (t->size + 3 & ~3) - t->size << 3;
-		v = funcinst(f, ISHL, class, v, mkintconst(bits));
-	}
-	bits += b.before;
-	if (bits)
-		v = funcinst(f, t->u.arith.issigned ? ISAR : ISHR, class, v, mkintconst(bits));
-	return v;
 }
 
 static void
@@ -889,7 +896,10 @@ funcexpr(struct func *f, struct expr *e)
 		}
 		if (op == INONE)
 			fatal("internal error; unimplemented binary expression");
-		return funcinst(f, op, qbetype(e->type).base, l, r);
+		v = funcinst(f, op, qbetype(e->type).base, l, r);
+		if (t->kind == TYPEBITINT)
+			v = funcbits(f, t, v, (struct bitfield){0});
+		return v;
 	case EXPRCOND:
 		b[0] = mkblock("cond_true");
 		b[1] = mkblock("cond_false");

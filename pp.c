@@ -538,6 +538,7 @@ keyword(struct token *tok)
 		{"_Alignas",       TALIGNAS},
 		{"_Alignof",       TALIGNOF},
 		{"_Atomic",        T_ATOMIC},
+		{"_BitInt",        T_BITINT},
 		{"_Bool",          TBOOL},
 		{"_Complex",       T_COMPLEX},
 		{"_Decimal128",    T_DECIMAL128},

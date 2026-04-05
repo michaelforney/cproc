@@ -11,17 +11,17 @@ enum {
 static void
 cast(struct expr *expr)
 {
-	unsigned size;
+	struct type *t;
 	unsigned long long m;
 
-	size = expr->type->size;
-	if (expr->type->prop & PROPFLOAT) {
-		if (size == 4)
+	t = expr->type;
+	if (t->prop & PROPFLOAT) {
+		if (t->size == 4)
 			expr->u.constant.f = (float)expr->u.constant.f;
-	} else if (expr->type->prop & PROPINT) {
-		m = 1ull << size * 8 - 1;
+	} else if (t->prop & PROPINT) {
+		m = 1ull << t->u.arith.width - 1;
 		expr->u.constant.u &= m | m - 1;
-		if (expr->type->u.arith.issigned)
+		if (t->u.arith.issigned)
 			expr->u.constant.u = (expr->u.constant.u ^ m) - m;
 	}
 }

@@ -6,7 +6,8 @@
 #include "cc.h"
 
 #define INTTYPE(k, n, s, p) { \
-	.kind = k, .size = n, .align = n, .u.arith.issigned = s, \
+	.kind = k, .size = n, .align = n, \
+	.u.arith = {.issigned = s, .width = n * 8}, \
 	.prop = PROPSCALAR|PROPARITH|PROPREAL|PROPINT|p, \
 }
 #define FLTTYPE(k, n) { \
@@ -91,6 +92,32 @@ mkarraytype(struct type *base, enum typequal qual, unsigned long long len)
 	return t;
 }
 
+struct type *
+mkbitinttype(int width, bool sign)
+{
+	struct type *t;
+
+	t = mktype(TYPEBITINT, PROPSCALAR | PROPARITH | PROPREAL | PROPINT);
+	t->u.arith.issigned = sign;
+	t->u.arith.width = width;
+	if (width < 1 + sign || width > 64)
+		error(&tok.loc, "invalid %s _BitInt width %d", sign ? "signed" : "unsigned", width);
+
+	/* calculate byte size */
+	t->size = 1;
+	while (t->size * 8 < width)
+		t->size <<= 1;
+	t->align = t->size;
+
+	return t;
+}
+
+/*
+We define type rank using the number of bits in the type shifted
+left by 4. The least significant 4 bits are used to establish a
+ranking between integer types with the same width (such as long and
+long long on 64-bit platforms).
+*/
 static int
 typerank(struct type *t)
 {
@@ -98,15 +125,16 @@ typerank(struct type *t)
 		t = t->base;
 	assert(t->prop & PROPINT);
 	switch (t->kind) {
-	case TYPEBOOL:  return 1;
-	case TYPECHAR:  return 2;
-	case TYPESHORT: return 3;
-	case TYPEINT:   return 4;
-	case TYPELONG:  return 5;
-	case TYPELLONG: return 6;
+	case TYPEBOOL:   return 0;
+	case TYPECHAR:   return 0x081;
+	case TYPESHORT:  return 0x101;
+	case TYPEINT:    return 0x201;
+	case TYPELONG:   return t->size << 3 + 4 | 0x1;
+	case TYPELLONG:  return 0x402;
+	case TYPEBITINT: return t->u.arith.width << 4;
 	}
 	fatal("internal error; unhandled integer type");
-	return 0;
+	return -1;
 }
 
 bool
@@ -127,6 +155,8 @@ typecompatible(struct type *t1, struct type *t2)
 		       t2->kind == TYPEENUM && t1 == t2->base;
 	}
 	switch (t1->kind) {
+	case TYPEBITINT:
+		return t1->u.arith.width == t2->u.arith.width && t1->u.arith.issigned == t2->u.arith.issigned;
 	case TYPEPOINTER:
 		goto derived;
 	case TYPEARRAY:
@@ -173,6 +203,8 @@ typepromote(struct type *t, unsigned width)
 {
 	if (t == &typefloat)
 		return &typedouble;
+	if (t->kind == TYPEBITINT)
+		return t;
 	if (t->prop & PROPINT && (typerank(t) <= typerank(&typeint) || width <= typeint.size * 8)) {
 		if (width == -1)
 			width = t->size * 8;
@@ -204,14 +236,17 @@ typecommonreal(struct type *t1, unsigned w1, struct type *t2, unsigned w2)
 		t1 = t2;
 		t2 = tmp;
 	}
+	/* t1 is unsigned and t2 is signed */
 	if (typerank(t1) >= typerank(t2))
 		return t1;
-	if (t1->size < t2->size)
+	/* t1 has a lower rank than t2 */
+	if (t1->u.arith.width < t2->u.arith.width)
 		return t2;
-	if (t2 == &typelong)
-		return &typeulong;
-	if (t2 == &typellong)
-		return &typeullong;
+	switch (t2->kind) {
+	case TYPEINT: return &typeuint;
+	case TYPELONG: return &typeulong;
+	case TYPELLONG: return &typellong;
+	}
 	fatal("internal error; could not find common real type");
 	return NULL;
 }

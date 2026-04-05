@@ -168,6 +168,7 @@ enum typekind {
 	TYPESTRUCT,
 	TYPEUNION,
 	TYPENULLPTR,
+	TYPEBITINT,
 };
 
 enum typeprop {
@@ -211,6 +212,7 @@ struct type {
 	union {
 		struct {
 			bool issigned, iscomplex;
+			int width;
 		} arith;
 		struct {
 			struct expr *length;
@@ -434,6 +436,7 @@ bool consume(int);
 struct type *mktype(enum typekind, enum typeprop);
 struct type *mkpointertype(struct type *, enum typequal);
 struct type *mkarraytype(struct type *, enum typequal, unsigned long long);
+struct type *mkbitinttype(int width, bool sign);
 
 bool typecompatible(struct type *, struct type *);
 bool typesame(struct type *, struct type *);

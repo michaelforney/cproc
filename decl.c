@@ -42,6 +42,7 @@ enum typespec {
 	SPECSIGNED   = 1<<10,
 	SPECUNSIGNED = 1<<11,
 	SPECCOMPLEX  = 1<<12,
+	SPECBITINT   = 1<<13,
 
 	SPECLONGLONG = SPECLONG|SPECLONG2,
 };
@@ -326,7 +327,7 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 	enum typequal tq = QUALNONE;
 	enum tokenkind op;
 	int ntypes = 0;
-	unsigned long long i;
+	unsigned long long i, bits;
 	struct expr *typeofexpr = NULL;
 
 	t = NULL;
@@ -392,6 +393,14 @@ declspecs(struct scope *s, enum storageclass *sc, enum funcspec *fs, int *align)
 				error(&tok.loc, "duplicate 'unsigned'");
 			ts |= SPECUNSIGNED;
 			next();
+			break;
+		case T_BITINT:
+			ts |= SPECBITINT;
+			++ntypes;
+			next();
+			expect(TLPAREN, "after _BitInt");
+			bits = intconstexpr(s, false);
+			expect(TRPAREN, "after _BitInt width");
 			break;
 		case TBOOL:
 			t = &typebool;
@@ -494,6 +503,9 @@ done:
 	case SPECSIGNED|SPECLONGLONG|SPECINT:   t = &typellong;   break;
 	case SPECUNSIGNED|SPECLONGLONG:
 	case SPECUNSIGNED|SPECLONGLONG|SPECINT: t = &typeullong;  break;
+	case SPECBITINT:
+	case SPECBITINT|SPECSIGNED:             t = mkbitinttype(bits, true); break;
+	case SPECBITINT|SPECUNSIGNED:           t = mkbitinttype(bits, false); break;
 	case SPECFLOAT:                         t = &typefloat;   break;
 	case SPECDOUBLE:                        t = &typedouble;  break;
 	case SPECLONG|SPECDOUBLE:               t = &typeldouble; break;
@@ -818,7 +830,7 @@ addmember(struct structbuilder *b, struct qualtype mt, char *name, int align, un
 			error(&tok.loc, "bit-field '%s' in packed struct is not supported", name);
 		if (!width && name)
 			error(&tok.loc, "bit-field '%s' with zero width must not have declarator", name);
-		if (width > mt.type->size * 8)
+		if (width > mt.type->u.arith.width)
 			error(&tok.loc, "bit-field '%s' exceeds width of underlying type", name);
 		align = mt.type->align;
 		if (t->kind == TYPESTRUCT) {
