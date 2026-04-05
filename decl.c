@@ -238,6 +238,7 @@ tagspec(struct scope *s)
 			t->size = t->base->size;
 			t->align = t->base->align;
 			t->u.arith.issigned = t->base->u.arith.issigned;
+			t->u.arith.width = t->base->u.arith.width;
 			t->incomplete = false;
 			et = t;
 		} else {
@@ -309,6 +310,7 @@ tagspec(struct scope *s)
 			t->size = t->base->size;
 			t->align = t->base->align;
 			t->u.arith.issigned = t->base->u.arith.issigned;
+			t->u.arith.width = t->base->u.arith.width;
 		}
 	}
 	t->incomplete = false;
