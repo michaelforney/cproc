@@ -473,10 +473,13 @@ void targinit(const char *);
 /* attr */
 
 enum attrkind {
-	ATTRALIGNED     = 1<<0,
-	ATTRCONSTRUCTOR = 1<<1,
-	ATTRDESTRUCTOR  = 1<<2,
-	ATTRPACKED      = 1<<3,
+	ATTRNORETURN    = 1<<0,
+
+	/* GNU attributes */
+	ATTRALIGNED     = 1<<2,
+	ATTRCONSTRUCTOR = 1<<3,
+	ATTRDESTRUCTOR  = 1<<4,
+	ATTRPACKED      = 1<<5,
 };
 
 struct attr {

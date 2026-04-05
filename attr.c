@@ -46,6 +46,10 @@ parseattr(struct attr *a, enum attrkind allowed, enum attrprefix prefix)
 	}
 	kind = 0;
 	switch (prefix) {
+	case PREFIXNONE:
+		if (strcmp(name, "noreturn") == 0 || strcmp(name, "_Noreturn") == 0)
+			kind = ATTRNORETURN;
+		break;
 	case PREFIXGNU:
 		prefixname = "GNU ";
 		if (strcmp(name, "aligned") == 0) {
