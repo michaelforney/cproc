@@ -1,4 +1,3 @@
-#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "util.h"
@@ -20,11 +19,10 @@ cast(struct expr *expr)
 		if (size == 4)
 			expr->u.constant.f = (float)expr->u.constant.f;
 	} else if (expr->type->prop & PROPINT) {
-		expr->u.constant.u &= -1ull >> CHAR_BIT * sizeof(unsigned long long) - size * 8;
-		if (expr->type->u.arith.issigned) {
-			m = 1ull << size * 8 - 1;
+		m = 1ull << size * 8 - 1;
+		expr->u.constant.u &= m | m - 1;
+		if (expr->type->u.arith.issigned)
 			expr->u.constant.u = (expr->u.constant.u ^ m) - m;
-		}
 	}
 }
 
