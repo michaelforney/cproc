@@ -55,7 +55,7 @@ targinit(const char *name)
 	}
 	if (!targ)
 		fatal("unknown target '%s'", name);
-	typechar.u.basic.issigned = targ->signedchar;
+	typechar.u.arith.issigned = targ->signedchar;
 	qual = QUALNONE;
 	typeadjvalist = typeadjust(targ->typevalist, &qual);
 }

@@ -21,7 +21,7 @@ cast(struct expr *expr)
 			expr->u.constant.f = (float)expr->u.constant.f;
 	} else if (expr->type->prop & PROPINT) {
 		expr->u.constant.u &= -1ull >> CHAR_BIT * sizeof(unsigned long long) - size * 8;
-		if (expr->type->u.basic.issigned) {
+		if (expr->type->u.arith.issigned) {
 			m = 1ull << size * 8 - 1;
 			expr->u.constant.u = (expr->u.constant.u ^ m) - m;
 		}
@@ -49,7 +49,7 @@ binary(struct expr *expr, enum tokenkind op, struct expr *l, struct expr *r)
 	expr->kind = EXPRCONST;
 	if (l->type->prop & PROPFLOAT)
 		op |= F;
-	else if (l->type->prop & PROPINT && l->type->u.basic.issigned)
+	else if (l->type->prop & PROPINT && l->type->u.arith.issigned)
 		op |= S;
 	switch (op) {
 	case TMUL:
@@ -155,12 +155,12 @@ eval(struct expr *expr)
 		if (l->kind == EXPRCONST) {
 			expr->kind = EXPRCONST;
 			if (l->type->prop & PROPINT && t->prop & PROPFLOAT) {
-				if (l->type->u.basic.issigned)
+				if (l->type->u.arith.issigned)
 					expr->u.constant.f = l->u.constant.i;
 				else
 					expr->u.constant.f = l->u.constant.u;
 			} else if (l->type->prop & PROPFLOAT && t->prop & PROPINT) {
-				if (t->u.basic.issigned) {
+				if (t->u.arith.issigned) {
 					if (l->u.constant.f < -0x1p63 || l->u.constant.f >= 0x1p63)
 						error(&tok.loc, "integer part of floating-point constant %g cannot be represented as signed integer", l->u.constant.f);
 					expr->u.constant.i = l->u.constant.f;

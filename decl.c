@@ -236,7 +236,7 @@ tagspec(struct scope *s)
 		if (et) {
 			t->size = t->base->size;
 			t->align = t->base->align;
-			t->u.basic.issigned = t->base->u.basic.issigned;
+			t->u.arith.issigned = t->base->u.arith.issigned;
 			t->incomplete = false;
 			et = t;
 		} else {
@@ -254,18 +254,18 @@ tagspec(struct scope *s)
 					error(&tok.loc, "expected integer constant expression");
 				value = e->u.constant.u;
 				if (!t->base)
-					et = typehasint(&typeint, value, e->type->u.basic.issigned) ? &typeint : e->type;
-				else if (!typehasint(et, value, e->type->u.basic.issigned))
+					et = typehasint(&typeint, value, e->type->u.arith.issigned) ? &typeint : e->type;
+				else if (!typehasint(et, value, e->type->u.arith.issigned))
 					goto invalid;
-			} else if (value == 0 && !et->u.basic.issigned || value == 1ull << 63 && et->u.basic.issigned) {
-				error(&tok.loc, "no %ssigned integer type can represent enumerator value", et->u.basic.issigned ? "" : "un");
-			} else if (!typehasint(et, value, et->u.basic.issigned)) {
+			} else if (value == 0 && !et->u.arith.issigned || value == 1ull << 63 && et->u.arith.issigned) {
+				error(&tok.loc, "no %ssigned integer type can represent enumerator value", et->u.arith.issigned ? "" : "un");
+			} else if (!typehasint(et, value, et->u.arith.issigned)) {
 				if (t->base) {
 				invalid:
 					/* fixed underlying type */
 					error(&tok.loc, "enumerator '%s' value cannot be represented in underlying type", name);
 				}
-				sign = et->u.basic.issigned;
+				sign = et->u.arith.issigned;
 				for (i = 0; i < LEN(inttypes); ++i) {
 					et = inttypes[i][sign];
 					if (typehasint(et, value, sign))
@@ -278,7 +278,7 @@ tagspec(struct scope *s)
 			d->value = mkintconst(value);
 			d->next = enumconsts;
 			enumconsts = d;
-			if (et->u.basic.issigned && value >= 1ull << 63) {
+			if (et->u.arith.issigned && value >= 1ull << 63) {
 				if (-value > min)
 					min = -value;
 			} else if (value > max) {
@@ -307,7 +307,7 @@ tagspec(struct scope *s)
 			}
 			t->size = t->base->size;
 			t->align = t->base->align;
-			t->u.basic.issigned = t->base->u.basic.issigned;
+			t->u.arith.issigned = t->base->u.arith.issigned;
 		}
 	}
 	t->incomplete = false;
@@ -714,7 +714,7 @@ declarator(struct scope *s, struct qualtype base, char **name, struct scope **fu
 			if (t->u.array.length) {
 				e = eval(t->u.array.length);
 				if (e->kind == EXPRCONST && base.type->size) {
-					if (e->type->u.basic.issigned && e->u.constant.u >> 63)
+					if (e->type->u.arith.issigned && e->u.constant.u >> 63)
 						error(&tok.loc, "array length must be non-negative");
 					if (e->u.constant.u > ULLONG_MAX / base.type->size)
 						error(&tok.loc, "array length is too large");

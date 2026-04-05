@@ -1282,7 +1282,7 @@ intconstexpr(struct scope *s, bool allowneg)
 	e = eval(condexpr(s));
 	if (e->kind != EXPRCONST || !(e->type->prop & PROPINT))
 		error(&tok.loc, "not an integer constant expression");
-	if (!allowneg && e->type->u.basic.issigned && e->u.constant.u >> 63)
+	if (!allowneg && e->type->u.arith.issigned && e->u.constant.u >> 63)
 		error(&tok.loc, "integer constant expression cannot be negative");
 	return e->u.constant.u;
 }

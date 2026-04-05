@@ -196,8 +196,8 @@ qbetype(struct type *t)
 	if (!(t->prop & PROPSCALAR))
 		return l;
 	switch (t->size) {
-	case 1: return t->u.basic.issigned ? sb : ub;
-	case 2: return t->u.basic.issigned ? sh : uh;
+	case 1: return t->u.arith.issigned ? sb : ub;
+	case 2: return t->u.arith.issigned ? sh : uh;
 	case 4: return t->prop & PROPFLOAT ? s : w;
 	case 8: return t->prop & PROPFLOAT ? d : l;
 	case 16: fatal("long double is not yet supported");
@@ -303,15 +303,15 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 			if (dst->size <= src->size)
 				return l;
 			switch (src->size) {
-			case 4: op = src->u.basic.issigned ? IEXTSW : IEXTUW; break;
-			case 2: op = src->u.basic.issigned ? IEXTSH : IEXTUH; break;
-			case 1: op = src->u.basic.issigned ? IEXTSB : IEXTUB; break;
+			case 4: op = src->u.arith.issigned ? IEXTSW : IEXTUW; break;
+			case 2: op = src->u.arith.issigned ? IEXTSH : IEXTUH; break;
+			case 1: op = src->u.arith.issigned ? IEXTSB : IEXTUB; break;
 			default:
 				fatal("internal error; unknown integer conversion");
 				return NULL;  /* unreachable */
 			}
 		} else {
-			if (dst->u.basic.issigned)
+			if (dst->u.arith.issigned)
 				op = src->size == 8 ? IDTOSI : ISTOSI;
 			else
 				op = src->size == 8 ? IDTOUI : ISTOUI;
@@ -320,8 +320,8 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 		class = dst->size == 8 ? 'd' : 's';
 		if (src->prop & PROPINT) {
 			if (src->size < 4)
-				l = convert(f, src->u.basic.issigned ? &typeint : &typeuint, src, l);
-			if (src->u.basic.issigned)
+				l = convert(f, src->u.arith.issigned ? &typeint : &typeuint, src, l);
+			if (src->u.arith.issigned)
 				op = src->size == 8 ? ISLTOF : ISWTOF;
 			else
 				op = src->size == 8 ? IULTOF : IUWTOF;
@@ -408,7 +408,7 @@ funcbits(struct func *f, struct type *t, struct value *v, struct bitfield b)
 	}
 	bits += b.before;
 	if (bits)
-		v = funcinst(f, t->u.basic.issigned ? ISAR : ISHR, class, v, mkintconst(bits));
+		v = funcinst(f, t->u.arith.issigned ? ISAR : ISHR, class, v, mkintconst(bits));
 	return v;
 }
 
@@ -824,10 +824,10 @@ funcexpr(struct func *f, struct expr *e)
 			op = IMUL;
 			break;
 		case TDIV:
-			op = !(t->prop & PROPINT) || t->u.basic.issigned ? IDIV : IUDIV;
+			op = !(t->prop & PROPINT) || t->u.arith.issigned ? IDIV : IUDIV;
 			break;
 		case TMOD:
-			op = t->u.basic.issigned ? IREM : IUREM;
+			op = t->u.arith.issigned ? IREM : IUREM;
 			break;
 		case TADD:
 			op = IADD;
@@ -839,7 +839,7 @@ funcexpr(struct func *f, struct expr *e)
 			op = ISHL;
 			break;
 		case TSHR:
-			op = t->u.basic.issigned ? ISAR : ISHR;
+			op = t->u.arith.issigned ? ISAR : ISHR;
 			break;
 		case TBOR:
 			op = IOR;
@@ -852,27 +852,27 @@ funcexpr(struct func *f, struct expr *e)
 			break;
 		case TLESS:
 			if (t->size <= 4)
-				op = t->prop & PROPFLOAT ? ICLTS : t->u.basic.issigned ? ICSLTW : ICULTW;
+				op = t->prop & PROPFLOAT ? ICLTS : t->u.arith.issigned ? ICSLTW : ICULTW;
 			else
-				op = t->prop & PROPFLOAT ? ICLTD : t->u.basic.issigned ? ICSLTL : ICULTL;
+				op = t->prop & PROPFLOAT ? ICLTD : t->u.arith.issigned ? ICSLTL : ICULTL;
 			break;
 		case TGREATER:
 			if (t->size <= 4)
-				op = t->prop & PROPFLOAT ? ICGTS : t->u.basic.issigned ? ICSGTW : ICUGTW;
+				op = t->prop & PROPFLOAT ? ICGTS : t->u.arith.issigned ? ICSGTW : ICUGTW;
 			else
-				op = t->prop & PROPFLOAT ? ICGTD : t->u.basic.issigned ? ICSGTL : ICUGTL;
+				op = t->prop & PROPFLOAT ? ICGTD : t->u.arith.issigned ? ICSGTL : ICUGTL;
 			break;
 		case TLEQ:
 			if (t->size <= 4)
-				op = t->prop & PROPFLOAT ? ICLES : t->u.basic.issigned ? ICSLEW : ICULEW;
+				op = t->prop & PROPFLOAT ? ICLES : t->u.arith.issigned ? ICSLEW : ICULEW;
 			else
-				op = t->prop & PROPFLOAT ? ICLED : t->u.basic.issigned ? ICSLEL : ICULEL;
+				op = t->prop & PROPFLOAT ? ICLED : t->u.arith.issigned ? ICSLEL : ICULEL;
 			break;
 		case TGEQ:
 			if (t->size <= 4)
-				op = t->prop & PROPFLOAT ? ICGES : t->u.basic.issigned ? ICSGEW : ICUGEW;
+				op = t->prop & PROPFLOAT ? ICGES : t->u.arith.issigned ? ICSGEW : ICUGEW;
 			else
-				op = t->prop & PROPFLOAT ? ICGED : t->u.basic.issigned ? ICSGEL : ICUGEL;
+				op = t->prop & PROPFLOAT ? ICGED : t->u.arith.issigned ? ICSGEL : ICUGEL;
 			break;
 		case TEQL:
 			if (t->size <= 4)

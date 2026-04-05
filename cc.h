@@ -211,7 +211,7 @@ struct type {
 	union {
 		struct {
 			bool issigned, iscomplex;
-		} basic;
+		} arith;
 		struct {
 			struct expr *length;
 			enum typequal ptrqual;

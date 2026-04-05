@@ -6,7 +6,7 @@
 #include "cc.h"
 
 #define INTTYPE(k, n, s, p) { \
-	.kind = k, .size = n, .align = n, .u.basic.issigned = s, \
+	.kind = k, .size = n, .align = n, .u.arith.issigned = s, \
 	.prop = PROPSCALAR|PROPARITH|PROPREAL|PROPINT|p, \
 }
 #define FLTTYPE(k, n) { \
@@ -176,7 +176,7 @@ typepromote(struct type *t, unsigned width)
 	if (t->prop & PROPINT && (typerank(t) <= typerank(&typeint) || width <= typeint.size * 8)) {
 		if (width == -1)
 			width = t->size * 8;
-		return width - t->u.basic.issigned < typeint.size * 8 ? &typeint : &typeuint;
+		return width - t->u.arith.issigned < typeint.size * 8 ? &typeint : &typeuint;
 	}
 	return t;
 }
@@ -197,9 +197,9 @@ typecommonreal(struct type *t1, unsigned w1, struct type *t2, unsigned w2)
 	t2 = typepromote(t2, w2);
 	if (t1 == t2)
 		return t1;
-	if (t1->u.basic.issigned == t2->u.basic.issigned)
+	if (t1->u.arith.issigned == t2->u.arith.issigned)
 		return typerank(t1) > typerank(t2) ? t1 : t2;
-	if (t1->u.basic.issigned) {
+	if (t1->u.arith.issigned) {
 		tmp = t1;
 		t1 = t2;
 		t2 = tmp;
@@ -265,6 +265,6 @@ typehasint(struct type *t, unsigned long long i, bool sign)
 {
 	assert(t->prop & PROPINT);
 	if (sign && i >= -1ull << 63)
-		return t->u.basic.issigned && i >= -1ull << (t->size << 3) - 1;
-	return i <= 0xffffffffffffffffull >> (8 - t->size << 3) + t->u.basic.issigned;
+		return t->u.arith.issigned && i >= -1ull << (t->size << 3) - 1;
+	return i <= 0xffffffffffffffffull >> (8 - t->size << 3) + t->u.arith.issigned;
 }
