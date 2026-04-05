@@ -155,12 +155,15 @@ number(struct scanner *s)
 			if (!allowsign)
 				goto done;
 			break;
-		case '_':
 		case '.':
 			allowsign = false;
 			break;
+		case '\'':
+			nextchar(s);
+			--s->buf.len;  /* ignore separator */
+			/* fallthrough */
 		default:
-			if (!isalnum(s->chr))
+			if (!isalnum(s->chr) && s->chr != '_')
 				goto done;
 			allowsign = false;
 		}
