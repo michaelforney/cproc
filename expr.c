@@ -433,6 +433,7 @@ decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc,
 	int i;
 	const unsigned char *s = (const unsigned char *)src;
 
+	*hexoct = false;
 	if (*s == '\\') {
 		++s;
 		switch (*s) {
@@ -453,8 +454,7 @@ decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc,
 			c = 0;
 			do c = c * 16 + (*s > '9' ? 10 + tolower(*s) - 'a' : *s - '0');
 			while (isxdigit(*++s));
-			if (hexoct)
-				*hexoct = true;
+			*hexoct = true;
 			break;
 		default:
 			assert(isodigit(*s));
@@ -462,8 +462,7 @@ decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc,
 			i = 0;
 			do c = c * 8 + (*s++ - '0');
 			while (++i < 3 && isodigit(*s));
-			if (hexoct)
-				*hexoct = true;
+			*hexoct = true;
 		}
 	} else {
 		n = utf8dec(&c, s, 4);
@@ -573,7 +572,6 @@ stringconcat(struct stringlit *str, bool forceutf8)
 	arrayforeach(&parts, p) {
 		src = p->str;
 		while (*src != '"') {
-			hexoct = false;
 			src += decodechar(src, &chr, &hexoct, "string literal", &p->loc);
 			dst += encodechar(dst, chr, hexoct);
 		}
@@ -644,6 +642,8 @@ primaryexpr(struct scope *s)
 	struct type *t;
 	char *src, *end;
 	uint_least32_t chr;
+	unsigned long long val;
+	bool hexoct, ordinary;
 	int base;
 
 	switch (tok.kind) {
@@ -668,16 +668,25 @@ primaryexpr(struct scope *s)
 		break;
 	case TCHARCONST:
 		src = tok.lit;
+		ordinary = false;
 		switch (*src) {
 		case 'L': ++src; t = targ->typewchar; break;
 		case 'u': ++src; t = *src == '8' ? ++src, &typeuchar : &typeushort; break;
 		case 'U': ++src; t = &typeuint; break;
-		default: t = &typeint;
+		default: t = &typeuchar, ordinary = true;
 		}
 		assert(*src == '\'');
 		++src;
-		src += decodechar(src, &chr, NULL, "character constant", &tok.loc);
-		e = mkconstexpr(t, chr);
+		src += decodechar(src, &chr, &hexoct, "character constant", &tok.loc);
+		if (hexoct && !typehasint(t, chr, false))
+			error(&tok.loc, "character constant escape is out of range");
+		val = chr;
+		if (ordinary) {
+			if (typechar.u.arith.issigned)
+				val = (val ^ 0x80) - 0x80;
+			t = &typeint;
+		}
+		e = mkconstexpr(t, val);
 		if (*src != '\'')
 			error(&tok.loc, "character constant contains more than one character: %c", *src);
 		next();

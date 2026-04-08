@@ -1,0 +1,9 @@
+export
+function w $main() {
+@start.1
+@body.2
+	%.1 =w neg 1
+	%.2 =w extsb %.1
+	%.3 =w cnew 18446744073709551615, %.2
+	ret %.3
+}
