@@ -340,9 +340,15 @@ line:
 		scan(&tok);
 		newloc.file = tok.loc.file;
 		if (tok.kind == TSTRINGLIT) {
+			char *quote;
+
 			/* XXX: handle escape sequences (reuse string decoding from expr.c) */
-			newloc.file = strchr(tok.lit, '"') + 1;
-			*strchr(newloc.file, '"') = '\0';
+			quote = strchr(tok.lit, '"');
+			assert(quote);
+			newloc.file = quote + 1;
+			quote = strchr(quote + 1, '"');
+			assert(quote);
+			*quote = '\0';
 			scan(&tok);
 		}
 		while (tok.kind == TNUMBER)
