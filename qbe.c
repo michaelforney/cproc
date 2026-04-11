@@ -707,10 +707,11 @@ funclval(struct func *f, struct expr *e)
 	return lval;
 }
 
-/* returns the expression value if was evaluated normally, otherwise NULL */
+/* returns the expression value in the true branch */
 struct value *
 funcbranch(struct func *f, struct expr *e, struct block *bt, struct block *bf)
 {
+	static struct value one = {.kind = VALUE_INTCONST, .u.i = 1};
 	struct expr *l, *r;
 	struct value *v;
 	struct block *b;
@@ -728,7 +729,7 @@ funcbranch(struct func *f, struct expr *e, struct block *bt, struct block *bf)
 				if (e->op == TEQL)
 					b = bt, bt = bf, bf = b;
 				funcbranch(f, l, bt, bf);
-				return NULL;
+				return &one;
 			}
 			break;
 		case TLOR:
@@ -742,7 +743,7 @@ funcbranch(struct func *f, struct expr *e, struct block *bt, struct block *bf)
 			}
 			funclabel(f, b);
 			funcbranch(f, r, bt, bf);
-			return NULL;
+			return &one;
 		}
 		break;
 	case EXPRCOMMA:
@@ -961,8 +962,6 @@ funcexpr(struct func *f, struct expr *e)
 		funclabel(f, b[0]);
 		if (e->u.cond.t != e->base)
 			v = funcexpr(f, e->u.cond.t);
-		else if (!v)
-			v = mkintconst(1);
 		b[2]->phi.val[0] = convert(f, e->type, e->u.cond.t->type, v);
 		b[2]->phi.blk[0] = f->end;
 		funcjmp(f, b[2]);
