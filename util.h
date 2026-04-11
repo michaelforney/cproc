@@ -1,3 +1,13 @@
+#ifndef noreturn
+#if __STDC_VERSION__ >= 202311L
+#define noreturn [[noreturn]]
+#elif __STDC_VERSION__ >= 201112L
+#define noreturn _Noreturn
+#else
+#define noreturn
+#endif
+#endif
+
 struct list {
 	struct list *prev, *next;
 };
@@ -23,7 +33,7 @@ extern char *argv0;
 #define ALIGNUP(x, n) ALIGNDOWN((x) + (n) - 1, n)
 
 void warn(const char *, ...);
-void fatal(const char *fmt, ...);
+noreturn void fatal(const char *fmt, ...);
 
 void *reallocarray(void *, size_t, size_t);
 void *xreallocarray(void *, size_t, size_t);
