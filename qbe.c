@@ -707,7 +707,8 @@ funclval(struct func *f, struct expr *e)
 	return lval;
 }
 
-void
+/* returns the expression value if was evaluated normally, otherwise NULL */
+struct value *
 funcbranch(struct func *f, struct expr *e, struct block *bt, struct block *bf)
 {
 	struct value *v;
@@ -726,17 +727,18 @@ funcbranch(struct func *f, struct expr *e, struct block *bt, struct block *bf)
 			}
 			funclabel(f, b);
 			funcbranch(f, e->u.binary.r, bt, bf);
-			return;
+			return NULL;
 		}
 		break;
 	case EXPRCOMMA:
 		for (e = e->base; e->next; e = e->next)
 			funcexpr(f, e);
 		funcbranch(f, e, bt, bf);
-		return;
+		return NULL;
 	}
 	v = funcexpr(f, e);
 	funcjnz(f, v, e->type, bt, bf);
+	return v;
 }
 
 struct value *
@@ -940,12 +942,13 @@ funcexpr(struct func *f, struct expr *e)
 		b[1] = mkblock("cond_false");
 		b[2] = mkblock("cond_join");
 
-		v = funcexpr(f, e->base);
-		funcjnz(f, v, e->base->type, b[0], b[1]);
+		v = funcbranch(f, e->base, b[0], b[1]);
 
 		funclabel(f, b[0]);
 		if (e->u.cond.t != e->base)
 			v = funcexpr(f, e->u.cond.t);
+		else if (!v)
+			v = mkintconst(1);
 		b[2]->phi.val[0] = convert(f, e->type, e->u.cond.t->type, v);
 		b[2]->phi.blk[0] = f->end;
 		funcjmp(f, b[2]);
