@@ -1,13 +1,11 @@
 image: freebsd/latest
 packages:
 - binutils
+- qbe
 sources:
 - https://git.sr.ht/~mcf/cproc
-- git://c9x.me/qbe.git
 tasks:
 - build: |
-    PATH=$HOME/qbe:$PATH
-    make -C qbe
     cd cproc
     ./configure
     make all check bootstrap

@@ -1,10 +1,10 @@
 image: alpine/latest
 packages:
+- qbe
 - qemu-riscv64
 - qemu-openrc
 sources:
 - https://git.sr.ht/~mcf/cproc
-- git://c9x.me/qbe.git
 tasks:
 - setup: |
     sudo /etc/init.d/qemu-binfmt start
@@ -12,8 +12,7 @@ tasks:
     tar --warning=no-unknown-keyword -xzf riscv64-linux-musl-cross.tgz
     patch -p0 -d riscv64-linux-musl-cross/riscv64-linux-musl/include < cproc/.builds/musl-riscv64.diff
 - build: |
-    PATH=$HOME/qbe:$HOME/riscv64-linux-musl-cross/bin:$PATH
-    make -C qbe
+    PATH=$HOME/riscv64-linux-musl-cross/bin:$PATH
     cd cproc
     ./configure \
       --target=riscv64-linux-musl \
