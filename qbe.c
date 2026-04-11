@@ -711,30 +711,44 @@ funclval(struct func *f, struct expr *e)
 struct value *
 funcbranch(struct func *f, struct expr *e, struct block *bt, struct block *bf)
 {
+	struct expr *l, *r;
 	struct value *v;
 	struct block *b;
 
 	/* Maybe we we could do something for EXPRCOND as well. */
 	switch (e->kind) {
 	case EXPRBINARY:
-		if (e->op == TLOR || e->op == TLAND) {
+		l = e->u.binary.l;
+		r = e->u.binary.r;
+		switch (e->op) {
+		case TEQL:
+		case TNEQ:
+			r = eval(r);
+			if (r->kind == EXPRCONST && r->type->prop & PROPINT && r->u.constant.u == 0) {
+				if (e->op == TEQL)
+					b = bt, bt = bf, bf = b;
+				funcbranch(f, l, bt, bf);
+				return NULL;
+			}
+			break;
+		case TLOR:
+		case TLAND:
 			if (e->op == TLOR) {
 				b = mkblock("logic_or");
-				funcbranch(f, e->u.binary.l, bt, b);
+				funcbranch(f, l, bt, b);
 			} else {
 				b = mkblock("logic_and");
-				funcbranch(f, e->u.binary.l, b, bf);
+				funcbranch(f, l, b, bf);
 			}
 			funclabel(f, b);
-			funcbranch(f, e->u.binary.r, bt, bf);
+			funcbranch(f, r, bt, bf);
 			return NULL;
 		}
 		break;
 	case EXPRCOMMA:
 		for (e = e->base; e->next; e = e->next)
 			funcexpr(f, e);
-		funcbranch(f, e, bt, bf);
-		return NULL;
+		return funcbranch(f, e, bt, bf);
 	}
 	v = funcexpr(f, e);
 	funcjnz(f, v, e->type, bt, bf);
