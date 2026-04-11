@@ -1018,6 +1018,7 @@ decl(struct scope *s, struct func *f)
 	enum typequal tq;
 	enum storageclass sc;
 	enum funcspec fs;
+	struct attr a;
 	struct init *init;
 	bool hasinit;
 	char *name, *asmname;
@@ -1029,7 +1030,8 @@ decl(struct scope *s, struct func *f)
 
 	if (staticassert(s))
 		return true;
-	if (attr(NULL, 0) && consume(TSEMICOLON))
+	a.kind = 0;
+	if (attr(&a, ATTRNORETURN) && consume(TSEMICOLON))
 		return true;
 	base = declspecs(s, &sc, &fs, &align);
 	if (!base.type)
@@ -1125,7 +1127,7 @@ decl(struct scope *s, struct func *f)
 			d = declcommon(s, kind, name, asmname, t, tq, sc, prior);
 			d->value = mkglobal(d);
 			d->u.func.inlinedefn = d->linkage == LINKEXTERN && fs & FUNCINLINE && !(sc & SCEXTERN) && (!prior || prior->u.func.inlinedefn);
-			d->u.func.isnoreturn = fs & FUNCNORETURN;
+			d->u.func.isnoreturn = fs & FUNCNORETURN || a.kind & ATTRNORETURN;
 			if (tok.kind == TLBRACE) {
 				if (!allowfunc)
 					error(&tok.loc, "function definition not allowed");
