@@ -42,29 +42,33 @@ SRC=\
 	util.c\
 	$(BACKEND).c
 OBJ=$(SRC:%.c=$(objdir)/%.o)
+HDR=\
+	cc.h\
+	tokens.h\
+	util.h
 
 $(objdir)/cproc-qbe: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OBJ)
 
-$(objdir)/attr.o    : attr.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ attr.c
-$(objdir)/decl.o    : decl.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ decl.c
-$(objdir)/driver.o  : driver.c  util.h config.h   $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ driver.c
-$(objdir)/eval.o    : eval.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ eval.c
-$(objdir)/expr.o    : expr.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ expr.c
-$(objdir)/init.o    : init.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ init.c
-$(objdir)/main.o    : main.c    util.h cc.h arg.h $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ main.c
-$(objdir)/map.o     : map.c     util.h            $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ map.c
-$(objdir)/pp.o      : pp.c      util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ pp.c
-$(objdir)/qbe.o     : qbe.c     util.h cc.h ops.h $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ qbe.c
-$(objdir)/scan.o    : scan.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ scan.c
-$(objdir)/scope.o   : scope.c   util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ scope.c
-$(objdir)/stmt.o    : stmt.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ stmt.c
-$(objdir)/targ.o    : targ.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ targ.c
-$(objdir)/token.o   : token.c   util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ token.c
-$(objdir)/tree.o    : tree.c    util.h            $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ tree.c
-$(objdir)/type.o    : type.c    util.h cc.h       $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ type.c
-$(objdir)/utf.o     : utf.c     utf.h             $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ utf.c
-$(objdir)/util.o    : util.c    util.h            $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ util.c
+$(objdir)/attr.o    : attr.c    $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ attr.c
+$(objdir)/decl.o    : decl.c    $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ decl.c
+$(objdir)/driver.o  : driver.c  util.h config.h $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ driver.c
+$(objdir)/eval.o    : eval.c    $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ eval.c
+$(objdir)/expr.o    : expr.c    $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ expr.c
+$(objdir)/init.o    : init.c    $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ init.c
+$(objdir)/main.o    : main.c    $(HDR) arg.h    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ main.c
+$(objdir)/map.o     : map.c     util.h          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ map.c
+$(objdir)/pp.o      : pp.c      $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ pp.c
+$(objdir)/qbe.o     : qbe.c     $(HDR) ops.h    $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ qbe.c
+$(objdir)/scan.o    : scan.c    $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ scan.c
+$(objdir)/scope.o   : scope.c   $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ scope.c
+$(objdir)/stmt.o    : stmt.c    $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ stmt.c
+$(objdir)/targ.o    : targ.c    $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ targ.c
+$(objdir)/token.o   : token.c   $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ token.c
+$(objdir)/tree.o    : tree.c    util.h          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ tree.c
+$(objdir)/type.o    : type.c    $(HDR)          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ type.c
+$(objdir)/utf.o     : utf.c     utf.h           $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ utf.c
+$(objdir)/util.o    : util.c    util.h          $(stagedeps) ; $(CC) $(CFLAGS) -c -o $@ util.c
 
 # Make sure stage2 and stage3 binaries are stripped by adding -s to
 # LDFLAGS. Otherwise they will contain paths to object files, which
