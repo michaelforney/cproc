@@ -557,7 +557,7 @@ declarator().
 static void
 declaratortypes(struct scope *s, struct list *result, char **name, struct scope **funcscope, bool allowabstract)
 {
-	struct list *ptr, *prev;
+	struct list *ptr;
 	struct type *t;
 	struct decl *d, **paramend;
 	struct expr *e;
@@ -575,7 +575,6 @@ declaratortypes(struct scope *s, struct list *result, char **name, struct scope 
 	if (name)
 		*name = NULL;
 	ptr = result->next;
-	prev = ptr->prev;
 	switch (tok.kind) {
 	case TLPAREN:
 		next();
@@ -637,7 +636,7 @@ declaratortypes(struct scope *s, struct list *result, char **name, struct scope 
 				++t->u.func.nparam;
 			} while (consume(TCOMMA));
 			expect(TRPAREN, "to close function declarator");
-			if (funcscope && ptr->prev == prev) {
+			if (funcscope && ptr->prev == result) {
 				/* we may need to re-open the scope later if this is a function definition */
 				*funcscope = s;
 				s = s->parent;
