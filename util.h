@@ -67,7 +67,7 @@ struct mapkey {
 
 void mapkey(struct mapkey *, const void *, size_t);
 void mapinit(struct map *, size_t);
-void mapfree(struct map *, void(void *));
+void mapfree(struct map *, void (*)(void *));
 void **mapput(struct map *, struct mapkey *);
 void *mapget(struct map *, struct mapkey *);
 
