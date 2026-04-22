@@ -2,8 +2,8 @@
 
 [![builds.sr.ht status](https://builds.sr.ht/~mcf/cproc/commits/master.svg)](https://builds.sr.ht/~mcf/cproc/commits/master)
 
-`cproc` is a C compiler using [QBE] as a backend, released under
-the [ISC] license. It implements most of C11 as well as many [C23]
+cproc is a C compiler using [QBE] as a backend, released under the
+[ISC] license. It implements most of C11 as well as many [C23]
 features. Additionally, it implements a few [GNU C extensions].
 
 It is currently able to build a lot of C software, though occasionally
@@ -14,7 +14,7 @@ It was inspired by several other small C compilers including [8cc],
 
 ## Goals
 
-`cproc` aims to closely follow the C standard, but also to be a
+cproc aims to closely follow the C standard, but also to be a
 practical tool able compile many real-world software packages.
 Sometimes, these goals can be at ends with each other, since there
 is a *lot* of non-conforming C code out there.
@@ -29,11 +29,11 @@ The main philosophy regarding C extensions is this:
   implementation. Ideally, it should also be accompanied with a
   proposal to WG14 so that its semantics are well specified.
 
-By following these guidelines, hopefully `cproc` can help shrink
-the gap between what's required to implement the C specification
-and what's required to compile real C software.
+By following these guidelines, hopefully cproc can help shrink the
+gap between what's required to implement the C specification and
+what's required to compile real C software.
 
-`cproc` does not implement multiple versions of C. Instead, code
+cproc does not implement multiple versions of C. Instead, code
 affected by breaking changes in new C versions (such as the new
 keywords introduced in C23) must be updated or patched to be
 compatible with the new version.
