@@ -1,7 +1,7 @@
-diff --git a/sys/sys/cdefs.h b/sys/sys/cdefs.h
+diff --git a/sys/cdefs.h b/sys/cdefs.h
 index 3ca3b1f16b0c..caa623c0123c 100644
---- a/sys/sys/cdefs.h
-+++ b/sys/sys/cdefs.h
+--- a/sys/cdefs.h
++++ b/sys/cdefs.h
 @@ -497,13 +497,11 @@
  #endif
  
