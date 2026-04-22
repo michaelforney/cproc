@@ -1008,6 +1008,7 @@ funcexpr(struct func *f, struct expr *e)
 			l = funcexpr(f, e->base);
 			return funcinst(f, IALLOC16, ptrclass, l, NULL);
 		case BUILTINUNREACHABLE:
+			funchlt(f);
 			return NULL;
 		default:
 			fatal("internal error: unimplemented builtin");
