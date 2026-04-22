@@ -1,8 +1,10 @@
 struct s {
+	int i;
 	char s[5];
 	float f;
-} x;
+} x = {123};
 
-void f(void) {
+int main(void) {
 	struct s y = x;
+	return y.i != 123;
 }

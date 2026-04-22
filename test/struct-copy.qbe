@@ -1,7 +1,8 @@
+export data $x = align 4 { w 123, z 12 }
 export
-function $f() {
+function w $main() {
 @start.1
-	%.1 =l alloc4 12
+	%.1 =l alloc4 16
 @body.2
 	%.2 =w loadw $x
 	storew %.2, %.1
@@ -13,6 +14,12 @@ function $f() {
 	%.7 =l add %.4, 4
 	%.8 =w loadw %.6
 	storew %.8, %.7
-	ret
+	%.9 =l add %.6, 4
+	%.10 =l add %.7, 4
+	%.11 =w loadw %.9
+	storew %.11, %.10
+	%.12 =l add %.1, 0
+	%.13 =w loadw %.12
+	%.14 =w cnew %.13, 123
+	ret %.14
 }
-export data $x = align 4 { z 12 }
