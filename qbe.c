@@ -1101,7 +1101,7 @@ funcinit(struct func *func, struct decl *d, struct init *init, bool hasinit)
 }
 
 static void
-casesearch(struct func *f, int class, struct value *v, struct switchcase *c, struct block *defaultlabel, struct switchcase *cl, struct switchcase *cr)
+casesearch(struct func *f, int class, struct value *v, struct switchcase *c, struct block *defaultlabel, unsigned long long min, unsigned long long max)
 {
 	struct value *res, *key;
 	struct block *label[3];
@@ -1110,17 +1110,14 @@ casesearch(struct func *f, int class, struct value *v, struct switchcase *c, str
 		funcjmp(f, defaultlabel);
 		return;
 	}
-	if (cr && cr->node.key - c->node.key == 1) {
-		if (c->node.key == 0 || (cl && c->node.key - cl->node.key == 1)) {
-			funcjmp(f, c->body);
-			return;
-		}
+	if (min == max) {
+		funcjmp(f, c->body);
+		return;
 	}
 	label[0] = mkblock("switch_ne");
 	label[1] = mkblock("switch_lt");
 	label[2] = mkblock("switch_gt");
 
-	/* XXX: linear search if c->node.height < 4 */
 	key = mkintconst(c->node.key);
 	res = funcinst(f, class == 'w' ? ICEQW : ICEQL, 'w', v, key);
 	funcjnz(f, res, NULL, c->body, label[0]);
@@ -1128,15 +1125,15 @@ casesearch(struct func *f, int class, struct value *v, struct switchcase *c, str
 	res = funcinst(f, class == 'w' ? ICULTW : ICULTL, 'w', v, key);
 	funcjnz(f, res, NULL, label[1], label[2]);
 	funclabel(f, label[1]);
-	casesearch(f, class, v, c->node.child[0], defaultlabel, cl, c);
+	casesearch(f, class, v, c->node.child[0], defaultlabel, min, c->node.key - 1);
 	funclabel(f, label[2]);
-	casesearch(f, class, v, c->node.child[1], defaultlabel, c, cr);
+	casesearch(f, class, v, c->node.child[1], defaultlabel, c->node.key + 1, max);
 }
 
 void
 funcswitch(struct func *f, struct value *v, struct switchcases *c, struct block *defaultlabel)
 {
-	casesearch(f, qbetype(c->type).base, v, c->root, defaultlabel, 0, 0);
+	casesearch(f, qbetype(c->type).base, v, c->root, defaultlabel, 0, -1);
 }
 
 /* emit */
