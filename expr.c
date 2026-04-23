@@ -762,7 +762,6 @@ primaryexpr(struct scope *s)
 		break;
 	default:
 		error(&tok.loc, "expected primary expression");
-		return NULL;  /* unreachable */
 	}
 
 	return e;
@@ -908,7 +907,6 @@ builtinfunc(struct scope *s, enum builtinkind kind)
 		break;
 	default:
 		fatal("internal error; unknown builtin");
-		return NULL;  /* unreachable */
 	}
 	return e;
 }
@@ -1117,7 +1115,6 @@ unaryexpr(struct scope *s)
 			e = unaryexpr(s);
 		} else {
 			error(&tok.loc, "expected ')' after 'alignof'");
-			return NULL;  /* unreachable */
 		}
 		if (!t) {
 			if (e->decayed)
@@ -1280,12 +1277,10 @@ condexpr(struct scope *s)
 				t = typecomposite(lt, rt);
 			} else {
 				error(&tok.loc, "operands of conditional operator must have compatible types");
-				return NULL;  /* unreachable */
 			}
 			t = mkpointertype(t, tq);
 		} else {
 			error(&tok.loc, "invalid operands to conditional operator");
-			return NULL;  /* unreachable */
 		}
 	}
 	e = eval(e);

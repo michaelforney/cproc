@@ -302,18 +302,14 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 			case 2: op = ICNEW; if (src->kind != TYPEBITINT) l = funcinst(f, IEXTUH, 'w', l, NULL); break;
 			case 4: op = ICNEW; break;
 			case 8: op = ICNEL; break;
-			default:
-				fatal("internal error; unknown integer conversion");
-				return NULL;  /* unreachable */
+			default: fatal("internal error; unknown integer conversion");
 			}
 		} else {
 			assert(src->prop & PROPFLOAT);
 			switch (src->size) {
 			case 4: op = ICNES, r = mkfltconst(VALUE_FLTCONST, 0); break;
 			case 8: op = ICNED, r = mkfltconst(VALUE_DBLCONST, 0); break;
-			default:
-				fatal("internal error; unknown floating point conversion");
-				return NULL;  /* unreachable */
+			default: fatal("internal error; unknown floating point conversion");
 			}
 		}
 	} else if (dst->prop & PROPINT) {
@@ -330,9 +326,7 @@ convert(struct func *f, struct type *dst, struct type *src, struct value *l)
 			case 4: op = src->u.arith.issigned ? IEXTSW : IEXTUW; break;
 			case 2: op = src->u.arith.issigned ? IEXTSH : IEXTUH; break;
 			case 1: op = src->u.arith.issigned ? IEXTSB : IEXTUB; break;
-			default:
-				fatal("internal error; unknown integer conversion");
-				return NULL;  /* unreachable */
+			default: fatal("internal error; unknown integer conversion");
 			}
 		} else {
 			if (dst->u.arith.issigned)
@@ -805,7 +799,6 @@ funcexpr(struct func *f, struct expr *e)
 			r = mkfltconst(t->size == 4 ? VALUE_FLTCONST : VALUE_DBLCONST, 1);
 		} else {
 			fatal("not a scalar");
-			return NULL;  /* unreachable */
 		}
 		v = funcinst(f, e->op == TINC ? IADD : ISUB, qbetype(t).base, l, r);
 		v = funcstore(f, e->type, e->qual, lval, v);

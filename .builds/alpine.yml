@@ -26,6 +26,11 @@ tasks:
     cd cproc
     ./configure
     make all check bootstrap
+- build-c99: |
+    cd cproc
+    git clean -dfx
+    ./configure 'CFLAGS=-std=c99 -Werror=pedantic'
+    make
 - build-aarch64: |
     sudo chroot aarch64 sh -ec '
     	cd cproc

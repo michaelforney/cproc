@@ -157,7 +157,6 @@ focus(struct initparser *p)
 		break;
 	default:
 		fatal("internal error: init cursor has unexpected type");
-		return;  /* unreachable */
 	}
 	subobj(p, t, 0);
 }
