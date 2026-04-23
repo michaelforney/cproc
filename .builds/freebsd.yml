@@ -5,6 +5,8 @@ packages:
 sources:
 - https://git.sr.ht/~mcf/cproc
 tasks:
+- setup: |
+    sudo patch -p1 -d /usr/include < cproc/.builds/freebsd.diff
 - build: |
     cd cproc
     ./configure

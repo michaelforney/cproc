@@ -1,0 +1,21 @@
+diff --git a/sys/_types.h b/sys/_types.h
+index a2ee83a862da..a61e0a82b76c 100644
+--- a/sys/_types.h
++++ b/sys/_types.h
+@@ -210,13 +210,11 @@ typedef	__uint_least32_t __char32_t;
+ #endif
+ 
+ typedef struct {
+-	long long __max_align1
+-	    __attribute__((__aligned__(__alignof__(long long))));
++	long long __max_align1;
+ #ifndef _STANDALONE
+-	long double __max_align2
+-	    __attribute__((__aligned__(__alignof__(long double))));
++	long double __max_align2;
+ #endif
+-	void *__max_align3 __attribute__((__aligned__(__alignof__(void *))));
++	void *__max_align3;
+ } __max_align_t;
+ 
+ /* Types for sys/acl.h */
