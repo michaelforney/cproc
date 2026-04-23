@@ -36,15 +36,15 @@ tasks:
     	cd cproc
     	./configure
     	make all check bootstrap
+    	readelf -h stage2/cproc stage2/cproc-qbe
     '
-    file aarch64/cproc/stage2/cproc aarch64/cproc/stage2/cproc-qbe
 - build-riscv64: |
     sudo chroot riscv64 sh -ec '
     	cd cproc
     	./configure
     	make all check bootstrap
+    	readelf -h stage2/cproc stage2/cproc-qbe
     '
-    file riscv64/cproc/stage2/cproc riscv64/cproc/stage2/cproc-qbe
 triggers:
 - action: email
   condition: failure
