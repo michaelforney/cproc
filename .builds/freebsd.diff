@@ -16,3 +16,35 @@ index fe345b43d5eb..8296cbdf2e1e 100644
  #endif
  } __max_align_t;
  
+diff --git a/x86/ucontext.h b/x86/ucontext.h
+index 00edc8c16bce..6abdc7c848d9 100644
+--- a/x86/ucontext.h
++++ b/x86/ucontext.h
+@@ -80,7 +80,12 @@ typedef struct __mcontext {
+ 	/*
+ 	 * See <machine/npx.h> for the internals of mc_fpstate[].
+ 	 */
+-	int	mc_fpstate[128] __aligned(16);
++#if __STDC_VERSION__ >= 201112L
++	_Alignas(16)
++#else
++	__aligned(16)
++#endif
++	int	mc_fpstate[128];
+ 
+ 	__register_t mc_fsbase;
+ 	__register_t mc_gsbase;
+@@ -152,7 +157,12 @@ typedef struct __mcontext {
+ 	/*
+ 	 * See <machine/fpu.h> for the internals of mc_fpstate[].
+ 	 */
+-	long	mc_fpstate[64] __aligned(16);
++#if __STDC_VERSION__ >= 201112L
++	_Alignas(16)
++#else
++	__aligned(16)
++#endif
++	long	mc_fpstate[64];
+ 
+ 	__register_t	mc_fsbase;
+ 	__register_t	mc_gsbase;
