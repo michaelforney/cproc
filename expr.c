@@ -397,40 +397,67 @@ mkbinaryexpr(struct location *loc, enum tokenkind op, struct expr *l, struct exp
 }
 
 static struct type *
-inttype(unsigned long long val, bool decimal, char *end)
+inttype(unsigned long long val, bool decimal, char *suffix)
 {
-	static struct {
-		struct type *type;
-		const char *end1, *end2;
-	} limits[] = {
-		{&typeint,    "",    NULL},
-		{&typeuint,   "u",   NULL},
-		{&typelong,   "l",   NULL},
-		{&typeulong,  "ul",  "lu"},
-		{&typellong,  "ll",  NULL},
-		{&typeullong, "ull", "llu"},
+	enum {
+		U = 1,
+		L = 2,
+		LL = 4,
+		WB = 8,
 	};
+	static struct type *const types[] = {
+		&typeint,
+		&typeuint,   /* u */
+		&typelong,   /* l */
+		&typeulong,  /* ul */
+		&typellong,  /* ll */
+		&typeullong, /* ull */
+	};
+	int flags, i, step;
+	bool sign;
+	char *s;
 	struct type *t;
-	size_t i, step;
 
-	for (i = 0; end[i]; ++i)
-		end[i] = tolower(end[i]);
-	for (i = 0; i < countof(limits); ++i) {
-		if (strcmp(end, limits[i].end1) == 0)
-			break;
-		if (limits[i].end2 && strcmp(end, limits[i].end2) == 0)
-			break;
+	/* parse suffix */
+	flags = 0;
+	for (s = suffix; *s; ++s) {
+		int new;
+
+		switch (*s) {
+		case 'u':
+		case 'U': new = U; break;
+		case 'l':
+		case 'L': new = s[1] == s[0] ? (++s, LL) : L; break;
+		case 'w': if (s[1] != 'b') goto invalid; ++s, new = WB; break;
+		case 'W': if (s[1] != 'B') goto invalid; ++s, new = WB; break;
+		default:
+		invalid: error(&tok.loc, "invalid integer constant suffix '%s'", suffix);
+		}
+		if (flags & new || flags & ~U && new & ~U)
+			goto invalid;
+		flags |= new;
 	}
-	if (i == countof(limits))
-		error(&tok.loc, "invalid integer constant suffix '%s'", end);
-	step = i % 2 || decimal ? 2 : 1;
-	for (; i < countof(limits); i += step) {
-		t = limits[i].type;
+
+	/* find integer type */
+	sign = !(flags & U);
+	if (flags & WB) {
+		for (i = 1;; ++i) {
+			if (i > 64 - sign)
+				goto notype;
+			if (val <= 0xffffffffffffffff >> 64 - i)
+				break;
+		}
+		return mkbitinttype(i + sign, sign);
+	}
+	assert(flags < countof(types));
+	step = !sign || decimal ? 2 : 1;
+	for (i = flags; i < countof(types); i += step) {
+		t = types[i];
 		if (typehasint(t, val, false))
 			return t;
 	}
+notype:
 	error(&tok.loc, "no suitable type for constant '%s'", tok.lit);
-	return NULL;
 }
 
 static int

@@ -1,0 +1,7 @@
+export data $a = align 1 { z 1 }
+export data $b = align 1 { z 1 }
+export data $c = align 1 { z 1 }
+export data $d = align 1 { z 1 }
+export data $e = align 8 { z 8 }
+export data $f = align 8 { z 8 }
+export data $g = align 8 { z 8 }
