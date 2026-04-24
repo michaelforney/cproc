@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <ctype.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -759,9 +758,9 @@ primaryexpr(struct scope *s)
 	case TNUMBER:
 		e = mkexpr(EXPRCONST, NULL, NULL);
 		if (tok.lit[0] == '0') {
-			switch (tolower(tok.lit[1])) {
-			case 'x': base = 16; break;
-			case 'b': base = 2; break;
+			switch (tok.lit[1]) {
+			case 'x': case 'X': base = 16; break;
+			case 'b': case 'B': base = 2; break;
 			default: base = 8; break;
 			}
 		} else {
@@ -774,9 +773,9 @@ primaryexpr(struct scope *s)
 				error(&tok.loc, "invalid floating constant '%s'", tok.lit);
 			if (!end[0])
 				e->type = &typedouble;
-			else if (tolower(end[0]) == 'f' && !end[1])
+			else if ((end[0] == 'f' || end[0] == 'F') && !end[1])
 				e->type = &typefloat;
-			else if (tolower(end[0]) == 'l' && !end[1])
+			else if ((end[0] == 'l' || end[0] == 'L') && !end[1])
 				e->type = &typeldouble;
 			else
 				error(&tok.loc, "invalid floating constant suffix '%s'", end);
