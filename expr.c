@@ -461,9 +461,23 @@ notype:
 }
 
 static int
-isodigit(int c)
+octval(int c)
 {
-	return '0' <= c && c <= '7';
+	if ('0' <= c && c <= '7')
+		return c - '0';
+	return -1;
+}
+
+static int
+hexval(int c)
+{
+	if ('0' <= c && c <= '9')
+		return c - '0';
+	if ('a' <= c && c <= 'z')
+		return c - 'a' + 10;
+	if ('A' <= c && c <= 'Z')
+		return c - 'A' + 10;
+	return -1;
 }
 
 static size_t
@@ -471,7 +485,7 @@ decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc,
 {
 	uint_least32_t c;
 	size_t n;
-	int i;
+	int i, v;
 	const unsigned char *s = (const unsigned char *)src;
 
 	*hexoct = false;
@@ -491,18 +505,28 @@ decodechar(const char *src, uint_least32_t *chr, bool *hexoct, const char *desc,
 		case 'v':  c = '\v'; ++s; break;
 		case 'x':
 			++s;
-			assert(isxdigit(*s));
 			c = 0;
-			do c = c * 16 + (*s > '9' ? 10 + tolower(*s) - 'a' : *s - '0');
-			while (isxdigit(*++s));
+			v = hexval(*s);
+			assert(v >= 0);
+			do {
+				if (c > 0xffffffff / 16)
+					error(&tok.loc, "character constant escape is out of range");
+				c = c * 16 + v;
+				v = hexval(*++s);
+			} while (v >= 0);
 			*hexoct = true;
 			break;
 		default:
-			assert(isodigit(*s));
 			c = 0;
+			v = octval(*s);
+			assert(v >= 0);
 			i = 0;
-			do c = c * 8 + (*s++ - '0');
-			while (++i < 3 && isodigit(*s));
+			do {
+				if (c > 0xffffffff / 8)
+					error(&tok.loc, "character constant escape is out of range");
+				c = c * 8 + v;
+				v = octval(*++s);
+			} while (v >= 0 && ++i < 3);
 			*hexoct = true;
 		}
 	} else {
