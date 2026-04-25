@@ -3,7 +3,7 @@
 : ${CCQBE:=./cproc-qbe}
 
 if [ $# = 0 ] ; then
-	set -- test/*.c
+	set -- test/*.c test/constraint/*.c
 fi
 
 numtest=0
@@ -11,7 +11,15 @@ numpass=0
 numfail=0
 fail=
 got=$(mktemp)
+tmp=$(mktemp)
 trap 'rm "$got"' EXIT
+
+checkfail() {
+	got=$1
+	shift
+	"$@" >"$tmp" 2>&1 && return 1
+	cut -d ' ' -f 2- "$tmp" >"$got"
+}
 
 for test ; do
 	name=${test%.c}
@@ -25,6 +33,9 @@ for test ; do
 	elif [ -f "$name.pp" ] ; then
 		want=$name.pp
 		set -- $CCQBE -t $arch -E -o "$got" "$test"
+	elif [ -f "$name.err" ] ; then
+		want=$name.err
+		set -- checkfail "$got" $CCQBE -t $arch -o /dev/null "$test"
 	else
 		echo "invalid test '$test'" >&2
 		continue
