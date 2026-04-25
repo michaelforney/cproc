@@ -177,7 +177,7 @@ DEFAULT_QBE=$(printf '"%s", ' ${DEFAULT_QBE:-qbe})
 DEFAULT_AS=$(printf '"%s", ' ${DEFAULT_AS:-${toolprefix}as})
 DEFAULT_LD=$(printf '"%s", ' ${DEFAULT_LD:-${toolprefix}ld})
 
-test "$DEFAULT_LDSO" && linkflags=$linkflags' "--dynamic-linker", "'$DEFAULT_LDSO'"'
+test -n "$DEFAULT_LDSO" && linkflags=$linkflags' "--dynamic-linker", "'$DEFAULT_LDSO'"'
 
 printf "creating config.h... "
 cat >config.h <<EOF
