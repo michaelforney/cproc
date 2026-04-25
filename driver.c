@@ -390,7 +390,10 @@ main(int argc, char *argv[])
 	arrayaddbuf(&stages[ASSEMBLE].cmd, assemblecmd, sizeof(assemblecmd));
 	arrayaddbuf(&stages[LINK].cmd, linkcmd, sizeof(linkcmd));
 
-	if (hasprefix(target, "x86_64-") || hasprefix(target, "amd64-")) {
+	if (hasprefix(target, "x86_64-apple-")) {
+		arch = "x86_64-sysv";
+		qbearch = "amd64_apple";
+	} else if (hasprefix(target, "x86_64-") || hasprefix(target, "amd64-")) {
 		arch = "x86_64-sysv";
 		qbearch = "amd64_sysv";
 	} else if (hasprefix(target, "aarch64-")) {

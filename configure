@@ -23,6 +23,7 @@ for arg ; do
 	--with-ld=*) DEFAULT_LD=${arg#*=} ;;
 	--with-ldso=*) DEFAULT_LDSO=${arg#*=} ;;
 	--with-gcc-libdir=*) gcclibdir=${arg#*=} ;;
+	--with-macos-sdk=*) macossdk=${arg#*=} ;;
 	CC=*) CC=${arg#*=} ;;
 	CFLAGS=*) CFLAGS=${arg#*=} ;;
 	LDFLAGS=*) LDFLAGS=${arg#*=} ;;
@@ -151,6 +152,21 @@ case "$target" in
 	startfiles='"-l", ":crt0.o", "-l", ":crti.o"'
 	endfiles='"-l", "c", "-l", ":crtn.o"'
 	defines='"-D", "__builtin_stdarg_start(ap, last)=__builtin_va_start(ap, last)"'
+	;;
+*-apple-darwin*)
+	: ${DEFAULT_CPP:=clang -E}
+	startfiles='0'
+	endfiles='"-l", "System"'
+	defines='
+	"-D", "_Nullable=",
+	"-D", "__compar=",
+	"-U", "__BLOCKS__",
+'
+	if [ -z "$macossdk" ] ; then
+		test "$host" = "$target" || fail "macos sdk must be specified when building a cross-compiler"
+		macossdk=$(xcrun --show-sdk-path)
+	fi
+	linkflags='"-syslibroot", "'$macossdk'"'
 	;;
 *)
 	fail "unknown target '$target', please create config.h manually"
