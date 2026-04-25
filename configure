@@ -17,11 +17,11 @@ for arg ; do
 	--bindir=*) bindir=${arg#*=} ;;
 	--host=*) host=${arg#*=} ;;
 	--target=*) target=${arg#*=} ;;
-	--with-cpp=*) DEFAULT_PREPROCESSOR=${arg#*=} ;;
+	--with-cpp=*) DEFAULT_CPP=${arg#*=} ;;
 	--with-qbe=*) DEFAULT_QBE=${arg#*=} ;;
-	--with-as=*) DEFAULT_ASSEMBLER=${arg#*=} ;;
-	--with-ld=*) DEFAULT_LINKER=${arg#*=} ;;
-	--with-ldso=*) DEFAULT_DYNAMIC_LINKER=${arg#*=} ;;
+	--with-as=*) DEFAULT_AS=${arg#*=} ;;
+	--with-ld=*) DEFAULT_LD=${arg#*=} ;;
+	--with-ldso=*) DEFAULT_LDSO=${arg#*=} ;;
 	--with-gcc-libdir=*) gcclibdir=${arg#*=} ;;
 	CC=*) CC=${arg#*=} ;;
 	CFLAGS=*) CFLAGS=${arg#*=} ;;
@@ -52,20 +52,20 @@ linkflags=
 
 case "$target" in
 *-linux-*musl*)
-	test "${DEFAULT_DYNAMIC_LINKER+set}" || case "$target" in
-	x86_64*)  DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-x86_64.so.1  ;;
-	aarch64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-aarch64.so.1 ;;
-	riscv64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-musl-riscv64.so.1 ;;
+	test "${DEFAULT_LDSO+set}" || case "$target" in
+	x86_64*)  DEFAULT_LDSO=/lib/ld-musl-x86_64.so.1  ;;
+	aarch64*) DEFAULT_LDSO=/lib/ld-musl-aarch64.so.1 ;;
+	riscv64*) DEFAULT_LDSO=/lib/ld-musl-riscv64.so.1 ;;
 	*) fail "unsuported target '$target'"
 	esac
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
 	endfiles='"-l", "c", "-l", ":crtn.o"'
 	;;
 *-linux-*gnu*)
-	test "${DEFAULT_DYNAMIC_LINKER+set}" || case "$target" in
-	x86_64*)  DEFAULT_DYNAMIC_LINKER=/lib64/ld-linux-x86-64.so.2 ;;
-	aarch64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-linux-aarch64.so.1  ;;
-	riscv64*) DEFAULT_DYNAMIC_LINKER=/lib/ld-linux-riscv64-lp64d.so.1 ;;
+	test "${DEFAULT_LDSO+set}" || case "$target" in
+	x86_64*)  DEFAULT_LDSO=/lib64/ld-linux-x86-64.so.2 ;;
+	aarch64*) DEFAULT_LDSO=/lib/ld-linux-aarch64.so.1  ;;
+	riscv64*) DEFAULT_LDSO=/lib/ld-linux-riscv64-lp64d.so.1 ;;
 	*) fail "unsuported target '$target'"
 	esac
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o", "-l", ":crtbegin.o"'
@@ -78,7 +78,7 @@ case "$target" in
 	linkflags='"-L", "'$gcclibdir'",'
 	;;
 *-*freebsd*)
-	: ${DEFAULT_DYNAMIC_LINKER:=/libexec/ld-elf.so.1}
+	: ${DEFAULT_LDSO:=/libexec/ld-elf.so.1}
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
 	endfiles='"-l", "c", "-l", ":crtn.o"'
 	linkflags='"-L", "/usr/lib",'
@@ -105,7 +105,7 @@ case "$target" in
 '
 	;;
 *-*dragonflybsd*)
-	: ${DEFAULT_DYNAMIC_LINKER:=/libexec/ld-elf.so.2}
+	: ${DEFAULT_LDSO:=/libexec/ld-elf.so.2}
 	startfiles='"-l", ":crt1.o", "-l", ":crti.o"'
 	endfiles='"-l", "c", "-l", ":crtn.o"'
 	linkflags='"-L", "/usr/lib",'
@@ -133,8 +133,8 @@ case "$target" in
 '
 	;;
 *-*openbsd*)
-	: ${DEFAULT_DYNAMIC_LINKER:=/usr/libexec/ld.so}
-	test "$host" = "$target" && : ${DEFAULT_PREPROCESSOR:=/usr/libexec/cpp}
+	: ${DEFAULT_LDSO:=/usr/libexec/ld.so}
+	test "$host" = "$target" && : ${DEFAULT_CPP:=/usr/libexec/cpp}
 	startfiles='"-l", ":crt0.o", "-l", ":crtbegin.o"'
 	endfiles='"-l", "c", "-l", ":crtend.o"'
 	linkflags='"-L", "/usr/lib", "-nopie",'
@@ -147,7 +147,7 @@ case "$target" in
 '
 	;;
 *-*netbsd*)
-	: ${DEFAULT_DYNAMIC_LINKER:=/usr/libexec/ld.elf_so}
+	: ${DEFAULT_LDSO:=/usr/libexec/ld.elf_so}
 	startfiles='"-l", ":crt0.o", "-l", ":crti.o"'
 	endfiles='"-l", "c", "-l", ":crtn.o"'
 	defines='"-D", "__builtin_stdarg_start(ap, last)=__builtin_va_start(ap, last)"'
@@ -156,12 +156,12 @@ case "$target" in
 	fail "unknown target '$target', please create config.h manually"
 esac
 
-: ${DEFAULT_PREPROCESSOR:=${toolprefix}cpp}
+: ${DEFAULT_CPP:=${toolprefix}cpp}
 : ${DEFAULT_QBE:=qbe}
-: ${DEFAULT_ASSEMBLER:=${toolprefix}as}
-: ${DEFAULT_LINKER:=${toolprefix}ld}
+: ${DEFAULT_AS:=${toolprefix}as}
+: ${DEFAULT_LD:=${toolprefix}ld}
 
-test "$DEFAULT_DYNAMIC_LINKER" && linkflags=$linkflags' "--dynamic-linker", "'$DEFAULT_DYNAMIC_LINKER'"'
+test "$DEFAULT_LDSO" && linkflags=$linkflags' "--dynamic-linker", "'$DEFAULT_LDSO'"'
 
 printf "creating config.h... "
 cat >config.h <<EOF
@@ -169,7 +169,7 @@ static const char target[]               = "$target";
 static const char *const startfiles[]    = {$startfiles};
 static const char *const endfiles[]      = {$endfiles};
 static const char *const preprocesscmd[] = {
-	"$DEFAULT_PREPROCESSOR",
+	"$DEFAULT_CPP",
 
 	/* clear preprocessor GNU C and clang identifiers */
 	"-U", "__GNUC__",
@@ -188,8 +188,8 @@ static const char *const preprocesscmd[] = {
 	"-D", "__extension__=",
 $defines};
 static const char *const codegencmd[]    = {"$DEFAULT_QBE"};
-static const char *const assemblecmd[]   = {"$DEFAULT_ASSEMBLER"};
-static const char *const linkcmd[]       = {"$DEFAULT_LINKER", $linkflags};
+static const char *const assemblecmd[]   = {"$DEFAULT_AS"};
+static const char *const linkcmd[]       = {"$DEFAULT_LD", $linkflags};
 EOF
 echo done
 
