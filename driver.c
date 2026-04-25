@@ -157,8 +157,7 @@ spawnphase(struct stageinfo *phase, int *fd, char *input, char *output, bool las
 		arrayaddptr(&phase->cmd, "-o");
 		arrayaddptr(&phase->cmd, output);
 	}
-	if (input && *fd == -1)
-		arrayaddptr(&phase->cmd, input);
+	arrayaddptr(&phase->cmd, input && *fd == -1 ? input : "-");
 	arrayaddptr(&phase->cmd, NULL);
 
 	ret = posix_spawn_file_actions_init(&actions);
