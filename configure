@@ -156,10 +156,10 @@ case "$target" in
 	fail "unknown target '$target', please create config.h manually"
 esac
 
-: ${DEFAULT_CPP:=${toolprefix}cpp}
-: ${DEFAULT_QBE:=qbe}
-: ${DEFAULT_AS:=${toolprefix}as}
-: ${DEFAULT_LD:=${toolprefix}ld}
+DEFAULT_CPP=$(printf '"%s", ' ${DEFAULT_CPP:-${toolprefix}cpp})
+DEFAULT_QBE=$(printf '"%s", ' ${DEFAULT_QBE:-qbe})
+DEFAULT_AS=$(printf '"%s", ' ${DEFAULT_AS:-${toolprefix}as})
+DEFAULT_LD=$(printf '"%s", ' ${DEFAULT_LD:-${toolprefix}ld})
 
 test "$DEFAULT_LDSO" && linkflags=$linkflags' "--dynamic-linker", "'$DEFAULT_LDSO'"'
 
@@ -169,7 +169,7 @@ static const char target[]               = "$target";
 static const char *const startfiles[]    = {$startfiles};
 static const char *const endfiles[]      = {$endfiles};
 static const char *const preprocesscmd[] = {
-	"$DEFAULT_CPP",
+	$DEFAULT_CPP
 
 	/* clear preprocessor GNU C and clang identifiers */
 	"-U", "__GNUC__",
@@ -187,9 +187,9 @@ static const char *const preprocesscmd[] = {
 	/* ignore extension markers */
 	"-D", "__extension__=",
 $defines};
-static const char *const codegencmd[]    = {"$DEFAULT_QBE"};
-static const char *const assemblecmd[]   = {"$DEFAULT_AS"};
-static const char *const linkcmd[]       = {"$DEFAULT_LD", $linkflags};
+static const char *const codegencmd[]    = {$DEFAULT_QBE};
+static const char *const assemblecmd[]   = {$DEFAULT_AS};
+static const char *const linkcmd[]       = {$DEFAULT_LD$linkflags};
 EOF
 echo done
 
