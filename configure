@@ -90,14 +90,15 @@ case "$target" in
 	"-D", "__GNUCLIKE_BUILTIN_STDARG",
 	"-D", "__GNUCLIKE_BUILTIN_VARARGS",
 
+	/* disable TLS for rune locale (needs initial-exec TLS, #103 */
+	"-D", "__RUNETYPE_INTERNAL",
+
 	/* required to define _RuneLocale, needed by xlocale/_ctype.h */
 	"-D", "_USE_CTYPE_INLINE_",
 	/* workaround for #42 */
 	"-D", "_XLOCALE_INLINE=static inline",
 	/* used like attribute after declarator, so _Alignas will not work here */
 	"-D", "__aligned(x)=",
-	/* TLS is not yet supported (#8) */
-	"-D", "__NO_TLS",
 
 	/* disable warnings for redefining _Pragma */
 	"-Wno-builtin-macro-redefined",
@@ -116,9 +117,8 @@ case "$target" in
 	"-D", "__GNUCLIKE_BUILTIN_STDARG",
 	"-D", "__GNUCLIKE_BUILTIN_VARARGS",
 
-	/* Workaround for TLS */
+	/* disable TLS for errno and rune locale (needs initial-exec TLS, #103) */
 	"-D", "__WANT_NO_INLINED___ERROR",
-	/* Workaround for TLS */
 	"-D", "__RUNETYPE_INTERNAL",
 
 	/* required to define _RuneLocale, needed by xlocale/_ctype.h */
