@@ -1,0 +1,1 @@
+error: object 'a' with thread storage duration cannot have variably modified type

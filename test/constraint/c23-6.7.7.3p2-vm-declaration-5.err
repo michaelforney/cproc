@@ -1,0 +1,1 @@
+error: object 'a' with static storage duration cannot have variably modified type
