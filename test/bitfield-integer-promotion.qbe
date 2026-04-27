@@ -3,7 +3,7 @@ function w $main() {
 @start.1
 @body.2
 	%.1 =w neg 1
-	%.2 =l add $s, 0
+	%.2 =l add extern $s, 0
 	%.3 =w loadw %.2
 	%.4 =w shl %.3, 30
 	%.5 =w shr %.4, 30

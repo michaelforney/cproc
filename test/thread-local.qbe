@@ -8,12 +8,12 @@ export
 function w $main() {
 @start.1
 @body.2
-	%.1 =w loadw thread $a
+	%.1 =w loadw extern thread $a
 	%.2 =w loadw thread $b
 	%.3 =w add %.1, %.2
-	%.4 =w loadw thread $c
+	%.4 =w loadw extern thread $c
 	%.5 =w add %.3, %.4
-	%.6 =w loadw thread $d
+	%.6 =w loadw extern thread $d
 	%.7 =w add %.5, %.6
 	%.8 =w loadw thread $e
 	%.9 =w add %.7, %.8

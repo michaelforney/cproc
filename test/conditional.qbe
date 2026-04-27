@@ -2,7 +2,7 @@ export
 function w $main() {
 @start.1
 @body.2
-	%.1 =w loadw $i
+	%.1 =w loadw extern $i
 	jnz %.1, @cond_true.5, @cond_false.6
 @cond_true.5
 	jmp @cond_join.7
@@ -13,7 +13,7 @@ function w $main() {
 @if_true.3
 	ret 1
 @if_false.4
-	%.3 =s loads $f
+	%.3 =s loads extern $f
 	%.4 =w cnes %.3, s_0
 	jnz %.4, @cond_true.10, @cond_false.11
 @cond_true.10
@@ -25,7 +25,7 @@ function w $main() {
 @if_true.8
 	ret 1
 @if_false.9
-	%.6 =l loadl $p
+	%.6 =l loadl extern $p
 	%.7 =w cnel %.6, 0
 	jnz %.7, @cond_true.15, @cond_false.16
 @cond_true.15

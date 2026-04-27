@@ -3,7 +3,7 @@ export
 function w $main() {
 @start.1
 @body.2
-	%.1 =w loadw $n
+	%.1 =w loadw extern $n
 	%.2 =l extsw %.1
 	%.3 =l mul %.2, 1
 	%.4 =l add %.3, 48

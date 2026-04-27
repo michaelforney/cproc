@@ -18,14 +18,14 @@ function w $main() {
 	%.10 =w add %.8, %.9
 	storew %.10, %.1
 	%.11 =w loadw %.1
-	%.12 =w loadw $c
+	%.12 =w loadw extern $c
 	%.13 =w cnew %.12, 0
 	%.14 =w add %.11, %.13
 	storew %.14, %.1
 	%.15 =w loadw %.1
-	%.16 =w loadw $c
+	%.16 =w loadw extern $c
 	%.17 =w add %.16, 1
-	storew %.17, $c
+	storew %.17, extern $c
 	%.18 =l loadl %.6
 	%.19 =l extsw 2
 	%.20 =l mul %.19, 4
@@ -33,7 +33,7 @@ function w $main() {
 	%.22 =w add %.15, %.21
 	storew %.22, %.1
 	%.23 =w loadw %.1
-	%.24 =w loadw $c
+	%.24 =w loadw extern $c
 	%.25 =w cnew %.24, 1
 	%.26 =w add %.23, %.25
 	storew %.26, %.1
@@ -42,7 +42,7 @@ function w $main() {
 	%.29 =w add %.27, %.28
 	storew %.29, %.1
 	%.30 =w loadw %.1
-	%.31 =w loadw $c
+	%.31 =w loadw extern $c
 	%.32 =w cnew %.31, 1
 	%.33 =w add %.30, %.32
 	storew %.33, %.1
@@ -77,9 +77,9 @@ function w $main() {
 	%.57 =w add %.54, %.56
 	storew %.57, %.1
 	%.58 =w loadw %.1
-	%.59 =w loadw $c
+	%.59 =w loadw extern $c
 	%.60 =w add %.59, 1
-	storew %.60, $c
+	storew %.60, extern $c
 	%.61 =l extsw 5
 	%.62 =l mul %.61, 4
 	%.63 =l extsw 5
@@ -88,7 +88,7 @@ function w $main() {
 	%.66 =w add %.58, %.65
 	storew %.66, %.1
 	%.67 =w loadw %.1
-	%.68 =w loadw $c
+	%.68 =w loadw extern $c
 	%.69 =w cnew %.68, 2
 	%.70 =w add %.67, %.69
 	storew %.70, %.1

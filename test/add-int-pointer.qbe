@@ -4,7 +4,7 @@ function $f() {
 @body.2
 	%.1 =l extsw 1
 	%.2 =l mul %.1, 4
-	%.3 =l add $x, %.2
+	%.3 =l add extern $x, %.2
 	ret
 }
 export data $x = align 4 { z 8 }

@@ -3,7 +3,7 @@ export
 function w $f() {
 @start.1
 @body.2
-	%.1 =:.1 call $g()
+	%.1 =:.1 call extern $g()
 	%.2 =l add %.1, 4
 	%.3 =w loadw %.2
 	ret %.3

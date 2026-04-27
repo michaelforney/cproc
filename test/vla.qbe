@@ -8,7 +8,7 @@ export
 function l $f() {
 @start.3
 @body.4
-	%.1 =w call $g()
+	%.1 =w call extern $g()
 	%.2 =w extsh %.1
 	%.3 =w add 10, %.2
 	%.4 =l extsw %.3

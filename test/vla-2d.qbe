@@ -16,10 +16,10 @@ function $f() {
 	%.8 =l alloc8 8
 	%.15 =l alloc4 4
 @body.6
-	%.1 =w call $h()
+	%.1 =w call extern $h()
 	%.2 =l extsw %.1
 	%.3 =l mul %.2, 4
-	%.4 =w call $g()
+	%.4 =w call extern $g()
 	%.5 =l extsw %.4
 	%.6 =l mul %.5, %.3
 	%.7 =l alloc4 %.6

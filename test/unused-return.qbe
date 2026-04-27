@@ -2,6 +2,6 @@ export
 function $f() {
 @start.1
 @body.2
-	%.1 =w call $g()
+	%.1 =w call extern $g()
 	ret
 }
