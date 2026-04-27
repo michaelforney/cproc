@@ -1,0 +1,183 @@
+--- usr/include/i386/_types.h.orig	2026-04-25 12:55:44
++++ usr/include/i386/_types.h	2026-04-25 12:59:28
+@@ -115,10 +115,8 @@
+ 
+ #if USE_CLANG_TYPES
+ typedef va_list                 __darwin_va_list;       /* va_list */
+-#elif (__GNUC__ > 2)
+-typedef __builtin_va_list       __darwin_va_list;       /* va_list */
+ #else
+-typedef void *                  __darwin_va_list;       /* va_list */
++typedef __builtin_va_list       __darwin_va_list;       /* va_list */
+ #endif
+ 
+ #if USE_CLANG_TYPES
+--- usr/include/arm/_types.h.orig	2026-04-27 16:47:16
++++ usr/include/arm/_types.h	2026-04-27 16:47:32
+@@ -91,10 +91,8 @@
+ 
+ #if USE_CLANG_TYPES
+ typedef va_list                 __darwin_va_list;       /* va_list */
+-#elif (__GNUC__ > 2)
+-typedef __builtin_va_list       __darwin_va_list;       /* va_list */
+ #else
+-typedef void *                  __darwin_va_list;       /* va_list */
++typedef __builtin_va_list       __darwin_va_list;       /* va_list */
+ #endif
+ 
+ #if USE_CLANG_TYPES
+--- usr/include/mach/arm/_structs.h.orig	2026-04-27 16:59:34
++++ usr/include/mach/arm/_structs.h	2026-04-27 17:13:49
+@@ -36,6 +36,14 @@
+ #include <sys/cdefs.h> /* __DARWIN_UNIX03 */
+ #include <machine/types.h> /* __uint32_t */
+ 
++#if __STDC_VERSION__ >= 202311L
++#define __aligned(x) alignas(x)
++#elif __STDC_VERSION__ >= 201112L
++#define __aligned(x) _Alignas(x)
++#else
++#define __aligned(x) __attribute__((__aligned__(x)))
++#endif
++
+ #if __DARWIN_UNIX03
+ #define _STRUCT_ARM_EXCEPTION_STATE struct __darwin_arm_exception_state
+ _STRUCT_ARM_EXCEPTION_STATE
+@@ -537,14 +545,22 @@
+ #if defined(__arm64__)
+ _STRUCT_ARM_NEON_STATE64
+ {
++#ifdef __SIZEOF_INT128__
+ 	__uint128_t __v[32];
++#else
++	__aligned(16) char __opaque[512];
++#endif
+ 	__uint32_t  __fpsr;
+ 	__uint32_t  __fpcr;
+ };
+ 
+ _STRUCT_ARM_NEON_STATE
+ {
++#ifdef __SIZEOF_INT128__
+ 	__uint128_t __v[16];
++#else
++	__aligned(16) char __opaque[256];
++#endif
+ 	__uint32_t  __fpsr;
+ 	__uint32_t  __fpcr;
+ };
+@@ -554,13 +570,15 @@
+  */
+ _STRUCT_ARM_NEON_STATE64
+ {
++	__aligned(16)
+ 	char opaque[(32 * 16) + (2 * sizeof(__uint32_t))];
+-} __attribute__((aligned(16)));
++};
+ 
+ _STRUCT_ARM_NEON_STATE
+ {
++	__aligned(16)
+ 	char opaque[(16 * 16) + (2 * sizeof(__uint32_t))];
+-} __attribute__((aligned(16)));
++};
+ 
+ #else
+ #error Unknown architecture.
+@@ -590,13 +608,15 @@
+  */
+ _STRUCT_ARM_NEON_STATE64
+ {
++	__aligned(16)
+ 	char opaque[(32 * 16) + (2 * sizeof(__uint32_t))];
+-} __attribute__((aligned(16)));
++};
+ 
+ _STRUCT_ARM_NEON_STATE
+ {
++	__aligned(16)
+ 	char opaque[(16 * 16) + (2 * sizeof(__uint32_t))];
+-} __attribute__((aligned(16)));
++};
+ 
+ #else
+ #error Unknown architecture.
+@@ -623,26 +643,30 @@
+ #define _STRUCT_ARM_SVE_Z_STATE struct __darwin_arm_sve_z_state
+ _STRUCT_ARM_SVE_Z_STATE
+ {
++	__aligned(4)
+ 	char            __z[16][256];
+-} __attribute__((aligned(4)));
++};
+ 
+ #define _STRUCT_ARM_SVE_P_STATE struct __darwin_arm_sve_p_state
+ _STRUCT_ARM_SVE_P_STATE
+ {
++	__aligned(4)
+ 	char            __p[16][256 / 8];
+-} __attribute__((aligned(4)));
++};
+ 
+ #define _STRUCT_ARM_SME_ZA_STATE struct __darwin_arm_sme_za_state
+ _STRUCT_ARM_SME_ZA_STATE
+ {
++	__aligned(4)
+ 	char            __za[4096];
+-} __attribute__((aligned(4)));
++};
+ 
+ #define _STRUCT_ARM_SME2_STATE struct __darwin_arm_sme2_state
+ _STRUCT_ARM_SME2_STATE
+ {
++	__aligned(4)
+ 	char            __zt0[64];
+-} __attribute__((aligned(4)));
++};
+ #else /* !__DARWIN_UNIX03 */
+ #define _STRUCT_ARM_SME_STATE struct arm_sme_state
+ _STRUCT_ARM_SME_STATE
+@@ -655,26 +679,30 @@
+ #define _STRUCT_ARM_SVE_Z_STATE struct arm_sve_z_state
+ _STRUCT_ARM_SVE_Z_STATE
+ {
++	__aligned(4)
+ 	char            z[16][256];
+-} __attribute__((aligned(4)));
++};
+ 
+ #define _STRUCT_ARM_SVE_P_STATE struct arm_sve_p_state
+ _STRUCT_ARM_SVE_P_STATE
+ {
++	__aligned(4)
+ 	char            p[16][256 / 8];
+-} __attribute__((aligned(4)));
++};
+ 
+ #define _STRUCT_ARM_SME_ZA_STATE struct arm_sme_za_state
+ _STRUCT_ARM_SME_ZA_STATE
+ {
++	__aligned(4)
+ 	char            za[4096];
+-} __attribute__((aligned(4)));
++};
+ 
+ #define _STRUCT_ARM_SME2_STATE struct arm_sme2_state
+ _STRUCT_ARM_SME2_STATE
+ {
++	__aligned(4)
+ 	char            zt0[64];
+-} __attribute__((aligned(4)));
++};
+ #endif /* __DARWIN_UNIX03 */
+ 
+ /*
+@@ -786,6 +814,8 @@
+ };
+ #endif /* !__DARWIN_UNIX03 */
+ 
++#undef __aligned
++
+ #endif /* defined (__arm__) || defined (__arm64__) */
+ 
+ #endif /* _MACH_ARM__STRUCTS_H_ */

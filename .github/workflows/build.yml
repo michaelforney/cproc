@@ -1,0 +1,28 @@
+name: build
+on: [push]
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [macos-15-intel, macos-26-intel]
+        # TODO: fix macos-latest (aarch64 assembly issue?)
+        #include:
+        #- os: macos-latest
+        #  config: --host=aarch64-apple-darwin
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v6
+    - name: qbe
+      run: |
+        git clone -b dev git://c9x.me/qbe.git
+        make -C qbe install
+    - name: setup
+      run: sudo patch -d "$(xcrun --show-sdk-path)" -i "$PWD/.github/workflows/macos.diff"
+    - name: build
+      run: ./configure ${{ matrix.config }} && make
+    - name: test
+      run: make check
+    - name: bootstrap
+      run: make bootstrap
+    - name: test stage2
+      run: make check-stage2
