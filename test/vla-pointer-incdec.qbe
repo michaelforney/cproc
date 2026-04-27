@@ -9,7 +9,7 @@ function $f() {
 @start.3
 	%.7 =l alloc8 8
 @body.4
-	%.1 =w call $g()
+	%.1 =w call extern $g()
 	%.2 =l extsw %.1
 	%.3 =l mul %.2, 4
 	%.4 =l extsw 2

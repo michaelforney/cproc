@@ -3,7 +3,7 @@ function $f() {
 @start.1
 @body.2
 	%.1 =d exts s_1
-	call $g1(w 0, ..., d %.1)
-	call $g2(s s_1)
+	call extern $g1(w 0, ..., d %.1)
+	call extern $g2(s s_1)
 	ret
 }

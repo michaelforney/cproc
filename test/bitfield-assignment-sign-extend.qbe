@@ -2,7 +2,7 @@ export
 function w $main() {
 @start.1
 @body.2
-	%.1 =l add $s, 0
+	%.1 =l add extern $s, 0
 	%.2 =w shl 15, 0
 	%.3 =w shl %.2, 28
 	%.4 =w sar %.3, 28

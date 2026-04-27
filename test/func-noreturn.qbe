@@ -8,7 +8,7 @@ function $f() {
 	%.1 =w loadw $.Lc.2
 	jnz %.1, @while_body.4, @while_join.5
 @while_body.4
-	%.2 =w call $puts(l $.Lstring.3)
+	%.2 =w call extern $puts(l $.Lstring.3)
 	jmp @while_cond.3
 @while_join.5
 	hlt
@@ -17,12 +17,12 @@ export
 function w $main() {
 @start.6
 @body.7
-	call $exit(w 0)
+	call extern $exit(w 0)
 	hlt
 @dead.8
-	call $f()
+	call extern $f()
 	hlt
 @dead.9
-	call $f()
+	call extern $f()
 	hlt
 }

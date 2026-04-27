@@ -20,7 +20,7 @@ function w $f2(w %.1, ...) {
 	vastart %.4
 	%.5 =w loadw %.2
 	%.6 =l loadl %.4
-	%.7 =w call $f1(w %.5, l %.6)
+	%.7 =w call extern $f1(w %.5, l %.6)
 	storew %.7, %.3
 	%.8 =l loadl %.4
 	%.9 =w loadw %.3

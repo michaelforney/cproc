@@ -2,14 +2,14 @@ export
 function w $main() {
 @start.1
 @body.2
-	%.1 =w loadw $i
+	%.1 =w loadw extern $i
 	jnz %.1, @logic_and.5, @if_false.4
 @logic_and.5
 	jnz 1, @if_true.3, @if_false.4
 @if_true.3
 	ret 1
 @if_false.4
-	%.2 =s loads $f
+	%.2 =s loads extern $f
 	%.3 =w cnes %.2, s_0
 	jnz %.3, @logic_and.8, @if_false.7
 @logic_and.8
@@ -17,7 +17,7 @@ function w $main() {
 @if_true.6
 	ret 1
 @if_false.7
-	%.4 =l loadl $p
+	%.4 =l loadl extern $p
 	%.5 =w cnel %.4, 0
 	jnz %.5, @logic_and.11, @if_false.10
 @logic_and.11

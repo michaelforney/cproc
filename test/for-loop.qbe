@@ -10,7 +10,7 @@ function $f() {
 	jnz %.3, @for_body.4, @for_join.6
 @for_body.4
 	%.4 =w loadw %.1
-	call $g(w %.4)
+	call extern $g(w %.4)
 @for_cont.5
 	%.5 =w loadw %.1
 	%.6 =w add %.5, 1

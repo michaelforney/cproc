@@ -3,7 +3,7 @@ export
 function $g() {
 @start.1
 @body.2
-	call $f(:s.1 $s)
+	call extern $f(:s.1 extern $s)
 	ret
 }
 export data $s = align 4 { z 4 }

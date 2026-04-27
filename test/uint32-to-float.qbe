@@ -2,7 +2,7 @@ export
 function s $f() {
 @start.1
 @body.2
-	%.1 =w call $g()
+	%.1 =w call extern $g()
 	%.2 =s uwtof %.1
 	ret %.2
 }

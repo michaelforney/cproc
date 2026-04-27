@@ -2,7 +2,7 @@ export
 function w $main() {
 @start.1
 @body.2
-	%.1 =w loadw $x
+	%.1 =w loadw extern $x
 	jmp @switch_cond.3
 @switch_case.5
 	ret 1
