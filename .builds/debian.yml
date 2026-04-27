@@ -13,7 +13,7 @@ tasks:
 - build: |
     cd cproc
     ./configure
-    make all check bootstrap
+    make all check bootstrap check-stage2
 - build-aarch64: |
     cd cproc
     crtbegin=$(aarch64-linux-gnu-gcc -print-file-name=crtbegin.o)

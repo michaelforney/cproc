@@ -11,7 +11,7 @@ tasks:
 - build: |
     cd cproc
     ./configure --with-ldso=
-    make all check bootstrap
+    make all check bootstrap check-stage2
 triggers:
 - action: email
   condition: failure

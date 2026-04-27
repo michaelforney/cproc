@@ -93,6 +93,10 @@ bootstrap: stage2 stage3
 check: all
 	@CCQBE=./cproc-qbe ./runtests
 
+.PHONY: check-stage2
+check-stage2: all
+	@CCQBE=stage2/cproc-qbe ./runtests
+
 .PHONY: install
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)

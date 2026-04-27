@@ -9,7 +9,7 @@ tasks:
 - build: |
     cd cproc
     ./configure
-    make all check bootstrap
+    make all check bootstrap check-stage2
 triggers:
 - action: email
   condition: failure

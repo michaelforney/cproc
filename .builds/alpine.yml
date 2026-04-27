@@ -25,7 +25,7 @@ tasks:
 - build: |
     cd cproc
     ./configure
-    make all check bootstrap
+    make all check bootstrap check-stage2
 - build-c99: |
     cd cproc
     git clean -dfx
