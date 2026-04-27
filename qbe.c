@@ -19,8 +19,9 @@ struct value {
 		VALUE_TYPE,
 		VALUE_LABEL,
 
-		VALUE_THREAD = 1<<4,
-		VALUE_QUOTE = 1<<5,
+		VALUE_EXTERN = 1<<4,
+		VALUE_THREAD = 1<<5,
+		VALUE_QUOTE = 1<<6,
 	} kind;
 	unsigned id;
 	union {
@@ -139,6 +140,8 @@ mkglobal(struct decl *d)
 
 	v = xmalloc(sizeof(*v));
 	v->kind = VALUE_GLOBAL;
+	if (d->linkage == LINKEXTERN)
+		v->kind |= VALUE_EXTERN;
 	if (d->kind == DECLOBJECT && d->u.obj.storage == SDTHREAD)
 		v->kind |= VALUE_THREAD;
 	if (d->asmname) {
@@ -1173,6 +1176,8 @@ emitvalue(struct value *v)
 		printf("d_%.17g", v->u.f);
 		break;
 	case VALUE_GLOBAL:
+		if (v->kind & VALUE_EXTERN)
+			fputs("extern ", stdout);
 		if (v->kind & VALUE_THREAD)
 			fputs("thread ", stdout);
 		/* fallthrough */
