@@ -5,10 +5,9 @@ jobs:
     strategy:
       matrix:
         os: [macos-15-intel, macos-26-intel]
-        # TODO: fix macos-latest (aarch64 assembly issue?)
-        #include:
-        #- os: macos-latest
-        #  config: --host=aarch64-apple-darwin
+        include:
+        - os: macos-latest
+          config: --host=aarch64-apple-darwin
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v6

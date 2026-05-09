@@ -392,6 +392,9 @@ main(int argc, char *argv[])
 	if (hasprefix(target, "x86_64-apple-")) {
 		arch = "x86_64-sysv";
 		qbearch = "amd64_apple";
+	} else if (hasprefix(target, "aarch64-apple-")) {
+		arch = "aarch64";
+		qbearch = "arm64_apple";
 	} else if (hasprefix(target, "x86_64-") || hasprefix(target, "amd64-")) {
 		arch = "x86_64-sysv";
 		qbearch = "amd64_sysv";
