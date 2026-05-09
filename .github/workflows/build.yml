@@ -22,6 +22,6 @@ jobs:
     - name: test
       run: make check
     - name: bootstrap
-      run: make bootstrap
-    - name: test stage2
+      run: make -k bootstrap
+    - name: test stage3
       run: make check-stage2
