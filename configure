@@ -263,6 +263,15 @@ case "$target" in
 	"-D", "_Nullable=",
 	"-D", "__compar=",
 	"-U", "__BLOCKS__",
+
+	"-D", "__INT_MAX__=0x7fffffff",
+	"-D", "__LONG_MAX__=0x7fffffffffffffffL",
+	"-D", "__LONG_LONG_MAX__=0x7fffffffffffffffLL",
+	"-D", "__PTRDIFF_TYPE__=long",
+	"-D", "__SIZE_TYPE__=unsigned long",
+	"-D", "__WCHAR_TYPE__=int",
+
+	"-D", "__has_attribute(x)=0",
 '
 	if [ -z "$macossdk" ] ; then
 		test "$host" = "$target" || fail "macos sdk must be specified when building a cross-compiler"
