@@ -2,12 +2,12 @@ image: alpine/edge
 packages:
 - bison
 - flex
-- qbe
 - qemu-aarch64
 - qemu-openrc
 - qemu-riscv64
 sources:
 - https://git.sr.ht/~mcf/cproc
+- git://c9x.me/qbe.git#v1.3
 tasks:
 - setup: |
     sudo /etc/init.d/qemu-binfmt start
@@ -22,6 +22,10 @@ tasks:
     	git -C cproc --work-tree $PWD/$arch/cproc checkout HEAD .
     done
     patch -p0 -d riscv64/usr/include < cproc/.builds/musl-riscv64.diff
+- build-qbe: |
+    cd qbe
+    make
+    sudo make install
 - build: |
     cd cproc
     ./configure

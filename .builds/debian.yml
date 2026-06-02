@@ -4,12 +4,16 @@ packages:
 - libc-dev-arm64-cross
 - gcc-riscv64-linux-gnu
 - libc-dev-riscv64-cross
-- qbe
 - qemu-user
 - qemu-user-binfmt
 sources:
 - https://git.sr.ht/~mcf/cproc
+- git://c9x.me/qbe.git#v1.3
 tasks:
+- build-qbe: |
+    cd qbe
+    make
+    sudo make install
 - build: |
     cd cproc
     ./configure
