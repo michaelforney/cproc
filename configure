@@ -253,6 +253,9 @@ case "$target" in
 	: ${DEFAULT_CPP:=clang -E}
 	startfiles='0'
 	endfiles='"-l", "System"'
+	case $target in
+	aarch64-*) defines=$defines'"-D", "__arm64__",';;
+	esac
 	defines=$defines'
 	"-D", "__APPLE__",
 	"-D", "__unix__",
