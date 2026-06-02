@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v6
     - name: qbe
       run: |
-        git clone git://c9x.me/qbe.git
+        git clone -b arm64-extern-offset https://git.sr.ht/~mcf/qbe
         make -C qbe install
     - name: setup
       run: sudo patch -d "$(xcrun --show-sdk-path)" -i "$PWD/.github/workflows/macos.diff"
